@@ -311,7 +311,7 @@ func parser(c *sqlglot.ParserConfig) {
 	m := &c.Methods
 
 	m.ParseTriggerExecute = func(p *sqlglot.Parser) *exp.Expr {
-		body := p.TryParse(p.ParseStatement, true)
+		body := p.TryParse(p.ParseStatement, false)
 		if p.Curr.Ok() {
 			return nil
 		}

@@ -516,12 +516,18 @@ func (e *Expr) NamedSelects() []string {
 	return out
 }
 
-// IsWrapper mirrors Subquery.is_wrapper: all args except "this" are None.
+// IsWrapper mirrors Subquery.is_wrapper: all args except "this" are None. Empty lists count
+// as None because nil list arguments are stored as empty slices (the parser sets e.g. pivots to
+// None when there are none).
 func (e *Expr) IsWrapper() bool {
 	for _, a := range e.args {
-		if a.Key != "this" && a.Value != nil {
-			return false
+		if a.Key == "this" || a.Value == nil {
+			continue
 		}
+		if l, ok := a.Value.([]*Expr); ok && len(l) == 0 {
+			continue
+		}
+		return false
 	}
 	return true
 }

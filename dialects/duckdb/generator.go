@@ -105,6 +105,8 @@ func generator(c *sqlglot.GeneratorConfig) {
 	c.PropertiesLocation[exp.TriggerProperties] = exp.PostExpression
 	c.PropertiesLocation[exp.IcebergProperty] = exp.PostCreate
 
+	c.Extra["IGNORE_RESPECT_NULLS_WINDOW_FUNCTIONS"] = []exp.Kind{exp.FirstValue, exp.Lag, exp.LastValue, exp.Lead, exp.NthValue}
+
 	methods(c)
 }
 
