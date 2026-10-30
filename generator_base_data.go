@@ -1,0 +1,149 @@
+package sqlglot
+
+import (
+	"github.com/cottrellashley/sqlglot-go/exp"
+	"github.com/cottrellashley/sqlglot-go/tokens"
+)
+
+func strPtr(s string) *string { return &s }
+
+// baseGeneratorData assigns the data tables of sqlglot's base Generator class.
+// Generated with tools/port/gen_config.py.
+func baseGeneratorData(c *GeneratorConfig) {
+	c.AlterPartitionOptions = exp.NewKindSet()
+	c.AlterSetType = "SET DATA TYPE"
+	c.AlterSetWrapped = false
+	c.AlterTableAddColumnsWrapped = true
+	c.AlterTableIncludeColumnKeyword = true
+	c.ArrayConcatIsVarLen = true
+	c.ArraySizeDimRequired = nil
+	c.ArraySizeName = "ARRAY_LENGTH"
+	c.AutoRefreshBareIntervals = false
+	c.ByteStringFunction = ""
+	c.CanImplementArrayAny = false
+	c.CastToIntRounds = false
+	c.CollateIsFunc = false
+	c.ComputedColumnWithType = true
+	c.CopyHasIntoKeyword = true
+	c.CopyParamsAreWrapped = true
+	c.CopyParamsEqRequired = false
+	c.CreateFunctionReturnAs = true
+	c.CteRecursiveKeywordRequired = true
+	c.DataTypeSpecifiersAllowed = false
+	c.DeclareDefaultAssignment = "="
+	c.DirectedJoins = false
+	c.DuplicateKeyUpdateWithSet = true
+	c.EnsureBools = false
+	c.ExceptIntersectSupportAllClause = true
+	c.ExcludeComments = exp.NewKindSet(exp.Binary, exp.SetOperation)
+	c.ExtractAllowsQuotes = true
+	c.GroupingsSep = ","
+	c.HexFunc = "HEX"
+	c.HistoricalDataPostAlias = false
+	c.IgnoreNullsBeforeOrder = true
+	c.IgnoreNullsInFunc = false
+	c.IndexOn = "ON"
+	c.InoutSeparator = " "
+	c.InsertOverwrite = " OVERWRITE TABLE"
+	c.IntervalAllowsPluralForm = true
+	c.IsBoolAllowed = true
+	c.JoinHints = true
+	c.JsonKeyValuePairSep = ":"
+	c.JsonPathBracketedKeySupported = true
+	c.JsonPathKeyQuotedForcesBrackets = false
+	c.JsonPathSingleQuoteEscape = false
+	c.JsonTypeRequiredForExtraction = false
+	c.LastDaySupportsDatePart = true
+	c.LikePropertyInsideSchema = false
+	c.LimitFetch = "ALL"
+	c.LimitIsTop = false
+	c.LimitOnlyLiterals = false
+	c.LockingReadsSupported = false
+	c.MatchedBySource = true
+	c.MatchAgainstTablePrefix = nil
+	c.MergeAllByName = false
+	c.ModOperator = "%"
+	c.ModParenParentTypes = exp.NewKindSet(exp.Div, exp.IntDiv, exp.Mod, exp.Mul)
+	c.MultiArgDistinct = true
+	c.NamedPlaceholderToken = ":"
+	c.NormalizeExtractDateParts = false
+	c.NullOrderingSupported = Bool(true)
+	c.Nvl2Supported = true
+	c.PadFillPatternIsRequired = false
+	c.ParameterizableTextTypes = exp.NewTypeSet(exp.DTypeChar, exp.DTypeNchar, exp.DTypeNvarchar, exp.DTypeVarchar)
+	c.ParameterToken = "@"
+	c.ParseJsonName = strPtr("PARSE_JSON")
+	c.PivotAliasWithAs = true
+	c.PropertiesLocation = map[exp.Kind]exp.PropertiesLocation{exp.AggregateKeyProperty: exp.PostSchema, exp.AllowedValuesProperty: exp.PostSchema, exp.AlgorithmProperty: exp.PostCreate, exp.ApiProperty: exp.PostCreate, exp.ApplicationProperty: exp.PostCreate, exp.AutoIncrementProperty: exp.PostSchema, exp.AutoRefreshProperty: exp.PostSchema, exp.BackupProperty: exp.PostSchema, exp.BlockCompressionProperty: exp.PostName, exp.CalledOnNullInputProperty: exp.PostSchema, exp.CatalogProperty: exp.PostCreate, exp.CharacterSetProperty: exp.PostSchema, exp.ChecksumProperty: exp.PostName, exp.CollateProperty: exp.PostSchema, exp.ComputeProperty: exp.PostCreate, exp.CopyGrantsProperty: exp.PostSchema, exp.CopyTagsProperty: exp.PostSchema, exp.Cluster: exp.PostSchema, exp.ClusteredByProperty: exp.PostSchema, exp.ClusterProperty: exp.PostSchema, exp.DistributedByProperty: exp.PostSchema, exp.DuplicateKeyProperty: exp.PostSchema, exp.DataBlocksizeProperty: exp.PostName, exp.DatabaseProperty: exp.PostCreate, exp.DataDeletionProperty: exp.PostSchema, exp.DefinerProperty: exp.PostCreate, exp.DictRange: exp.PostSchema, exp.DictProperty: exp.PostSchema, exp.DynamicProperty: exp.PostCreate, exp.DistKeyProperty: exp.PostSchema, exp.DistStyleProperty: exp.PostSchema, exp.EmptyProperty: exp.PostSchema, exp.EncodeProperty: exp.PostExpression, exp.EngineProperty: exp.PostSchema, exp.EnviromentProperty: exp.PostSchema, exp.HandlerProperty: exp.PostSchema, exp.ParameterStyleProperty: exp.PostSchema, exp.ExecuteAsProperty: exp.PostSchema, exp.ExternalProperty: exp.PostCreate, exp.FallbackProperty: exp.PostName, exp.FileFormatProperty: exp.PostWith, exp.FreespaceProperty: exp.PostName, exp.GlobalProperty: exp.PostCreate, exp.HeapProperty: exp.PostWith, exp.HybridProperty: exp.PostCreate, exp.InheritsProperty: exp.PostSchema, exp.IcebergProperty: exp.PostCreate, exp.IncludeProperty: exp.PostSchema, exp.InputModelProperty: exp.PostSchema, exp.IsolatedLoadingProperty: exp.PostName, exp.JournalProperty: exp.PostName, exp.LanguageProperty: exp.PostSchema, exp.LikeProperty: exp.PostSchema, exp.LocationProperty: exp.PostSchema, exp.LockProperty: exp.PostSchema, exp.LockingProperty: exp.PostAlias, exp.LogProperty: exp.PostName, exp.MaskingProperty: exp.PostCreate, exp.MaterializedProperty: exp.PostCreate, exp.MergeBlockRatioProperty: exp.PostName, exp.ModuleProperty: exp.PostSchema, exp.NetworkProperty: exp.PostCreate, exp.NoPrimaryIndexProperty: exp.PostExpression, exp.OnProperty: exp.PostSchema, exp.OnCommitProperty: exp.PostExpression, exp.Order: exp.PostSchema, exp.OutputModelProperty: exp.PostSchema, exp.PartitionedByProperty: exp.PostWith, exp.PartitionedOfProperty: exp.PostSchema, exp.PhysicalProperty: exp.Unsupported, exp.PrimaryKey: exp.PostSchema, exp.Property: exp.PostWith, exp.RefreshTriggerProperty: exp.PostSchema, exp.RemoteWithConnectionModelProperty: exp.PostSchema, exp.ReturnsProperty: exp.PostSchema, exp.RollupProperty: exp.Unsupported, exp.RowAccessProperty: exp.Unsupported, exp.RowFormatProperty: exp.PostSchema, exp.RowFormatDelimitedProperty: exp.PostSchema, exp.RowFormatSerdeProperty: exp.PostSchema, exp.SampleProperty: exp.PostSchema, exp.SchemaCommentProperty: exp.PostSchema, exp.SecureProperty: exp.PostCreate, exp.SecurityIntegrationProperty: exp.PostCreate, exp.SerdeProperties: exp.PostSchema, exp.Set: exp.PostSchema, exp.SettingsProperty: exp.PostSchema, exp.SetProperty: exp.PostCreate, exp.SetConfigProperty: exp.PostSchema, exp.SharingProperty: exp.PostExpression, exp.SequenceProperties: exp.PostExpression, exp.TriggerProperties: exp.PostExpression, exp.SortKeyProperty: exp.PostSchema, exp.SqlReadWriteProperty: exp.PostSchema, exp.SqlSecurityProperty: exp.PostSchema, exp.StabilityProperty: exp.PostSchema, exp.StorageHandlerProperty: exp.PostSchema, exp.StorageProperty: exp.Unsupported, exp.StreamingTableProperty: exp.PostCreate, exp.StrictProperty: exp.PostSchema, exp.Tags: exp.PostWith, exp.TableSpaceProperty: exp.Unsupported, exp.TemporaryProperty: exp.PostCreate, exp.ToTableProperty: exp.PostSchema, exp.TransientProperty: exp.PostCreate, exp.TransformModelProperty: exp.PostSchema, exp.MergeTreeTTL: exp.PostSchema, exp.UnloggedProperty: exp.PostCreate, exp.UsingProperty: exp.PostExpression, exp.UsingTemplateProperty: exp.PostSchema, exp.ViewAttributeProperty: exp.PostSchema, exp.VirtualProperty: exp.PostCreate, exp.VolatileProperty: exp.PostCreate, exp.WithDataProperty: exp.PostExpression, exp.WithJournalTableProperty: exp.PostName, exp.WithProcedureOptions: exp.PostSchema, exp.WithSchemaBindingProperty: exp.PostSchema, exp.WithSystemVersioningProperty: exp.PostSchema, exp.ForceProperty: exp.PostCreate}
+	c.QueryHints = true
+	c.QueryHintSep = ", "
+	c.QuoteJsonPath = true
+	c.RenameTableWithDb = true
+	c.ReservedKeywords = strSet()
+	c.RespectIgnoreNullsUnsupportedExpressions = exp.NewKindSet()
+	c.ReturningEnd = true
+	c.SafeIntDivision = false
+	c.SelectKinds = []string{"STRUCT", "VALUE"}
+	c.SemiAntiJoinWithSide = true
+	c.SentinelLineBreak = "__SQLGLOT__LB__"
+	c.SetAssignmentRequiresVariableKeyword = false
+	c.SetOpLimits = false
+	c.SetOpModifiers = true
+	c.SetOpParenthesizedOperands = true
+	c.SingleStringInterval = false
+	c.StarExcept = "EXCEPT"
+	c.StarExcludeRequiresDerivedTable = true
+	c.StructDelimiter = []string{"<", ">"}
+	c.SupportedJsonPathParts = exp.NewKindSet(exp.JSONPathFilter, exp.JSONPathKey, exp.JSONPathRecursive, exp.JSONPathRoot, exp.JSONPathScript, exp.JSONPathSelector, exp.JSONPathSlice, exp.JSONPathSubscript, exp.JSONPathUnion, exp.JSONPathWildcard)
+	c.SupportsAlterColumnIfExists = false
+	c.SupportsAlterColumnNullability = false
+	c.SupportsBetweenFlags = false
+	c.SupportsChangeColumn = false
+	c.SupportsConvertTimezone = false
+	c.SupportsCreateTableLike = true
+	c.SupportsDecodeCase = true
+	c.SupportsDropAlterIcebergProperty = true
+	c.SupportsExplodingProjections = true
+	c.SupportsGroupingSetsAsSuffix = false
+	c.SupportsLikeQuantifiers = true
+	c.SupportsMedian = true
+	c.SupportsMergeWhere = false
+	c.SupportsModifyColumn = false
+	c.SupportsNamedCteColumns = true
+	c.SupportsNearestJoin = false
+	c.SupportsSelectInto = false
+	c.SupportsSingleArgConcat = true
+	c.SupportsTableAliasColumns = true
+	c.SupportsTableCopy = true
+	c.SupportsToNumber = true
+	c.SupportsUescape = true
+	c.SupportsUnixSeconds = false
+	c.SupportsUnloggedTables = false
+	c.SupportsWindowExclude = false
+	c.TablesampleKeywords = "TABLESAMPLE"
+	c.TablesampleRequiresParens = true
+	c.TablesampleSeedKeyword = "SEED"
+	c.TablesampleSizeIsRows = true
+	c.TablesampleWithMethod = true
+	c.TableHints = true
+	c.TimePartSingulars = map[string]string{"MICROSECONDS": "MICROSECOND", "SECONDS": "SECOND", "MINUTES": "MINUTE", "HOURS": "HOUR", "DAYS": "DAY", "WEEKS": "WEEK", "MONTHS": "MONTH", "QUARTERS": "QUARTER", "YEARS": "YEAR"}
+	c.TrySupported = true
+	c.TypeMapping = map[exp.DType]string{exp.DTypeDatetime2: "TIMESTAMP", exp.DTypeNchar: "CHAR", exp.DTypeNvarchar: "VARCHAR", exp.DTypeMediumtext: "TEXT", exp.DTypeLongtext: "TEXT", exp.DTypeTinytext: "TEXT", exp.DTypeBlob: "VARBINARY", exp.DTypeMediumblob: "BLOB", exp.DTypeLongblob: "BLOB", exp.DTypeTinyblob: "BLOB", exp.DTypeInet: "INET", exp.DTypeRowversion: "VARBINARY", exp.DTypeSmalldatetime: "TIMESTAMP"}
+	c.TzToWithTimeZone = false
+	c.UnicodeSubstitute = nil
+	c.UnnestWithOrdinality = true
+	c.UnpivotAliasesAreIdentifiers = true
+	c.UnwrappedIntervalValues = exp.NewKindSet(exp.Column, exp.Literal, exp.Neg, exp.Paren)
+	c.UpdateStatementSupportsFrom = true
+	c.ValuesAsTable = true
+	c.WindowFuncsWithNullOrdering = exp.NewKindSet()
+	c.WithPropertiesPrefix = "WITH"
+	c.WithSeparatedComments = exp.NewKindSet(exp.Command, exp.Create, exp.Delete, exp.Describe, exp.Drop, exp.From, exp.Group, exp.Having, exp.Insert, exp.Join, exp.MultitableInserts, exp.Order, exp.Select, exp.SetOperation, exp.Update, exp.Where, exp.With)
+	c.WrapDerivedValues = true
+	c.ExpressionsWithoutNestedCtes = exp.KindSet{}
+	c.ExpressionPrecedesPropertiesCreatables = StringSet{}
+	c.UnsupportedTypes = exp.NewTypeSet()
+	c.TokenMapping = map[tokens.TokenType]string{}
+	c.TypeParamSettings = map[exp.DType]TypeParamSetting{}
+	c.SafeJsonPathKeyRe = exp.SafeIdentifierRe
+}
