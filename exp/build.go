@@ -910,13 +910,22 @@ func replacePlaceholder(p *Expr, e *Expr) *Expr {
 	return e
 }
 
+// isNoneValue reports whether v is Python None (nil or a typed nil expression).
+func isNoneValue(v any) bool {
+	if v == nil {
+		return true
+	}
+	e, ok := v.(*Expr)
+	return ok && e == nil
+}
+
 // ReplacePlaceholders mirrors exp.replace_placeholders(expression, *args, **kwargs).
 func ReplacePlaceholders(e *Expr, args []any, kwargs map[string]any) *Expr {
 	i := 0
 	return e.Transform(func(node *Expr) *Expr {
 		if node.Is(Placeholder) {
 			if node.Arg("this") != nil {
-				if v, ok := kwargs[node.Name()]; ok && v != nil {
+				if v, ok := kwargs[node.Name()]; ok && !isNoneValue(v) {
 					return replacePlaceholder(node, ConvertValue(v, false))
 				}
 			} else if i < len(args) {

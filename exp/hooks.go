@@ -13,6 +13,10 @@ const (
 )
 
 var (
+	// NonnullConstants and Constants mirror NONNULL_CONSTANTS and CONSTANTS.
+	NonnullConstants = []Kind{Literal, Boolean}
+	Constants        = []Kind{Literal, Boolean, Null}
+
 	TableParts       = []string{"this", "db", "catalog"}
 	ColumnParts      = []string{"this", "table", "db", "catalog"}
 	PositionMetaKeys = []string{"line", "col", "start", "end"}

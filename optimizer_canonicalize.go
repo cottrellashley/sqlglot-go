@@ -193,6 +193,9 @@ func coerceTimeunitArg(arg *exp.Expr, unit *exp.Expr) *exp.Expr {
 }
 
 // isDateUnit mirrors helper.is_date_unit.
+// IsDateUnit mirrors helper.is_date_unit.
+func IsDateUnit(e *exp.Expr) bool { return isDateUnit(e) }
+
 func isDateUnit(e *exp.Expr) bool {
 	return e != nil && helper.DateUnits[toLowerASCII(e.Name())]
 }

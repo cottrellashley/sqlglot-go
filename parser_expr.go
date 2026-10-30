@@ -324,7 +324,10 @@ func (p *Parser) parseBitwise() *exp.Expr {
 		} else if p.MatchPair(tokens.Gt, tokens.Gt) {
 			this = p.Expr(exp.BitwiseRightShift, "this", this, "expression", p.ParseTerm(true))
 		} else if len(p.C.JsonOperators) > 0 && MatchIn(p, p.C.JsonOperators) {
-			this = p.C.JsonOperators[p.Prev.Type](p, this, p.ParseTerm(true))
+			// Look the operator up before parsing the operand: Go doesn't order the map index
+			// relative to the ParseTerm call.
+			op := p.C.JsonOperators[p.Prev.Type]
+			this = op(p, this, p.ParseTerm(true))
 		} else {
 			break
 		}
