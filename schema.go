@@ -71,8 +71,8 @@ type Schema interface {
 }
 
 type tableCacheKey struct {
-	table         exp.ExprKey
-	ensureTypes   bool
+	table       exp.ExprKey
+	ensureTypes bool
 }
 
 // MappingSchema mirrors schema.MappingSchema: a schema defined by a nested mapping of

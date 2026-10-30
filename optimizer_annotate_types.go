@@ -559,7 +559,7 @@ func mustBuildType(t TypeValue) *exp.Expr {
 // annotates the expression's children first (post-order), then the expression itself.
 func (a *TypeAnnotator) AnnotateExpression(e *exp.Expr, scope *Scope) {
 	type item struct {
-		e                *exp.Expr
+		e                 *exp.Expr
 		childrenAnnotated bool
 	}
 	stack := []item{{e, false}}

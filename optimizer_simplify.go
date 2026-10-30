@@ -999,7 +999,9 @@ func (s *Simplifier) simplifyConnectors(e *exp.Expr, root bool) *exp.Expr {
 	return e
 }
 
-func (s *Simplifier) comparisonOperands(e *exp.Expr) (*exp.Expr, *exp.Expr) { return e.This(), e.Expression() }
+func (s *Simplifier) comparisonOperands(e *exp.Expr) (*exp.Expr, *exp.Expr) {
+	return e.This(), e.Expression()
+}
 
 // SimplifyComparison mirrors Simplifier._simplify_comparison (it may return nil).
 func (s *Simplifier) SimplifyComparison(expression, left, right *exp.Expr, or bool) *exp.Expr {
