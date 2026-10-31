@@ -162,6 +162,15 @@ func (d Dec) Quo(o Dec) Dec {
 	return Dec{Neg: neg, Coef: coef, Exp: exp}.round()
 }
 
+// Negate is unary minus (-d), rounded to the context precision like Python.
+func (d Dec) Negate() Dec {
+	n := Dec{Neg: !d.Neg, Coef: new(big.Int).Set(d.Coef), Exp: d.Exp}
+	if n.Coef.Sign() == 0 {
+		n.Neg = false
+	}
+	return n.round()
+}
+
 // IsZero reports whether d is zero.
 func (d Dec) IsZero() bool { return d.Coef.Sign() == 0 }
 

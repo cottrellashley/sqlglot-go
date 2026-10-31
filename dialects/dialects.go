@@ -8,4 +8,5 @@ package dialects
 
 import (
 	_ "github.com/cottrellashley/sqlglot-go/dialects/duckdb"
+	_ "github.com/cottrellashley/sqlglot-go/dialects/snowflake"
 )

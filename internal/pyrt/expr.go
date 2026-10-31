@@ -1,12 +1,15 @@
 package pyrt
 
 import (
+	"reflect"
 	"regexp"
+	"sort"
 	"strings"
 
 	sqlglot "github.com/cottrellashley/sqlglot-go"
 	"github.com/cottrellashley/sqlglot-go/errs"
 	"github.com/cottrellashley/sqlglot-go/exp"
+	"github.com/cottrellashley/sqlglot-go/tokens"
 )
 
 // ArgsView is Expression.args.
@@ -754,6 +757,18 @@ func metaDict(e *exp.Expr) Value {
 // fromGo converts a Go API value into a Python value.
 func fromGo(v any) Value {
 	switch x := v.(type) {
+	case tokens.TokenSet:
+		out := NewSet()
+		for _, t := range x.Types() {
+			out.Add(t)
+		}
+		return out
+	case sqlglot.StringSet:
+		out := NewSet()
+		for _, k := range sortedKeys(x) {
+			out.Add(k)
+		}
+		return out
 	case []exp.Kind:
 		out := make(Tuple, len(x))
 		for i, k := range x {
@@ -776,6 +791,31 @@ func fromGo(v any) Value {
 		return int(x)
 	case float32:
 		return float64(x)
+	}
+	// maps with string keys become dicts (sorted keys), other slices lists
+	rv := reflect.ValueOf(v)
+	switch rv.Kind() {
+	case reflect.Map:
+		if rv.Type().Key().Kind() == reflect.String {
+			keys := make([]string, 0, rv.Len())
+			for _, k := range rv.MapKeys() {
+				keys = append(keys, k.String())
+			}
+			sort.Strings(keys)
+			d := NewDict()
+			for _, k := range keys {
+				d.Set(k, fromGo(rv.MapIndex(reflect.ValueOf(k).Convert(rv.Type().Key())).Interface()))
+			}
+			return d
+		}
+	case reflect.Slice:
+		if rv.Type().Elem().Kind() != reflect.Uint8 {
+			out := make([]Value, rv.Len())
+			for i := range out {
+				out[i] = fromGo(rv.Index(i).Interface())
+			}
+			return &List{out}
+		}
 	}
 	return norm(v)
 }

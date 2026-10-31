@@ -7,9 +7,9 @@ import (
 	"unicode"
 
 	sqlglot "github.com/cottrellashley/sqlglot-go"
+	"github.com/cottrellashley/sqlglot-go/dialects/duckdb"
 	"github.com/cottrellashley/sqlglot-go/errs"
 	"github.com/cottrellashley/sqlglot-go/exp"
-	"github.com/cottrellashley/sqlglot-go/dialects/duckdb"
 	"github.com/cottrellashley/sqlglot-go/tokens"
 )
 
@@ -68,6 +68,25 @@ func G(name string) Value {
 			}
 		case parts[0] == "sqlglot" && len(parts) >= 3 && parts[1] == "dialects" && parts[2] == "dialect" && last == "Dialect":
 			return dialectClassValue
+		case name == "sqlglot.parser":
+			return &Module{Name: name, Attrs: map[string]Value{"Parser": baseConfig("Parser")}}
+		case name == "sqlglot.generator":
+			return &Module{Name: name, Attrs: map[string]Value{"Generator": baseConfig("Generator")}}
+		case name == "sqlglot.tokens":
+			return &Module{Name: name, Attrs: map[string]Value{"Tokenizer": baseConfig("Tokenizer")}}
+		case parts[0] == "sqlglot" && len(parts) == 4 && (parts[1] == "parsers" || parts[1] == "generators" || parts[1] == "tokenizers"):
+			// e.g. sqlglot.parsers.snowflake.SnowflakeParser
+			if c, err := sqlglot.GetDialectClass(parts[2]); err == nil {
+				for _, part := range []string{"Parser", "Generator", "Tokenizer"} {
+					if strings.HasSuffix(last, part) {
+						v, _ := (&DialectClassV{c}).pyAttrConfig(part)
+						return v
+					}
+				}
+			} else if KnownDialects[parts[2]] {
+				skipEvents++
+				return &SkippedV{parts[2]}
+			}
 		}
 		if v, ok := globals[last]; ok {
 			return v
@@ -641,13 +660,18 @@ func (d *DialectV) PyAttr(name string) (Value, bool) {
 	return classField(reflect.ValueOf(d.D.DialectClass).Elem(), name)
 }
 
+func baseConfig(part string) Value {
+	v, _ := (&DialectClassV{sqlglot.BaseDialectClass()}).pyAttrConfig(part)
+	return v
+}
+
 // PyAttr exposes the Parser/Generator/Tokenizer configuration of a dialect class.
 func (c *DialectClassV) pyAttrConfig(name string) (Value, bool) {
 	switch name {
 	case "Generator":
 		return &ConfigV{reflect.ValueOf(c.C.Generator).Elem(), c.C.Generator.Extra}, true
 	case "Parser":
-		return &ConfigV{reflect.ValueOf(c.C.Parser).Elem(), nil}, true
+		return &ConfigV{reflect.ValueOf(c.C.Parser).Elem(), c.C.Parser.Extra}, true
 	case "Tokenizer":
 		return &ConfigV{reflect.ValueOf(c.C.Tokenizer).Elem(), nil}, true
 	}

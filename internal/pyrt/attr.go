@@ -7,6 +7,7 @@ import (
 
 	"github.com/cottrellashley/sqlglot-go/errs"
 	"github.com/cottrellashley/sqlglot-go/exp"
+	"github.com/cottrellashley/sqlglot-go/tokens"
 )
 
 // Attrer is implemented by Go objects exposing Python attributes.
@@ -50,6 +51,11 @@ func A(v Value, name string) Value {
 		}
 	case errs.ErrorLevel:
 		if name == "name" {
+			return x.String()
+		}
+	case tokens.TokenType:
+		switch name {
+		case "name", "value":
 			return x.String()
 		}
 	case Attrer:

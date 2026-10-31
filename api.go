@@ -59,7 +59,9 @@ func BuildFunc(name string, converted []*exp.Expr, kwargs []exp.Arg, d *Dialect)
 	if constructor, ok := d.Parser.Functions[strings.ToUpper(name)]; ok {
 		if len(converted) > 0 {
 			fn = constructor(converted, d)
-		} else if kind, ok := exp.FunctionByName(name); ok {
+		} else if kind, ok := exp.FunctionByName(strings.ToUpper(name)); ok {
+			// Python uses the class of a from_arg_list constructor; builders don't expose their
+			// class here, so FUNCTION_BY_NAME is used for both cases.
 			kv := make([]any, 0, len(kwargs)*2)
 			for _, a := range kwargs {
 				kv = append(kv, a.Key, a.Value)

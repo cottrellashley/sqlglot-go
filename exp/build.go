@@ -2,6 +2,7 @@ package exp
 
 import (
 	"encoding/hex"
+	"github.com/cottrellashley/sqlglot-go/internal/pydec"
 
 	"github.com/cottrellashley/sqlglot-go/errs"
 
@@ -41,7 +42,12 @@ func LiteralNumber(v any) *Expr {
 			}
 		case Decimal:
 			if x.Rat.Sign() < 0 {
-				lit.Set("this", strings.TrimPrefix(x.Text, "-"))
+				// Python stores str(-to_py), i.e. the Decimal formatting of the absolute value
+				text := strings.TrimPrefix(x.Text, "-")
+				if d, ok := pydec.Parse(x.Text); ok {
+					text = d.Negate().String()
+				}
+				lit.Set("this", text)
 				return New(Neg, "this", lit)
 			}
 		}
