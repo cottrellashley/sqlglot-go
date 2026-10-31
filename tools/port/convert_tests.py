@@ -980,7 +980,7 @@ class Converter:
         tests = []
         for node in cls.body:
             if isinstance(node, ast.FunctionDef):
-                methods.append(f"{go_str(node.name)}: {self.method_func(cls.name, node.name)},")
+                methods.append(f"{go_str(node.name)}, {self.method_func(cls.name, node.name)},")
                 funcs += self.method(node, cls.name) + [""]
                 if node.name.startswith("test"):
                     tests.append(go_str(node.name))
@@ -989,7 +989,7 @@ class Converter:
                     value = self.expr(node.value, None)
                 except NotPortedErr as e:
                     value = self.np(node, str(e))
-                attrs.append(f"{go_str(node.targets[0].id)}: {value},")
+                attrs.append(f"{go_str(node.targets[0].id)}, {value},")
                 # later statements of the class body can refer to the attribute by name
                 if node.targets[0].id not in self.module_names:
                     self.module_names[node.targets[0].id] = value
@@ -1006,7 +1006,9 @@ class Converter:
                f"File: {go_str(self.relpath)},"]
         if base:
             out.append(f"Base: {self.class_var(base)},")
-        out += ["Attrs: map[string]Value{"] + attrs + ["},", "Methods: map[string]Method{"] + methods + ["},"]
+        # tables are built by calls rather than map literals, whose alignment depends on the
+        # gofmt version
+        out += ["Attrs: AttrTable("] + attrs + ["),", "Methods: MethodTable("] + methods + ["),"]
         out += ["Tests: []string{" + ", ".join(tests) + "},", "}", ""]
         return out + funcs
 

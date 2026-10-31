@@ -15,12 +15,12 @@ func TestMaterialize(t *testing.T) { RunClass(t, test_materialize_TestMaterializ
 var test_materialize_TestMaterialize = &Class{
 	Name: "TestMaterialize",
 	File: "tests/dialects/test_materialize.py",
-	Attrs: map[string]Value{
-		"dialect": "materialize",
-	},
-	Methods: map[string]Method{
-		"test_materialize": test_materialize_TestMaterialize_test_materialize,
-	},
+	Attrs: AttrTable(
+		"dialect", "materialize",
+	),
+	Methods: MethodTable(
+		"test_materialize", test_materialize_TestMaterialize_test_materialize,
+	),
 	Tests: []string{"test_materialize"},
 }
 

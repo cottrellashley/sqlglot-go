@@ -86,10 +86,10 @@ func TestTyping(t *testing.T) { RunClass(t, test_typing_TestTyping) }
 var test_typing_TestTyping = &Class{
 	Name:  "TestTyping",
 	File:  "tests/test_typing.py",
-	Attrs: map[string]Value{},
-	Methods: map[string]Method{
-		"test_no_redundant_expression_metadata": test_typing_TestTyping_test_no_redundant_expression_metadata,
-	},
+	Attrs: AttrTable(),
+	Methods: MethodTable(
+		"test_no_redundant_expression_metadata", test_typing_TestTyping_test_no_redundant_expression_metadata,
+	),
 	Tests: []string{"test_no_redundant_expression_metadata"},
 }
 

@@ -15,24 +15,24 @@ func TestDoris(t *testing.T) { RunClass(t, test_doris_TestDoris) }
 var test_doris_TestDoris = &Class{
 	Name: "TestDoris",
 	File: "tests/dialects/test_doris.py",
-	Attrs: map[string]Value{
-		"dialect": "doris",
-	},
-	Methods: map[string]Method{
-		"test_doris":                        test_doris_TestDoris_test_doris,
-		"test_identity":                     test_doris_TestDoris_test_identity,
-		"test_time":                         test_doris_TestDoris_test_time,
-		"test_date_add_sub":                 test_doris_TestDoris_test_date_add_sub,
-		"test_regex":                        test_doris_TestDoris_test_regex,
-		"test_match":                        test_doris_TestDoris_test_match,
-		"test_analyze":                      test_doris_TestDoris_test_analyze,
-		"test_key":                          test_doris_TestDoris_test_key,
-		"test_distributed":                  test_doris_TestDoris_test_distributed,
-		"test_partition":                    test_doris_TestDoris_test_partition,
-		"test_table_alias_conversion":       test_doris_TestDoris_test_table_alias_conversion,
-		"test_rename_table":                 test_doris_TestDoris_test_rename_table,
-		"test_materialized_view_properties": test_doris_TestDoris_test_materialized_view_properties,
-	},
+	Attrs: AttrTable(
+		"dialect", "doris",
+	),
+	Methods: MethodTable(
+		"test_doris", test_doris_TestDoris_test_doris,
+		"test_identity", test_doris_TestDoris_test_identity,
+		"test_time", test_doris_TestDoris_test_time,
+		"test_date_add_sub", test_doris_TestDoris_test_date_add_sub,
+		"test_regex", test_doris_TestDoris_test_regex,
+		"test_match", test_doris_TestDoris_test_match,
+		"test_analyze", test_doris_TestDoris_test_analyze,
+		"test_key", test_doris_TestDoris_test_key,
+		"test_distributed", test_doris_TestDoris_test_distributed,
+		"test_partition", test_doris_TestDoris_test_partition,
+		"test_table_alias_conversion", test_doris_TestDoris_test_table_alias_conversion,
+		"test_rename_table", test_doris_TestDoris_test_rename_table,
+		"test_materialized_view_properties", test_doris_TestDoris_test_materialized_view_properties,
+	),
 	Tests: []string{"test_doris", "test_identity", "test_time", "test_date_add_sub", "test_regex", "test_match", "test_analyze", "test_key", "test_distributed", "test_partition", "test_table_alias_conversion", "test_rename_table", "test_materialized_view_properties"},
 }
 

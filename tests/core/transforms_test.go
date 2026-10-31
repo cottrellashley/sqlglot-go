@@ -15,20 +15,20 @@ func TestTransforms(t *testing.T) { RunClass(t, test_transforms_TestTransforms) 
 var test_transforms_TestTransforms = &Class{
 	Name: "TestTransforms",
 	File: "tests/test_transforms.py",
-	Attrs: map[string]Value{
-		"maxDiff": nil,
-	},
-	Methods: map[string]Method{
-		"validate":                                  test_transforms_TestTransforms_validate,
-		"test_eliminate_distinct_on":                test_transforms_TestTransforms_test_eliminate_distinct_on,
-		"test_eliminate_qualify":                    test_transforms_TestTransforms_test_eliminate_qualify,
-		"test_remove_precision_parameterized_types": test_transforms_TestTransforms_test_remove_precision_parameterized_types,
-		"test_remove_unique_constraints":            test_transforms_TestTransforms_test_remove_unique_constraints,
-		"test_eliminate_join_marks":                 test_transforms_TestTransforms_test_eliminate_join_marks,
-		"test_eliminate_semi_and_anti_joins":        test_transforms_TestTransforms_test_eliminate_semi_and_anti_joins,
-		"test_eliminate_window_clause":              test_transforms_TestTransforms_test_eliminate_window_clause,
-		"test_inherit_struct_field_names":           test_transforms_TestTransforms_test_inherit_struct_field_names,
-	},
+	Attrs: AttrTable(
+		"maxDiff", nil,
+	),
+	Methods: MethodTable(
+		"validate", test_transforms_TestTransforms_validate,
+		"test_eliminate_distinct_on", test_transforms_TestTransforms_test_eliminate_distinct_on,
+		"test_eliminate_qualify", test_transforms_TestTransforms_test_eliminate_qualify,
+		"test_remove_precision_parameterized_types", test_transforms_TestTransforms_test_remove_precision_parameterized_types,
+		"test_remove_unique_constraints", test_transforms_TestTransforms_test_remove_unique_constraints,
+		"test_eliminate_join_marks", test_transforms_TestTransforms_test_eliminate_join_marks,
+		"test_eliminate_semi_and_anti_joins", test_transforms_TestTransforms_test_eliminate_semi_and_anti_joins,
+		"test_eliminate_window_clause", test_transforms_TestTransforms_test_eliminate_window_clause,
+		"test_inherit_struct_field_names", test_transforms_TestTransforms_test_inherit_struct_field_names,
+	),
 	Tests: []string{"test_eliminate_distinct_on", "test_eliminate_qualify", "test_remove_precision_parameterized_types", "test_remove_unique_constraints", "test_eliminate_join_marks", "test_eliminate_semi_and_anti_joins", "test_eliminate_window_clause", "test_inherit_struct_field_names"},
 }
 

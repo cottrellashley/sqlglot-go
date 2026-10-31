@@ -15,10 +15,10 @@ func TestBuild(t *testing.T) { RunClass(t, test_build_TestBuild) }
 var test_build_TestBuild = &Class{
 	Name:  "TestBuild",
 	File:  "tests/test_build.py",
-	Attrs: map[string]Value{},
-	Methods: map[string]Method{
-		"test_build": test_build_TestBuild_test_build,
-	},
+	Attrs: AttrTable(),
+	Methods: MethodTable(
+		"test_build", test_build_TestBuild_test_build,
+	),
 	Tests: []string{"test_build"},
 }
 

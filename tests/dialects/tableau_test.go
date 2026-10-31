@@ -15,12 +15,12 @@ func TestTableau(t *testing.T) { RunClass(t, test_tableau_TestTableau) }
 var test_tableau_TestTableau = &Class{
 	Name: "TestTableau",
 	File: "tests/dialects/test_tableau.py",
-	Attrs: map[string]Value{
-		"dialect": "tableau",
-	},
-	Methods: map[string]Method{
-		"test_tableau": test_tableau_TestTableau_test_tableau,
-	},
+	Attrs: AttrTable(
+		"dialect", "tableau",
+	),
+	Methods: MethodTable(
+		"test_tableau", test_tableau_TestTableau_test_tableau,
+	),
 	Tests: []string{"test_tableau"},
 }
 

@@ -15,14 +15,14 @@ func TestRisingWave(t *testing.T) { RunClass(t, test_risingwave_TestRisingWave) 
 var test_risingwave_TestRisingWave = &Class{
 	Name: "TestRisingWave",
 	File: "tests/dialects/test_risingwave.py",
-	Attrs: map[string]Value{
-		"dialect": "risingwave",
-		"maxDiff": nil,
-	},
-	Methods: map[string]Method{
-		"test_risingwave": test_risingwave_TestRisingWave_test_risingwave,
-		"test_datatypes":  test_risingwave_TestRisingWave_test_datatypes,
-	},
+	Attrs: AttrTable(
+		"dialect", "risingwave",
+		"maxDiff", nil,
+	),
+	Methods: MethodTable(
+		"test_risingwave", test_risingwave_TestRisingWave_test_risingwave,
+		"test_datatypes", test_risingwave_TestRisingWave_test_datatypes,
+	),
 	Tests: []string{"test_risingwave", "test_datatypes"},
 }
 

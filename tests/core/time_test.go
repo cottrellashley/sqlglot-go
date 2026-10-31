@@ -17,13 +17,13 @@ func TestTime(t *testing.T) { RunClass(t, test_time_TestTime) }
 var test_time_TestTime = &Class{
 	Name:  "TestTime",
 	File:  "tests/test_time.py",
-	Attrs: map[string]Value{},
-	Methods: map[string]Method{
-		"test_format_time":                      test_time_TestTime_test_format_time,
-		"test_canonical_time_format_vocabulary": test_time_TestTime_test_canonical_time_format_vocabulary,
-		"test_subsecond_precision":              test_time_TestTime_test_subsecond_precision,
-		"test_subsecond_precision_python311":    test_time_TestTime_test_subsecond_precision_python311,
-	},
+	Attrs: AttrTable(),
+	Methods: MethodTable(
+		"test_format_time", test_time_TestTime_test_format_time,
+		"test_canonical_time_format_vocabulary", test_time_TestTime_test_canonical_time_format_vocabulary,
+		"test_subsecond_precision", test_time_TestTime_test_subsecond_precision,
+		"test_subsecond_precision_python311", test_time_TestTime_test_subsecond_precision_python311,
+	),
 	Tests: []string{"test_format_time", "test_canonical_time_format_vocabulary", "test_subsecond_precision", "test_subsecond_precision_python311"},
 }
 

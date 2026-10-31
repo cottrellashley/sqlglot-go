@@ -15,13 +15,13 @@ func TestHelper(t *testing.T) { RunClass(t, test_helper_TestHelper) }
 var test_helper_TestHelper = &Class{
 	Name:  "TestHelper",
 	File:  "tests/test_helper.py",
-	Attrs: map[string]Value{},
-	Methods: map[string]Method{
-		"test_tsort":         test_helper_TestHelper_test_tsort,
-		"test_name_sequence": test_helper_TestHelper_test_name_sequence,
-		"test_to_int":        test_helper_TestHelper_test_to_int,
-		"test_merge_ranges":  test_helper_TestHelper_test_merge_ranges,
-	},
+	Attrs: AttrTable(),
+	Methods: MethodTable(
+		"test_tsort", test_helper_TestHelper_test_tsort,
+		"test_name_sequence", test_helper_TestHelper_test_name_sequence,
+		"test_to_int", test_helper_TestHelper_test_to_int,
+		"test_merge_ranges", test_helper_TestHelper_test_merge_ranges,
+	),
 	Tests: []string{"test_tsort", "test_name_sequence", "test_to_int", "test_merge_ranges"},
 }
 

@@ -17,16 +17,16 @@ func TestGenerator(t *testing.T) { RunClass(t, test_generator_TestGenerator) }
 var test_generator_TestGenerator = &Class{
 	Name:  "TestGenerator",
 	File:  "tests/test_generator.py",
-	Attrs: map[string]Value{},
-	Methods: map[string]Method{
-		"test_fallback_function_sql":           test_generator_TestGenerator_test_fallback_function_sql,
-		"test_fallback_function_var_args_sql":  test_generator_TestGenerator_test_fallback_function_var_args_sql,
-		"test_identify":                        test_generator_TestGenerator_test_identify,
-		"test_generate_nested_binary":          test_generator_TestGenerator_test_generate_nested_binary,
-		"test_overlap_operator":                test_generator_TestGenerator_test_overlap_operator,
-		"test_pretty_nested_types":             test_generator_TestGenerator_test_pretty_nested_types,
-		"test_unsupported_property_is_dropped": test_generator_TestGenerator_test_unsupported_property_is_dropped,
-	},
+	Attrs: AttrTable(),
+	Methods: MethodTable(
+		"test_fallback_function_sql", test_generator_TestGenerator_test_fallback_function_sql,
+		"test_fallback_function_var_args_sql", test_generator_TestGenerator_test_fallback_function_var_args_sql,
+		"test_identify", test_generator_TestGenerator_test_identify,
+		"test_generate_nested_binary", test_generator_TestGenerator_test_generate_nested_binary,
+		"test_overlap_operator", test_generator_TestGenerator_test_overlap_operator,
+		"test_pretty_nested_types", test_generator_TestGenerator_test_pretty_nested_types,
+		"test_unsupported_property_is_dropped", test_generator_TestGenerator_test_unsupported_property_is_dropped,
+	),
 	Tests: []string{"test_fallback_function_sql", "test_fallback_function_var_args_sql", "test_identify", "test_generate_nested_binary", "test_overlap_operator", "test_pretty_nested_types", "test_unsupported_property_is_dropped"},
 }
 

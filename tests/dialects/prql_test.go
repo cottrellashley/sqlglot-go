@@ -15,12 +15,12 @@ func TestPRQL(t *testing.T) { RunClass(t, test_prql_TestPRQL) }
 var test_prql_TestPRQL = &Class{
 	Name: "TestPRQL",
 	File: "tests/dialects/test_prql.py",
-	Attrs: map[string]Value{
-		"dialect": "prql",
-	},
-	Methods: map[string]Method{
-		"test_prql": test_prql_TestPRQL_test_prql,
-	},
+	Attrs: AttrTable(
+		"dialect", "prql",
+	),
+	Methods: MethodTable(
+		"test_prql", test_prql_TestPRQL_test_prql,
+	),
 	Tests: []string{"test_prql"},
 }
 

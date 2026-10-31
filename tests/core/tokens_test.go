@@ -15,19 +15,19 @@ func TestTokens(t *testing.T) { RunClass(t, test_tokens_TestTokens) }
 var test_tokens_TestTokens = &Class{
 	Name:  "TestTokens",
 	File:  "tests/test_tokens.py",
-	Attrs: map[string]Value{},
-	Methods: map[string]Method{
-		"test_space_keywords":      test_tokens_TestTokens_test_space_keywords,
-		"test_comment_attachment":  test_tokens_TestTokens_test_comment_attachment,
-		"test_token_line_col":      test_tokens_TestTokens_test_token_line_col,
-		"test_crlf":                test_tokens_TestTokens_test_crlf,
-		"test_command":             test_tokens_TestTokens_test_command,
-		"test_error_msg":           test_tokens_TestTokens_test_error_msg,
-		"test_jinja":               test_tokens_TestTokens_test_jinja,
-		"test_partial_token_list":  test_tokens_TestTokens_test_partial_token_list,
-		"test_unicode_identifiers": test_tokens_TestTokens_test_unicode_identifiers,
-		"test_token_repr":          test_tokens_TestTokens_test_token_repr,
-	},
+	Attrs: AttrTable(),
+	Methods: MethodTable(
+		"test_space_keywords", test_tokens_TestTokens_test_space_keywords,
+		"test_comment_attachment", test_tokens_TestTokens_test_comment_attachment,
+		"test_token_line_col", test_tokens_TestTokens_test_token_line_col,
+		"test_crlf", test_tokens_TestTokens_test_crlf,
+		"test_command", test_tokens_TestTokens_test_command,
+		"test_error_msg", test_tokens_TestTokens_test_error_msg,
+		"test_jinja", test_tokens_TestTokens_test_jinja,
+		"test_partial_token_list", test_tokens_TestTokens_test_partial_token_list,
+		"test_unicode_identifiers", test_tokens_TestTokens_test_unicode_identifiers,
+		"test_token_repr", test_tokens_TestTokens_test_token_repr,
+	),
 	Tests: []string{"test_space_keywords", "test_comment_attachment", "test_token_line_col", "test_crlf", "test_command", "test_error_msg", "test_jinja", "test_partial_token_list", "test_unicode_identifiers", "test_token_repr"},
 }
 

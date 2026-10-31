@@ -29,6 +29,25 @@ type Class struct {
 	Tests []string
 }
 
+// AttrTable builds the class attributes of a converted class from name, value pairs.
+func AttrTable(kv ...any) map[string]Value {
+	m := make(map[string]Value, len(kv)/2)
+	for i := 0; i+1 < len(kv); i += 2 {
+		m[kv[i].(string)] = kv[i+1]
+	}
+	return m
+}
+
+// MethodTable builds the methods of a converted class from name, function pairs.
+func MethodTable(kv ...any) map[string]Method {
+	m := make(map[string]Method, len(kv)/2)
+	for i := 0; i+1 < len(kv); i += 2 {
+		f := kv[i+1].(func(*Case, Args) Value)
+		m[kv[i].(string)] = f
+	}
+	return m
+}
+
 func (c *Class) method(name string) (Method, bool) {
 	for k := c; k != nil; k = k.Base {
 		if m, ok := k.Methods[name]; ok {

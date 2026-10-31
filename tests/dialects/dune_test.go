@@ -15,12 +15,12 @@ func TestDune(t *testing.T) { RunClass(t, test_dune_TestDune) }
 var test_dune_TestDune = &Class{
 	Name: "TestDune",
 	File: "tests/dialects/test_dune.py",
-	Attrs: map[string]Value{
-		"dialect": "dune",
-	},
-	Methods: map[string]Method{
-		"test_dune": test_dune_TestDune_test_dune,
-	},
+	Attrs: AttrTable(
+		"dialect", "dune",
+	),
+	Methods: MethodTable(
+		"test_dune", test_dune_TestDune_test_dune,
+	),
 	Tests: []string{"test_dune"},
 }
 

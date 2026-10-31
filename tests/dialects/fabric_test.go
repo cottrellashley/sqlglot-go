@@ -15,19 +15,19 @@ func TestFabric(t *testing.T) { RunClass(t, test_fabric_TestFabric) }
 var test_fabric_TestFabric = &Class{
 	Name: "TestFabric",
 	File: "tests/dialects/test_fabric.py",
-	Attrs: map[string]Value{
-		"dialect": "fabric",
-		"maxDiff": nil,
-	},
-	Methods: map[string]Method{
-		"test_type_mappings":                      test_fabric_TestFabric_test_type_mappings,
-		"test_lossy_type_mappings_keep_precision": test_fabric_TestFabric_test_lossy_type_mappings_keep_precision,
-		"test_precision_capping":                  test_fabric_TestFabric_test_precision_capping,
-		"test_timestamptz_without_at_time_zone":   test_fabric_TestFabric_test_timestamptz_without_at_time_zone,
-		"test_timestamptz_with_at_time_zone":      test_fabric_TestFabric_test_timestamptz_with_at_time_zone,
-		"test_unix_to_time":                       test_fabric_TestFabric_test_unix_to_time,
-		"test_varchar_precision_inference":        test_fabric_TestFabric_test_varchar_precision_inference,
-	},
+	Attrs: AttrTable(
+		"dialect", "fabric",
+		"maxDiff", nil,
+	),
+	Methods: MethodTable(
+		"test_type_mappings", test_fabric_TestFabric_test_type_mappings,
+		"test_lossy_type_mappings_keep_precision", test_fabric_TestFabric_test_lossy_type_mappings_keep_precision,
+		"test_precision_capping", test_fabric_TestFabric_test_precision_capping,
+		"test_timestamptz_without_at_time_zone", test_fabric_TestFabric_test_timestamptz_without_at_time_zone,
+		"test_timestamptz_with_at_time_zone", test_fabric_TestFabric_test_timestamptz_with_at_time_zone,
+		"test_unix_to_time", test_fabric_TestFabric_test_unix_to_time,
+		"test_varchar_precision_inference", test_fabric_TestFabric_test_varchar_precision_inference,
+	),
 	Tests: []string{"test_type_mappings", "test_lossy_type_mappings_keep_precision", "test_precision_capping", "test_timestamptz_without_at_time_zone", "test_timestamptz_with_at_time_zone", "test_unix_to_time", "test_varchar_precision_inference"},
 }
 

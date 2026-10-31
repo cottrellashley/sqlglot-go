@@ -15,13 +15,13 @@ func TestDruid(t *testing.T) { RunClass(t, test_druid_TestDruid) }
 var test_druid_TestDruid = &Class{
 	Name: "TestDruid",
 	File: "tests/dialects/test_druid.py",
-	Attrs: map[string]Value{
-		"dialect": "druid",
-	},
-	Methods: map[string]Method{
-		"test_druid":      test_druid_TestDruid_test_druid,
-		"test_json_value": test_druid_TestDruid_test_json_value,
-	},
+	Attrs: AttrTable(
+		"dialect", "druid",
+	),
+	Methods: MethodTable(
+		"test_druid", test_druid_TestDruid_test_druid,
+		"test_json_value", test_druid_TestDruid_test_json_value,
+	),
 	Tests: []string{"test_druid", "test_json_value"},
 }
 

@@ -15,16 +15,16 @@ func TestJsonpath(t *testing.T) { RunClass(t, test_jsonpath_TestJsonpath) }
 var test_jsonpath_TestJsonpath = &Class{
 	Name: "TestJsonpath",
 	File: "tests/test_jsonpath.py",
-	Attrs: map[string]Value{
-		"maxDiff": nil,
-	},
-	Methods: map[string]Method{
-		"test_jsonpath": test_jsonpath_TestJsonpath_test_jsonpath,
-		"test_unclosed_filter_raises_parse_error": test_jsonpath_TestJsonpath_test_unclosed_filter_raises_parse_error,
-		"test_identity":                       test_jsonpath_TestJsonpath_test_identity,
-		"test_union_preserves_falsey_members": test_jsonpath_TestJsonpath_test_union_preserves_falsey_members,
-		"test_cts_file":                       test_jsonpath_TestJsonpath_test_cts_file,
-	},
+	Attrs: AttrTable(
+		"maxDiff", nil,
+	),
+	Methods: MethodTable(
+		"test_jsonpath", test_jsonpath_TestJsonpath_test_jsonpath,
+		"test_unclosed_filter_raises_parse_error", test_jsonpath_TestJsonpath_test_unclosed_filter_raises_parse_error,
+		"test_identity", test_jsonpath_TestJsonpath_test_identity,
+		"test_union_preserves_falsey_members", test_jsonpath_TestJsonpath_test_union_preserves_falsey_members,
+		"test_cts_file", test_jsonpath_TestJsonpath_test_cts_file,
+	),
 	Tests: []string{"test_jsonpath", "test_unclosed_filter_raises_parse_error", "test_identity", "test_union_preserves_falsey_members", "test_cts_file"},
 }
 

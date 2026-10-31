@@ -15,12 +15,12 @@ func TestSolr(t *testing.T) { RunClass(t, test_solr_TestSolr) }
 var test_solr_TestSolr = &Class{
 	Name: "TestSolr",
 	File: "tests/dialects/test_solr.py",
-	Attrs: map[string]Value{
-		"dialect": "solr",
-	},
-	Methods: map[string]Method{
-		"test_solr": test_solr_TestSolr_test_solr,
-	},
+	Attrs: AttrTable(
+		"dialect", "solr",
+	),
+	Methods: MethodTable(
+		"test_solr", test_solr_TestSolr_test_solr,
+	),
 	Tests: []string{"test_solr"},
 }
 

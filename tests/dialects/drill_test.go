@@ -15,14 +15,14 @@ func TestDrill(t *testing.T) { RunClass(t, test_drill_TestDrill) }
 var test_drill_TestDrill = &Class{
 	Name: "TestDrill",
 	File: "tests/dialects/test_drill.py",
-	Attrs: map[string]Value{
-		"dialect": "drill",
-	},
-	Methods: map[string]Method{
-		"test_drill":   test_drill_TestDrill_test_drill,
-		"test_ilike":   test_drill_TestDrill_test_ilike,
-		"test_analyze": test_drill_TestDrill_test_analyze,
-	},
+	Attrs: AttrTable(
+		"dialect", "drill",
+	),
+	Methods: MethodTable(
+		"test_drill", test_drill_TestDrill_test_drill,
+		"test_ilike", test_drill_TestDrill_test_ilike,
+		"test_analyze", test_drill_TestDrill_test_analyze,
+	),
 	Tests: []string{"test_drill", "test_ilike", "test_analyze"},
 }
 

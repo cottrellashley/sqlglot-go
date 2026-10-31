@@ -15,14 +15,14 @@ func TestDAX(t *testing.T) { RunClass(t, test_dax_TestDAX) }
 var test_dax_TestDAX = &Class{
 	Name: "TestDAX",
 	File: "tests/dialects/test_dax.py",
-	Attrs: map[string]Value{
-		"dialect": "dax",
-	},
-	Methods: map[string]Method{
-		"test_evaluate": test_dax_TestDAX_test_evaluate,
-		"test_filter":   test_dax_TestDAX_test_filter,
-		"test_order_by": test_dax_TestDAX_test_order_by,
-	},
+	Attrs: AttrTable(
+		"dialect", "dax",
+	),
+	Methods: MethodTable(
+		"test_evaluate", test_dax_TestDAX_test_evaluate,
+		"test_filter", test_dax_TestDAX_test_filter,
+		"test_order_by", test_dax_TestDAX_test_order_by,
+	),
 	Tests: []string{"test_evaluate", "test_filter", "test_order_by"},
 }
 

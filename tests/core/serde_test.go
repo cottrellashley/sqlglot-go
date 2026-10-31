@@ -17,15 +17,15 @@ func TestSerde(t *testing.T) { RunClass(t, test_serde_TestSerde) }
 var test_serde_TestSerde = &Class{
 	Name:  "TestSerde",
 	File:  "tests/test_serde.py",
-	Attrs: map[string]Value{},
-	Methods: map[string]Method{
-		"dump_load":              test_serde_TestSerde_dump_load,
-		"test_serde":             test_serde_TestSerde_test_serde,
-		"test_custom_expression": test_serde_TestSerde_test_custom_expression,
-		"test_type_annotations":  test_serde_TestSerde_test_type_annotations,
-		"test_meta":              test_serde_TestSerde_test_meta,
-		"test_recursion":         test_serde_TestSerde_test_recursion,
-	},
+	Attrs: AttrTable(),
+	Methods: MethodTable(
+		"dump_load", test_serde_TestSerde_dump_load,
+		"test_serde", test_serde_TestSerde_test_serde,
+		"test_custom_expression", test_serde_TestSerde_test_custom_expression,
+		"test_type_annotations", test_serde_TestSerde_test_type_annotations,
+		"test_meta", test_serde_TestSerde_test_meta,
+		"test_recursion", test_serde_TestSerde_test_recursion,
+	),
 	Tests: []string{"test_serde", "test_custom_expression", "test_type_annotations", "test_meta", "test_recursion"},
 }
 
