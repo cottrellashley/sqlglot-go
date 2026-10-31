@@ -93,6 +93,24 @@ func (k Kind) String() string {
 // Name returns the Python class name of the kind.
 func (k Kind) Name() string { return k.String() }
 
+// QualName returns the qualified Python class name, e.g. "sqlglot.expressions.core.Paren".
+func (k Kind) QualName() string {
+	if k == AnyExpression {
+		return "sqlglot.expressions.core.Expr"
+	}
+	module := ""
+	if k < kindCap {
+		module = kindModule[k]
+	}
+	if module == "" {
+		module = "sqlglot.expressions"
+	}
+	return module + "." + k.String()
+}
+
+// ClassRepr returns the Python repr of the class, e.g. "<class 'sqlglot.expressions.core.Paren'>".
+func (k Kind) ClassRepr() string { return "<class '" + k.QualName() + "'>" }
+
 // Key returns the lowercase key of the kind (sqlglot's Expression.key), e.g. "select".
 func (k Kind) Key() string { return kindTable[k].key }
 

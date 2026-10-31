@@ -92,14 +92,14 @@ func test_sqlite_TestSQLite_test_is_precedence(self *Case, a Args) Value {
 		suffix = item_
 		for _, item_ := range Iter(NewTuple(NewTuple("NULL IS NULL", A(G("sqlglot.exp"), "Is")), NewTuple("NULL IS NOT DISTINCT FROM NULL", A(G("sqlglot.exp"), "NullSafeEQ")))) {
 			Unpack(item_, &predicate, &klass)
-			self.Do(119, func() {
+			self.DoAssign(119, func() {
 				lhs = IfV(M(suffix, "startswith", "BETWEEN"), func() Value { return F("(", FV{V: predicate}, ")") }, func() Value { return predicate })
-			})
-			self.Do(120, func() {
+			}, &lhs)
+			self.DoAssign(120, func() {
 				expression = self.ValidateIdentity(F("SELECT ", FV{V: predicate}, " ", FV{V: suffix}), F("SELECT ", FV{V: lhs}, " ", FV{V: suffix}))
-			})
+			}, &expression)
 			self.Do(123, func() {
-				M(self, "assertIsInstance", M(A(Item(A(expression, "expressions"), 0), "this"), "unnest"), klass)
+				Stmt(M(self, "assertIsInstance", M(A(Item(A(expression, "expressions"), 0), "this"), "unnest"), klass))
 			})
 		}
 	}
@@ -108,7 +108,7 @@ func test_sqlite_TestSQLite_test_is_precedence(self *Case, a Args) Value {
 		predicate = item_
 		for _, item_ := range Iter(NewTuple("IN (0, 1)", "BETWEEN 0 AND 1", "NOT IN (0, 1)")) {
 			suffix = item_
-			self.Do(130, func() { negated = M(suffix, "startswith", "NOT ") })
+			self.DoAssign(130, func() { negated = M(suffix, "startswith", "NOT ") }, &negated)
 			self.Do(131, func() {
 				self.ValidateIdentity(F("SELECT NULL ", FV{V: predicate}, " ", FV{V: suffix}), F("SELECT ", FV{V: IfV(negated, func() Value { return "NOT " }, func() Value { return "" })}, "(NOT NULL IS NULL) ", FV{V: M(suffix, "removeprefix", "NOT ")}))
 			})
@@ -178,10 +178,10 @@ func test_sqlite_TestSQLite_test_sqlite(self *Case, a Args) Value {
 	self.Do(274, func() {
 		self.AssertLogs(func(cm_ Value) {
 			logs = cm_
-			M(self, "validate_identity", "SELECT a -> 'it''s' FROM t")
-			M(self, "validate_identity", "SELECT a ->> 'it''s' FROM t")
-			M(self, "assertEqual", Len(A(logs, "output")), 2)
-			M(self, "assertTrue", Call(G("all"), func() Value {
+			Stmt(M(self, "validate_identity", "SELECT a -> 'it''s' FROM t"))
+			Stmt(M(self, "validate_identity", "SELECT a ->> 'it''s' FROM t"))
+			Stmt(M(self, "assertEqual", Len(A(logs, "output")), 2))
+			Stmt(M(self, "assertTrue", Call(G("all"), func() Value {
 				var message Value
 				_ = []Value{message}
 				var out []Value
@@ -190,20 +190,20 @@ func test_sqlite_TestSQLite_test_sqlite(self *Case, a Args) Value {
 					out = append(out, In("Invalid JSON path syntax", message))
 				}
 				return &List{V: out}
-			}()))
+			}())))
 		}, G("sqlglot.helper.logger"), Kw("level", "WARNING"))
 	})
 	self.L(279).ValidateIdentity("SELECT JSON_SET('{}', '$.x', JSON_EXTRACT(a, '$.k'))")
 	self.L(280).ValidateIdentity("SELECT JSON_EXTRACT(a, '$') FROM t")
 	self.L(281).ValidateIdentity("SELECT JSON_EXTRACT(a, b) FROM t")
-	self.Do(282, func() {
+	self.DoAssign(282, func() {
 		fn = M(Item(A(self.ParseOne("SELECT JSON_EXTRACT(a, '$.k') FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "JSONExtractScalar"))
-	})
-	self.Do(287, func() {
+	}, &fn)
+	self.DoAssign(287, func() {
 		op = M(Item(A(self.ParseOne("SELECT a ->> '$.k' FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "JSONExtractScalar"))
-	})
-	self.Do(288, func() { M(self, "assertTrue", M(A(fn, "args"), "get", "json_subtype")) })
-	self.Do(289, func() { M(self, "assertNotEqual", fn, op) })
+	}, &op)
+	self.Do(288, func() { Stmt(M(self, "assertTrue", M(A(fn, "args"), "get", "json_subtype"))) })
+	self.Do(289, func() { Stmt(M(self, "assertNotEqual", fn, op)) })
 	self.L(290).ValidateAll("SELECT JSON_EXTRACT(a, '$.k') FROM t", Kw("write", NewDict("postgres", "SELECT JSON_EXTRACT_PATH_TEXT(a, 'k') FROM t", "mysql", "SELECT a ->> '$.k' FROM t")))
 	self.L(297).ValidateAll("SELECT JSON_EXTRACT('[10, 20, [30, 40]]', '$[1]')", Kw("write", NewDict("sqlite", "SELECT JSON_EXTRACT('[10, 20, [30, 40]]', '$[1]')", "mysql", "SELECT CAST('[10, 20, [30, 40]]' AS JSON) ->> '$[1]'", "duckdb", "SELECT '[10, 20, [30, 40]]' ->> '$[1]'")))
 	self.L(305).ValidateIdentity(`SELECT item AS "item", some AS "some" FROM data WHERE (item = 'value_1' COLLATE NOCASE) AND (some = 't' COLLATE NOCASE) ORDER BY item ASC LIMIT 1 OFFSET 0`)
@@ -262,11 +262,11 @@ func test_sqlite_TestSQLite_test_sqlite(self *Case, a Args) Value {
 func test_sqlite_TestSQLite_test_json_arrow_precedence(self *Case, a Args) Value {
 	var expr Value
 	_ = []Value{expr}
-	self.Do(569, func() {
+	self.DoAssign(569, func() {
 		expr = Item(A(self.ParseOne("SELECT a.data ->> b.key ->> a.final_key FROM source AS a JOIN keys AS b ON TRUE"), "selects"), 0)
-	})
+	}, &expr)
 	self.Do(572, func() {
-		M(A(M(expr, "assert_is", A(G("sqlglot.exp"), "JSONExtractScalar")), "this"), "assert_is", A(G("sqlglot.exp"), "JSONExtractScalar"))
+		Stmt(M(A(M(expr, "assert_is", A(G("sqlglot.exp"), "JSONExtractScalar")), "this"), "assert_is", A(G("sqlglot.exp"), "JSONExtractScalar")))
 	})
 	self.L(574).ValidateIdentity("SELECT a.data ->> b.key ->> a.final_key FROM t")
 	self.L(575).ValidateIdentity("SELECT a -> b ->> c -> d FROM t")
@@ -282,9 +282,9 @@ func test_sqlite_TestSQLite_test_json_arrow_precedence(self *Case, a Args) Value
 	self.L(591).ValidateIdentity("SELECT -a || b FROM t")
 	self.L(592).ValidateIdentity("SELECT a || b COLLATE NOCASE FROM t ORDER BY 1")
 	self.L(593).ValidateIdentity("SELECT a COLLATE NOCASE || b -> c FROM t", "SELECT (a COLLATE NOCASE || b) -> c FROM t")
-	self.Do(599, func() { expr = Item(A(self.ParseOne("SELECT a || b COLLATE NOCASE FROM t"), "selects"), 0) })
+	self.DoAssign(599, func() { expr = Item(A(self.ParseOne("SELECT a || b COLLATE NOCASE FROM t"), "selects"), 0) }, &expr)
 	self.Do(600, func() {
-		M(A(M(expr, "assert_is", A(G("sqlglot.exp"), "DPipe")), "expression"), "assert_is", A(G("sqlglot.exp"), "Collate"))
+		Stmt(M(A(M(expr, "assert_is", A(G("sqlglot.exp"), "DPipe")), "expression"), "assert_is", A(G("sqlglot.exp"), "Collate")))
 	})
 	self.L(602).ValidateIdentity("SELECT a COLLATE NOCASE || b * c FROM t", "SELECT (a COLLATE NOCASE || b) * c FROM t")
 	self.L(606).ValidateIdentity("SELECT a COLLATE NOCASE -> b + c FROM t", "SELECT (a COLLATE NOCASE -> b) + c FROM t")
@@ -354,8 +354,8 @@ func test_sqlite_TestSQLite_test_warnings(self *Case, a Args) Value {
 	self.Do(728, func() {
 		self.AssertLogs(func(cm_ Value) {
 			cm = cm_
-			M(self, "validate_identity", "SELECT * FROM t AS t(c1, c2)", "SELECT * FROM t AS t")
-			M(self, "assertIn", "Named columns are not supported in table alias.", Item(A(cm, "output"), 0))
+			Stmt(M(self, "validate_identity", "SELECT * FROM t AS t(c1, c2)", "SELECT * FROM t AS t"))
+			Stmt(M(self, "assertIn", "Named columns are not supported in table alias.", Item(A(cm, "output"), 0)))
 		}, G("sqlglot.helper.logger"))
 	})
 	return nil
@@ -364,12 +364,12 @@ func test_sqlite_TestSQLite_test_warnings(self *Case, a Args) Value {
 func test_sqlite_TestSQLite_test_trunc(self *Case, a Args) Value {
 	var cm Value
 	_ = []Value{cm}
-	self.Do(738, func() { M(self.ValidateIdentity("TRUNC(3.14)"), "assert_is", A(G("sqlglot.exp"), "Trunc")) })
+	self.Do(738, func() { Stmt(M(self.ValidateIdentity("TRUNC(3.14)"), "assert_is", A(G("sqlglot.exp"), "Trunc"))) })
 	self.Do(741, func() {
 		self.AssertLogs(func(cm_ Value) {
 			cm = cm_
-			M(M(self, "validate_identity", "TRUNC(3.14, 2)", "TRUNC(3.14)"), "assert_is", A(G("sqlglot.exp"), "Trunc"))
-			M(self, "assertIn", "'decimals' is not supported", Item(A(cm, "output"), 0))
+			Stmt(M(M(self, "validate_identity", "TRUNC(3.14, 2)", "TRUNC(3.14)"), "assert_is", A(G("sqlglot.exp"), "Trunc")))
+			Stmt(M(self, "assertIn", "'decimals' is not supported", Item(A(cm, "output"), 0)))
 		}, G("sqlglot.helper.logger"))
 	})
 	return nil
@@ -395,7 +395,7 @@ func test_sqlite_TestSQLite_test_identity_columns(self *Case, a Args) Value {
 		generated = item_
 		for _, item_ := range Iter(NewTuple("", " (START WITH 10 INCREMENT BY 2)")) {
 			options = item_
-			self.Do(778, func() { identity = F("GENERATED ", FV{V: generated}, " AS IDENTITY", FV{V: options}) })
+			self.DoAssign(778, func() { identity = F("GENERATED ", FV{V: generated}, " AS IDENTITY", FV{V: options}) }, &identity)
 			for _, item_ := range Iter(NewTuple(NewTuple(F("a INT ", FV{V: identity}), "a INTEGER"), NewTuple(F("a INT ", FV{V: identity}, " PRIMARY KEY"), "a INTEGER PRIMARY KEY AUTOINCREMENT"), NewTuple(F("a INT ", FV{V: identity}, ", PRIMARY KEY (a)"), "a INTEGER PRIMARY KEY AUTOINCREMENT"), NewTuple(F("a INT ", FV{V: identity}, ", b INT PRIMARY KEY"), "a INTEGER, b INTEGER PRIMARY KEY"), NewTuple(F("a INT ", FV{V: identity}, ", b INT, PRIMARY KEY (a, b)"), "a INTEGER, b INTEGER, PRIMARY KEY (a, b)"))) {
 				Unpack(item_, &schema, &expected)
 				self.SubTest(func() {
@@ -415,26 +415,26 @@ func test_sqlite_TestSQLite_test_unsupported_auto_increment(self *Case, a Args) 
 	for _, item_ := range Iter(NewTuple(NewTuple("postgres", "GENERATED BY DEFAULT AS IDENTITY", "a INTEGER"), NewTuple("mysql", "UNIQUE AUTO_INCREMENT", "a INTEGER UNIQUE"), NewTuple("snowflake", "AUTOINCREMENT", "a INTEGER"))) {
 		Unpack(item_, &dialect, &constraint, &expected)
 		self.SubTest(func() {
-			self.Do(811, func() {
+			self.DoAssign(811, func() {
 				expression = Call(G("sqlglot.parse_one"), F("CREATE TABLE t (a INT ", FV{V: constraint}, ")"), Kw("read", dialect))
-			})
-			self.Do(812, func() { message = "SQLite AUTOINCREMENT requires an INTEGER PRIMARY KEY" })
+			}, &expression)
+			self.DoAssign(812, func() { message = "SQLite AUTOINCREMENT requires an INTEGER PRIMARY KEY" }, &message)
 			for _, item_ := range Iter(NewTuple(A(G("sqlglot.ErrorLevel"), "RAISE"), A(G("sqlglot.ErrorLevel"), "IMMEDIATE"))) {
 				level = item_
 				self.Do(815, func() {
 					self.AssertRaisesRegex(func(cm_ Value) {
 						_ = cm_
-						M(expression, "sql", "sqlite", Kw("unsupported_level", level))
+						Stmt(M(expression, "sql", "sqlite", Kw("unsupported_level", level)))
 					}, G("sqlglot.UnsupportedError"), message)
 				})
 			}
 			self.Do(818, func() {
 				self.AssertLogs(func(cm_ Value) {
 					cm = cm_
-					M(self, "assertEqual", M(expression, "sql", "sqlite"), F("CREATE TABLE t (", FV{V: expected}, ")"))
+					Stmt(M(self, "assertEqual", M(expression, "sql", "sqlite"), F("CREATE TABLE t (", FV{V: expected}, ")")))
 				}, G("sqlglot.generator.logger"))
 			})
-			self.Do(820, func() { M(self, "assertIn", message, Item(A(cm, "output"), 0)) })
+			self.Do(820, func() { Stmt(M(self, "assertIn", message, Item(A(cm, "output"), 0))) })
 			self.Do(822, func() {
 				self.ValidateAll(F("CREATE TABLE t (", FV{V: expected}, ")"), Kw("read", NewDict(dialect, F("CREATE TABLE t (a INT ", FV{V: constraint}, ")"))))
 			})

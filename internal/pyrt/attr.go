@@ -348,6 +348,13 @@ func sortValues(items []Value, a Args) []Value {
 
 func dictAttr(d *Dict, name string) Value {
 	switch name {
+	case "clear":
+		return method(name, func(a Args) Value {
+			for _, k := range append([]Value(nil), d.keys...) {
+				d.Delete(k)
+			}
+			return nil
+		})
 	case "get":
 		return method(name, func(a Args) Value {
 			if v, ok := d.Lookup(a.Pos[0]); ok {

@@ -32,7 +32,7 @@ func test_time_TestTime_test_format_time(self *Case, a Args) Value {
 	_ = []Value{mapping}
 	self.Do(14, func() { self.AssertEqual(Call(G("sqlglot.time.format_time"), "", NewDict()), nil) })
 	self.Do(15, func() { self.AssertEqual(Call(G("sqlglot.time.format_time"), " ", NewDict()), " ") })
-	self.Do(16, func() { mapping = NewDict("a", "b", "aa", "c") })
+	self.DoAssign(16, func() { mapping = NewDict("a", "b", "aa", "c") }, &mapping)
 	self.Do(17, func() { self.AssertEqual(Call(G("sqlglot.time.format_time"), "a", mapping), "b") })
 	self.Do(18, func() { self.AssertEqual(Call(G("sqlglot.time.format_time"), "aa", mapping), "c") })
 	self.Do(19, func() { self.AssertEqual(Call(G("sqlglot.time.format_time"), "aaada", mapping), "cbdb") })
@@ -48,33 +48,33 @@ func test_time_TestTime_test_canonical_time_format_vocabulary(self *Case, a Args
 		if Truth(Not(A(dialect, "value"))) {
 			continue
 		}
-		self.Do(30, func() { d = M(G("sqlglot.dialects.dialect.Dialect"), "get_or_raise", A(dialect, "value")) })
+		self.DoAssign(30, func() { d = M(G("sqlglot.dialects.dialect.Dialect"), "get_or_raise", A(dialect, "value")) }, &d)
 		for _, item_ := range Iter(NewTuple(Star(M(A(d, "TIME_MAPPING"), "values")), Star(M(A(d, "FORMAT_MAPPING"), "values")))) {
 			value = item_
 			for _, item_ := range Iter(M(G("sqlglot.generators.hive.CANONICAL_TIME_FORMAT"), "split", value)) {
 				part = item_
 				self.Do(33, func() {
-					M(self, "assertNotIn", "%", part, F(FV{V: A(dialect, "value")}, ": unconsumed '%' in ", FV{V: value, Conv: 'r', Spec: ""}))
+					Stmt(M(self, "assertNotIn", "%", part, F(FV{V: A(dialect, "value")}, ": unconsumed '%' in ", FV{V: value, Conv: 'r', Spec: ""})))
 				})
 			}
 			for _, item_ := range Iter(M(G("sqlglot.generators.hive.CANONICAL_TIME_FORMAT"), "findall", value)) {
 				atom = item_
 				self.Do(35, func() {
-					M(self, "assertTrue", M(test_time_KNOWN_CANONICAL_ATOM, "fullmatch", atom), F(FV{V: A(dialect, "value")}, ": unexpected canonical atom ", FV{V: atom, Conv: 'r', Spec: ""}, " in ", FV{V: value, Conv: 'r', Spec: ""}, " - update CANONICAL_TIME_FORMAT in sqlglot/generators/hive.py"))
+					Stmt(M(self, "assertTrue", M(test_time_KNOWN_CANONICAL_ATOM, "fullmatch", atom), F(FV{V: A(dialect, "value")}, ": unexpected canonical atom ", FV{V: atom, Conv: 'r', Spec: ""}, " in ", FV{V: value, Conv: 'r', Spec: ""}, " - update CANONICAL_TIME_FORMAT in sqlglot/generators/hive.py")))
 				})
 			}
 			self.Do(40, func() {
-				M(self, "assertIsNone", M(G("re"), "search", `%[mdHIMS](?!strict)\w`, value), F(FV{V: A(dialect, "value")}, ": a lax %m/%d/%H/%I/%M/%S directly followed by a word character in ", FV{V: value, Conv: 'r', Spec: ""}, " would be mis-tokenized by CANONICAL_TIME_FORMAT"))
+				Stmt(M(self, "assertIsNone", M(G("re"), "search", `%[mdHIMS](?!strict)\w`, value), F(FV{V: A(dialect, "value")}, ": a lax %m/%d/%H/%I/%M/%S directly followed by a word character in ", FV{V: value, Conv: 'r', Spec: ""}, " would be mis-tokenized by CANONICAL_TIME_FORMAT")))
 			})
 		}
 		if Truth(Eq(M(A(d, "TIME_MAPPING"), "get", "MM"), "%mstrict")) {
-			self.Do(49, func() { lax = Call(G("set"), G("sqlglot.generators.hive.LAX_TO_NON_PADDED_FORMATS")) })
+			self.DoAssign(49, func() { lax = Call(G("set"), G("sqlglot.generators.hive.LAX_TO_NON_PADDED_FORMATS")) }, &lax)
 			for _, item_ := range Iter(A(d, "INVERSE_TIME_MAPPING")) {
 				key = item_
-				self.Do(51, func() { atoms = M(G("sqlglot.generators.hive.CANONICAL_TIME_FORMAT"), "findall", key) })
+				self.DoAssign(51, func() { atoms = M(G("sqlglot.generators.hive.CANONICAL_TIME_FORMAT"), "findall", key) }, &atoms)
 				if Truth(Gt(Len(atoms), 1)) {
 					self.Do(53, func() {
-						M(self, "assertFalse", BitOp(lax, Call(G("set"), atoms), "&"), F(FV{V: A(dialect, "value")}, ": composite inverse key ", FV{V: key, Conv: 'r', Spec: ""}, " contains a lax specifier"))
+						Stmt(M(self, "assertFalse", BitOp(lax, Call(G("set"), atoms), "&"), F(FV{V: A(dialect, "value")}, ": composite inverse key ", FV{V: key, Conv: 'r', Spec: ""}, " contains a lax specifier")))
 					})
 				}
 			}

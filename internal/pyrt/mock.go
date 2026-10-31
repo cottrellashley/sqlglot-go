@@ -99,14 +99,14 @@ func (mm *MockMethodV) PyAttr(name string) (Value, bool) {
 	case "assert_not_called":
 		return Func(name, func(a Args) Value {
 			if len(calls) > 0 {
-				fail("Expected '%s' to not have been called. Called %d times: %v", mm.level, len(calls), calls)
+				failLog("Expected '%s' to not have been called. Called %d times: %v", mm.level, len(calls), calls)
 			}
 			return nil
 		}), true
 	case "assert_called", "assert_called_once":
 		return Func(name, func(a Args) Value {
 			if len(calls) == 0 || (name == "assert_called_once" && len(calls) != 1) {
-				fail("Expected '%s' to have been called (once: %v), called %d times", mm.level, name == "assert_called_once", len(calls))
+				failLog("Expected '%s' to have been called (once: %v), called %d times", mm.level, name == "assert_called_once", len(calls))
 			}
 			return nil
 		}), true
@@ -114,7 +114,7 @@ func (mm *MockMethodV) PyAttr(name string) (Value, bool) {
 		return Func(name, func(a Args) Value {
 			want := expectedMessage(a)
 			if len(calls) == 0 || calls[len(calls)-1] != want || (name == "assert_called_once_with" && len(calls) != 1) {
-				fail("expected call %s(%q), got %v", mm.level, want, calls)
+				failLog("expected call %s(%q), got %v", mm.level, want, calls)
 			}
 			return nil
 		}), true
@@ -126,7 +126,7 @@ func (mm *MockMethodV) PyAttr(name string) (Value, bool) {
 					return nil
 				}
 			}
-			fail("%s(%q) call not found in %v", mm.level, want, calls)
+			failLog("%s(%q) call not found in %v", mm.level, want, calls)
 			return nil
 		}), true
 	}

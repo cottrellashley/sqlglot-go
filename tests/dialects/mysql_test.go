@@ -117,10 +117,10 @@ func test_mysql_TestMySQL_test_xor_precedence(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewTuple(NewTuple("TRUE XOR FALSE AND FALSE", A(G("sqlglot.expressions"), "Xor"), A(G("sqlglot.expressions"), "Boolean"), A(G("sqlglot.expressions"), "And")), NewTuple("TRUE AND FALSE XOR TRUE", A(G("sqlglot.expressions"), "Xor"), A(G("sqlglot.expressions"), "And"), A(G("sqlglot.expressions"), "Boolean")), NewTuple("TRUE OR TRUE XOR TRUE", A(G("sqlglot.expressions"), "Or"), A(G("sqlglot.expressions"), "Boolean"), A(G("sqlglot.expressions"), "Xor")), NewTuple("TRUE XOR TRUE OR TRUE", A(G("sqlglot.expressions"), "Or"), A(G("sqlglot.expressions"), "Xor"), A(G("sqlglot.expressions"), "Boolean")), NewTuple("TRUE XOR FALSE XOR TRUE", A(G("sqlglot.expressions"), "Xor"), A(G("sqlglot.expressions"), "Xor"), A(G("sqlglot.expressions"), "Boolean")), NewTuple("(TRUE XOR FALSE) AND FALSE", A(G("sqlglot.expressions"), "And"), A(G("sqlglot.expressions"), "Paren"), A(G("sqlglot.expressions"), "Boolean")), NewTuple("TRUE XOR (TRUE OR FALSE)", A(G("sqlglot.expressions"), "Xor"), A(G("sqlglot.expressions"), "Boolean"), A(G("sqlglot.expressions"), "Paren")), NewTuple("TRUE XOR FALSE && FALSE", A(G("sqlglot.expressions"), "Xor"), A(G("sqlglot.expressions"), "Boolean"), A(G("sqlglot.expressions"), "And")), NewTuple("TRUE || TRUE XOR TRUE", A(G("sqlglot.expressions"), "Or"), A(G("sqlglot.expressions"), "Boolean"), A(G("sqlglot.expressions"), "Xor")))) {
 		Unpack(item_, &sql, &root, &left, &right)
 		self.SubTest(func() {
-			self.Do(57, func() { expression = Item(A(self.ParseOne(F("SELECT ", FV{V: sql})), "expressions"), 0) })
-			self.Do(58, func() { M(self, "assertIsInstance", expression, root) })
-			self.Do(59, func() { M(self, "assertIsInstance", A(expression, "this"), left) })
-			self.Do(60, func() { M(self, "assertIsInstance", A(expression, "expression"), right) })
+			self.DoAssign(57, func() { expression = Item(A(self.ParseOne(F("SELECT ", FV{V: sql})), "expressions"), 0) }, &expression)
+			self.Do(58, func() { Stmt(M(self, "assertIsInstance", expression, root)) })
+			self.Do(59, func() { Stmt(M(self, "assertIsInstance", A(expression, "this"), left)) })
+			self.Do(60, func() { Stmt(M(self, "assertIsInstance", A(expression, "expression"), right)) })
 		}, Kw("sql", sql))
 	}
 	self.L(62).ValidateAll("SELECT TRUE XOR FALSE AND FALSE", Kw("write", NewDict("mysql", "SELECT TRUE XOR FALSE AND FALSE", "snowflake", "SELECT BOOLXOR(TRUE, FALSE AND FALSE)")))
@@ -134,7 +134,7 @@ func test_mysql_TestMySQL_test_not_precedence(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewTuple(NewTuple("SELECT 1 + !2", "SELECT 1 + (NOT 2)"), NewTuple("SELECT !0 * 2", "SELECT (NOT 0) * 2"), NewTuple("SELECT !2 ^ 1", "SELECT (NOT 2) ^ 1"), NewTuple("SELECT !2 = 1", "SELECT (NOT 2) = 1"), NewTuple("SELECT !2 != 1", "SELECT (NOT 2) <> 1"), NewTuple("SELECT !NULL IS NULL", "SELECT (NOT NULL) IS NULL"), NewTuple("SELECT !2 IN (0, 1)", "SELECT (NOT 2) IN (0, 1)"), NewTuple("SELECT !2 BETWEEN 0 AND 1", "SELECT (NOT 2) BETWEEN 0 AND 1"), NewTuple("SELECT -!0", "SELECT -(NOT 0)"), NewTuple("SELECT !-2 + 1", "SELECT (NOT -2) + 1"), NewTuple("SELECT ~!0", "SELECT ~(NOT 0)"), NewTuple("SELECT ! !2 + 1", "SELECT (NOT (NOT 2)) + 1"), NewTuple("SELECT !(2 + 1)", "SELECT (NOT (2 + 1))"), NewTuple("SELECT NOT !2 + 1", "SELECT NOT (NOT 2) + 1"))) {
 		Unpack(item_, &sql, &expected)
 		self.SubTest(func() {
-			self.Do(95, func() { expression = self.ValidateIdentity(sql, expected) })
+			self.DoAssign(95, func() { expression = self.ValidateIdentity(sql, expected) }, &expression)
 			self.Do(96, func() { self.AssertEqual(expression, self.ParseOne(expected)) })
 		}, Kw("sql", sql))
 	}
@@ -209,14 +209,14 @@ func test_mysql_TestMySQL_test_ddl(self *Case, a Args) Value {
 	self.L(186).ValidateIdentity("ALTER TABLE t ADD CONSTRAINT FOREIGN KEY fk (a) REFERENCES p (a)", "ALTER TABLE t ADD FOREIGN KEY fk (a) REFERENCES p (a)")
 	self.L(190).ValidateIdentity("ALTER TABLE t ADD CONSTRAINT c FOREIGN KEY fk (a) REFERENCES p (a)")
 	self.L(191).ValidateIdentity("CREATE TABLE t (a INT, FOREIGN KEY fk (a) REFERENCES p (a))")
-	self.Do(192, func() { alter = self.ValidateIdentity("ALTER TABLE t DROP PRIMARY KEY") })
+	self.DoAssign(192, func() { alter = self.ValidateIdentity("ALTER TABLE t DROP PRIMARY KEY") }, &alter)
 	self.Do(193, func() {
-		M(Item(Item(A(alter, "args"), "actions"), 0), "assert_is", A(G("sqlglot.expressions"), "DropPrimaryKey"))
+		Stmt(M(Item(Item(A(alter, "args"), "actions"), 0), "assert_is", A(G("sqlglot.expressions"), "DropPrimaryKey")))
 	})
 	self.L(194).ValidateIdentity("ALTER TABLE t DROP COLUMN c, DROP PRIMARY KEY, DROP INDEX `i`")
 	self.L(195).ValidateIdentity("ALTER TABLE t DROP KEY k", "ALTER TABLE t DROP INDEX k")
 	self.Do(196, func() {
-		M(Item(Item(A(self.ValidateIdentity("ALTER TABLE t DROP CHECK c"), "args"), "actions"), 0), "assert_is", A(G("sqlglot.expressions"), "Drop"))
+		Stmt(M(Item(Item(A(self.ValidateIdentity("ALTER TABLE t DROP CHECK c"), "args"), "actions"), 0), "assert_is", A(G("sqlglot.expressions"), "Drop")))
 	})
 	self.L(197).ValidateIdentity("ALTER TABLE t ADD CONSTRAINT UNIQUE uq_a (a)", "ALTER TABLE t ADD UNIQUE uq_a (a)")
 	self.L(200).ValidateIdentity("CREATE TABLE t (a INT, CONSTRAINT PRIMARY KEY (a))", "CREATE TABLE t (a INT, PRIMARY KEY (a))")
@@ -247,7 +247,7 @@ func test_mysql_TestMySQL_test_ddl(self *Case, a Args) Value {
 	self.L(246).ValidateIdentity("ALTER TABLE t COMMENT='hi'")
 	self.L(247).ValidateIdentity("ALTER TABLE t COMMENT 'hi'", "ALTER TABLE t COMMENT='hi'")
 	self.Do(248, func() {
-		M(self.ValidateIdentity("ALTER TABLE t FORCE"), "assert_is", A(G("sqlglot.expressions"), "Alter"))
+		Stmt(M(self.ValidateIdentity("ALTER TABLE t FORCE"), "assert_is", A(G("sqlglot.expressions"), "Alter")))
 	})
 	self.L(249).ValidateIdentity("ALTER TABLE t ENGINE=InnoDB PARTITION BY LIST (a) (PARTITION p0 VALUES IN (1))")
 	for _, item_ := range Iter(NewTuple("ALTER TABLE t PARTITION BY RANGE (a) (PARTITION p0 VALUES LESS THAN (10), PARTITION p1 VALUES LESS THAN MAXVALUE)", "ALTER TABLE t PARTITION BY RANGE COLUMNS (a, b) (PARTITION p0 VALUES LESS THAN (10, 20))", "ALTER TABLE t PARTITION BY LIST COLUMNS (a) (PARTITION p0 VALUES IN (1, 2))", "ALTER TABLE t PARTITION BY LIST (a) (PARTITION p0 VALUES IN (1) COMMENT = 'x')", "ALTER TABLE t PARTITION BY RANGE (a) (PARTITION p0 VALUES LESS THAN (10) ENGINE = InnoDB)")) {
@@ -294,10 +294,10 @@ func test_mysql_TestMySQL_test_ddl(self *Case, a Args) Value {
 	self.L(370).ValidateIdentity("ALTER TABLE t ADD KEY `i` (`c`)", "ALTER TABLE t ADD INDEX `i` (`c`)")
 	self.L(374).ValidateIdentity("ALTER TABLE t ADD UNIQUE KEY uq (a) USING BTREE COMMENT 'why' INVISIBLE", "ALTER TABLE t ADD UNIQUE uq (a) USING BTREE COMMENT 'why' INVISIBLE")
 	self.Do(378, func() {
-		M(Item(Item(A(self.ValidateIdentity("ALTER TABLE t ADD FULLTEXT INDEX i (s)"), "args"), "actions"), 0), "assert_is", A(G("sqlglot.expressions"), "AddConstraint"))
+		Stmt(M(Item(Item(A(self.ValidateIdentity("ALTER TABLE t ADD FULLTEXT INDEX i (s)"), "args"), "actions"), 0), "assert_is", A(G("sqlglot.expressions"), "AddConstraint")))
 	})
 	self.Do(381, func() {
-		M(Item(Item(A(self.ValidateIdentity("ALTER TABLE t ADD SPATIAL INDEX i (g)"), "args"), "actions"), 0), "assert_is", A(G("sqlglot.expressions"), "AddConstraint"))
+		Stmt(M(Item(Item(A(self.ValidateIdentity("ALTER TABLE t ADD SPATIAL INDEX i (g)"), "args"), "actions"), 0), "assert_is", A(G("sqlglot.expressions"), "AddConstraint")))
 	})
 	self.L(384).ValidateIdentity("ALTER TABLE t ADD UNIQUE KEY u USING BTREE (c)", "ALTER TABLE t ADD UNIQUE u (c) USING BTREE")
 	self.L(388).ValidateIdentity("CREATE TABLE t (a INT, UNIQUE KEY u USING BTREE (a))", "CREATE TABLE t (a INT, UNIQUE u (a) USING BTREE)")
@@ -330,7 +330,7 @@ func test_mysql_TestMySQL_test_ddl(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewTuple(NewTuple("CREATE TABLE t (a VARCHAR(5) CHARSET utf8mb4 COLLATE utf8mb4_bin) CHARSET=utf8mb4 ENGINE=InnoDB", "CREATE TABLE t (a VARCHAR(5) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin) CHARACTER SET=utf8mb4 ENGINE=InnoDB"), NewTuple("ALTER TABLE t ADD COLUMN a VARCHAR(5) CHARSET utf8mb4 COLLATE utf8mb4_bin, CHARSET=utf8mb4 ENGINE=InnoDB", "ALTER TABLE t ADD COLUMN a VARCHAR(5) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin, CHARACTER SET=utf8mb4, ENGINE=InnoDB"), NewTuple("CREATE TABLE t (a VARCHAR(5) CHAR SET utf8mb4 COLLATE utf8mb4_bin) CHARSET=utf8mb4 ENGINE=InnoDB", "CREATE TABLE t (a VARCHAR(5) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin) CHARACTER SET=utf8mb4 ENGINE=InnoDB"), NewTuple("ALTER TABLE t ADD COLUMN a VARCHAR(5) CHAR SET utf8mb4 COLLATE utf8mb4_bin, CHARSET=utf8mb4 ENGINE=InnoDB", "ALTER TABLE t ADD COLUMN a VARCHAR(5) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin, CHARACTER SET=utf8mb4, ENGINE=InnoDB"), NewTuple("CREATE TABLE t (a VARCHAR(5) CHARSET utf8mb4) CHAR SET utf8mb4 ENGINE=InnoDB", "CREATE TABLE t (a VARCHAR(5) CHARACTER SET utf8mb4) CHARACTER SET=utf8mb4 ENGINE=InnoDB"), NewTuple("ALTER TABLE t ADD COLUMN a VARCHAR(5) CHARSET utf8mb4, DEFAULT CHAR SET=utf8mb4 ENGINE=InnoDB", "ALTER TABLE t ADD COLUMN a VARCHAR(5) CHARACTER SET utf8mb4, DEFAULT CHARACTER SET=utf8mb4, ENGINE=InnoDB"))) {
 		Unpack(item_, &sql, &expected)
 		self.SubTest(func() {
-			self.Do(505, func() { ast = self.ValidateIdentity(sql, expected) })
+			self.DoAssign(505, func() { ast = self.ValidateIdentity(sql, expected) }, &ast)
 			self.Do(506, func() {
 				self.AssertEqual(Len(Call(G("list"), M(ast, "find_all", A(G("sqlglot.expressions"), "CharacterSetColumnConstraint")))), 1)
 			})
@@ -339,9 +339,9 @@ func test_mysql_TestMySQL_test_ddl(self *Case, a Args) Value {
 			})
 		}, sql)
 	}
-	self.Do(508, func() {
+	self.DoAssign(508, func() {
 		create = self.ValidateIdentity("CREATE TABLE t (a INT) ENGINE=InnoDB, COMMENT='c' ROW_FORMAT=DYNAMIC", "CREATE TABLE t (a INT) ENGINE=InnoDB COMMENT='c' ROW_FORMAT=DYNAMIC")
-	})
+	}, &create)
 	self.Do(512, func() {
 		self.AssertEqual(func() Value {
 			var prop Value
@@ -389,25 +389,25 @@ func test_mysql_TestMySQL_test_alter_mixed_actions(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewTuple("ALTER TABLE t ADD COLUMN a INT, DROP COLUMN b, ADD COLUMN c INT, DROP COLUMN d", "ALTER TABLE t ADD INDEX `i` (`a`), DROP INDEX `j`", "ALTER TABLE t DROP INDEX i, ADD FULLTEXT INDEX i1 (s)", "ALTER TABLE t ADD CONSTRAINT c UNIQUE (a), DROP CONSTRAINT d", "ALTER TABLE t ALTER COLUMN c SET DEFAULT 1, ADD COLUMN d INT", "ALTER TABLE t ADD COLUMN a INT, DROP INDEX concurrently", "ALTER TABLE t ADD COLUMN a INT, DROP INDEX concurrently, DROP COLUMN b", "ALTER TABLE t ADD COLUMN a INT, DROP COLUMN concurrently", "ALTER TABLE t ADD COLUMN a INT, DROP COLUMN concurrently RESTRICT", "ALTER TABLE t ADD COLUMN a INT, DROP COLUMN any RESTRICT", "ALTER TABLE t ADD COLUMN a INT, RENAME INDEX any TO b", "ALTER TABLE t ADD COLUMN a INT, DROP COLUMN charset")) {
 		sql = item_
 		self.SubTest(func() {
-			self.Do(625, func() { alter = M(self.ValidateIdentity(sql), "assert_is", A(G("sqlglot.expressions"), "Alter")) })
+			self.DoAssign(625, func() { alter = M(self.ValidateIdentity(sql), "assert_is", A(G("sqlglot.expressions"), "Alter")) }, &alter)
 			for _, item_ := range Iter(Item(A(alter, "args"), "actions")) {
 				action = item_
-				self.Do(627, func() { M(self, "assertNotIsInstance", action, A(G("sqlglot.expressions"), "Command")) })
+				self.Do(627, func() { Stmt(M(self, "assertNotIsInstance", action, A(G("sqlglot.expressions"), "Command"))) })
 			}
 		}, sql)
 	}
 	for _, item_ := range Iter(NewTuple(NewTuple("ALTER TABLE t COMMENT='hi', ADD COLUMN c INT", "ALTER TABLE t ADD COLUMN c INT, COMMENT='hi'", 1, 1), NewTuple("ALTER TABLE t COMMENT='hi', AUTO_INCREMENT=3000000000", nil, 0, 2), NewTuple("ALTER TABLE t ADD c INT, AUTO_INCREMENT=5, ADD d INT", "ALTER TABLE t ADD COLUMN c INT, ADD COLUMN d INT, AUTO_INCREMENT=5", 2, 1), NewTuple("ALTER TABLE t MODIFY COLUMN c INT COMMENT 'col', COMMENT='tbl'", nil, 1, 1), NewTuple("ALTER TABLE t CHANGE COLUMN c d INT, COMMENT='hi'", nil, 1, 1), NewTuple("ALTER TABLE t ADD COLUMN c INT, COMMENT='x', AUTO_INCREMENT=5", nil, 1, 2), NewTuple("ALTER TABLE s.t COMMENT 'notes' AUTO_INCREMENT=5 COMPRESSION='zlib'", "ALTER TABLE s.t COMMENT='notes', AUTO_INCREMENT=5, COMPRESSION='zlib'", 0, 3), NewTuple("ALTER TABLE t COMMENT='x' AUTO_INCREMENT=5, ENGINE=InnoDB ROW_FORMAT=DYNAMIC", "ALTER TABLE t COMMENT='x', AUTO_INCREMENT=5, ENGINE=InnoDB, ROW_FORMAT=DYNAMIC", 0, 4), NewTuple("ALTER TABLE t ADD COLUMN x INT, ENGINE=InnoDB ROW_FORMAT=DYNAMIC", "ALTER TABLE t ADD COLUMN x INT, ENGINE=InnoDB, ROW_FORMAT=DYNAMIC", 1, 2), NewTuple("ALTER TABLE t ADD COLUMN x INT, LOCK=NONE, ENGINE=InnoDB ROW_FORMAT=DYNAMIC", "ALTER TABLE t ADD COLUMN x INT, LOCK=NONE, ENGINE=InnoDB, ROW_FORMAT=DYNAMIC", 1, 3))) {
 		Unpack(item_, &sql, &expected, &num_actions, &num_options)
 		self.SubTest(func() {
-			self.Do(672, func() {
+			self.DoAssign(672, func() {
 				alter = M(self.ValidateIdentity(sql, expected), "assert_is", A(G("sqlglot.expressions"), "Alter"))
-			})
+			}, &alter)
 			self.Do(673, func() { self.AssertEqual(Len(Item(A(alter, "args"), "actions")), num_actions) })
 			self.Do(674, func() { self.AssertEqual(Len(Item(A(alter, "args"), "options")), num_options) })
 		}, sql)
 	}
 	self.Do(676, func() {
-		M(self.ValidateIdentity("ALTER TABLE t ADD COLUMN a INT, DROP b, ADD COLUMN c INT", "ALTER TABLE t ADD COLUMN a INT, DROP COLUMN b, ADD COLUMN c INT"), "assert_is", A(G("sqlglot.expressions"), "Alter"))
+		Stmt(M(self.ValidateIdentity("ALTER TABLE t ADD COLUMN a INT, DROP b, ADD COLUMN c INT", "ALTER TABLE t ADD COLUMN a INT, DROP COLUMN b, ADD COLUMN c INT"), "assert_is", A(G("sqlglot.expressions"), "Alter")))
 	})
 	self.L(680).ValidateIdentity("ALTER TABLE t ADD COLUMN c INT SECONDARY_ENGINE_ATTRIBUTE='{}', ADD COLUMN z INT", Kw("check_command_warning", true))
 	return nil
@@ -436,26 +436,26 @@ func test_mysql_TestMySQL_test_alter_drop_column(self *Case, a Args) Value {
 	self.L(726).ValidateIdentity("ALTER TABLE t DROP b, DROP view RESTRICT", "ALTER TABLE t DROP COLUMN b, DROP COLUMN view RESTRICT")
 	self.L(730).ValidateIdentity("ALTER TABLE t DROP b, DROP COLUMN any RESTRICT", "ALTER TABLE t DROP COLUMN b, DROP COLUMN any RESTRICT")
 	self.Do(734, func() {
-		M(Item(Item(A(self.ValidateIdentity("ALTER TABLE t DROP COLUMN `cascade`"), "args"), "actions"), 0), "assert_is", A(G("sqlglot.expressions"), "Drop"))
+		Stmt(M(Item(Item(A(self.ValidateIdentity("ALTER TABLE t DROP COLUMN `cascade`"), "args"), "actions"), 0), "assert_is", A(G("sqlglot.expressions"), "Drop")))
 	})
 	self.Do(737, func() {
-		M(Item(Item(A(self.ValidateIdentity("ALTER TABLE t DROP INDEX `restrict`"), "args"), "actions"), 0), "assert_is", A(G("sqlglot.expressions"), "Drop"))
+		Stmt(M(Item(Item(A(self.ValidateIdentity("ALTER TABLE t DROP INDEX `restrict`"), "args"), "actions"), 0), "assert_is", A(G("sqlglot.expressions"), "Drop")))
 	})
 	self.Do(740, func() {
-		M(Item(Item(A(self.ValidateIdentity("ALTER TABLE t DROP COLUMN concurrently"), "args"), "actions"), 0), "assert_is", A(G("sqlglot.expressions"), "Drop"))
+		Stmt(M(Item(Item(A(self.ValidateIdentity("ALTER TABLE t DROP COLUMN concurrently"), "args"), "actions"), 0), "assert_is", A(G("sqlglot.expressions"), "Drop")))
 	})
 	self.Do(743, func() {
-		M(Item(Item(A(self.ValidateIdentity("ALTER TABLE t DROP COLUMN charset"), "args"), "actions"), 0), "assert_is", A(G("sqlglot.expressions"), "Drop"))
+		Stmt(M(Item(Item(A(self.ValidateIdentity("ALTER TABLE t DROP COLUMN charset"), "args"), "actions"), 0), "assert_is", A(G("sqlglot.expressions"), "Drop")))
 	})
 	self.L(746).ValidateIdentity("ALTER TABLE t DROP COLUMN charset RESTRICT")
-	self.Do(747, func() {
+	self.DoAssign(747, func() {
 		drop = M(Item(Item(A(self.ValidateIdentity("ALTER TABLE t DROP INDEX concurrently"), "args"), "actions"), 0), "assert_is", A(G("sqlglot.expressions"), "Drop"))
-	})
+	}, &drop)
 	self.Do(752, func() { self.AssertEqual(A(Item(Item(A(drop, "args"), "tables"), 0), "name"), "concurrently") })
-	self.Do(753, func() { M(self, "assertIs", Item(A(drop, "args"), "concurrently"), false) })
+	self.Do(753, func() { Stmt(M(self, "assertIs", Item(A(drop, "args"), "concurrently"), false)) })
 	self.L(754).ValidateIdentity("DROP INDEX concurrently ON t")
 	self.Do(755, func() {
-		M(self.ValidateIdentity("DROP INDEX i ON db.t"), "assert_is", A(G("sqlglot.expressions"), "Drop"))
+		Stmt(M(self.ValidateIdentity("DROP INDEX i ON db.t"), "assert_is", A(G("sqlglot.expressions"), "Drop")))
 	})
 	return nil
 }
@@ -629,12 +629,12 @@ func test_mysql_TestMySQL_test_introducers(self *Case, a Args) Value {
 func test_mysql_TestMySQL_test_hexadecimal_literal(self *Case, a Args) Value {
 	var write_CC, write_CC_with_leading_zeros Value
 	_ = []Value{write_CC, write_CC_with_leading_zeros}
-	self.Do(1047, func() {
+	self.DoAssign(1047, func() {
 		write_CC = NewDict("bigquery", "SELECT FROM_HEX('CC')", "clickhouse", G("sqlglot.UnsupportedError"), "databricks", "SELECT X'CC'", "drill", "SELECT 204", "duckdb", "SELECT UNHEX('CC')", "hive", "SELECT 204", "mysql", "SELECT x'CC'", "oracle", "SELECT 204", "postgres", "SELECT x'CC'", "presto", "SELECT x'CC'", "redshift", "SELECT 204", "snowflake", "SELECT x'CC'", "spark", "SELECT X'CC'", "sqlite", "SELECT x'CC'", "starrocks", "SELECT x'CC'", "tableau", "SELECT 204", "teradata", "SELECT X'CC'", "trino", "SELECT x'CC'", "tsql", "SELECT 0xCC")
-	})
-	self.Do(1068, func() {
+	}, &write_CC)
+	self.DoAssign(1068, func() {
 		write_CC_with_leading_zeros = NewDict("bigquery", "SELECT FROM_HEX('0000CC')", "clickhouse", G("sqlglot.UnsupportedError"), "databricks", "SELECT X'0000CC'", "drill", "SELECT 204", "duckdb", "SELECT UNHEX('0000CC')", "hive", "SELECT 204", "mysql", "SELECT x'0000CC'", "oracle", "SELECT 204", "postgres", "SELECT x'0000CC'", "presto", "SELECT x'0000CC'", "redshift", "SELECT 204", "snowflake", "SELECT x'0000CC'", "spark", "SELECT X'0000CC'", "sqlite", "SELECT x'0000CC'", "starrocks", "SELECT x'0000CC'", "tableau", "SELECT 204", "teradata", "SELECT X'0000CC'", "trino", "SELECT x'0000CC'", "tsql", "SELECT 0x0000CC")
-	})
+	}, &write_CC_with_leading_zeros)
 	self.L(1090).ValidateAll("SELECT X'1A'", Kw("write", NewDict("mysql", "SELECT x'1A'")))
 	self.L(1091).ValidateAll("SELECT 0xz", Kw("write", NewDict("mysql", "SELECT `0xz`")))
 	self.Do(1092, func() { self.ValidateAll("SELECT 0xCC", Kw("write", write_CC)) })
@@ -648,9 +648,9 @@ func test_mysql_TestMySQL_test_hexadecimal_literal(self *Case, a Args) Value {
 func test_mysql_TestMySQL_test_bits_literal(self *Case, a Args) Value {
 	var write_1011 Value
 	_ = []Value{write_1011}
-	self.Do(1099, func() {
+	self.DoAssign(1099, func() {
 		write_1011 = NewDict("bigquery", "SELECT 11", "clickhouse", "SELECT 0b1011", "databricks", "SELECT 11", "drill", "SELECT 11", "hive", "SELECT 11", "mysql", "SELECT b'1011'", "oracle", "SELECT 11", "postgres", "SELECT b'1011'", "presto", "SELECT 11", "redshift", "SELECT 11", "snowflake", "SELECT 11", "spark", "SELECT 11", "sqlite", "SELECT 11", "tableau", "SELECT 11", "teradata", "SELECT 11", "trino", "SELECT 11", "tsql", "SELECT 11")
-	})
+	}, &write_1011)
 	self.Do(1119, func() { self.ValidateAll("SELECT 0b1011", Kw("write", write_1011)) })
 	self.Do(1120, func() { self.ValidateAll("SELECT b'1011'", Kw("write", write_1011)) })
 	return nil
@@ -805,8 +805,8 @@ func test_mysql_TestMySQL_test_show_simple(self *Case, a Args) Value {
 	_ = []Value{key, write_key, show}
 	for _, item_ := range Iter(NewList(NewTuple("BINARY LOGS", "BINARY LOGS"), NewTuple("MASTER LOGS", "BINARY LOGS"), NewTuple("STORAGE ENGINES", "ENGINES"), NewTuple("ENGINES", "ENGINES"), NewTuple("EVENTS", "EVENTS"), NewTuple("MASTER STATUS", "MASTER STATUS"), NewTuple("PLUGINS", "PLUGINS"), NewTuple("PRIVILEGES", "PRIVILEGES"), NewTuple("PROFILES", "PROFILES"), NewTuple("REPLICAS", "REPLICAS"), NewTuple("SLAVE HOSTS", "REPLICAS"))) {
 		Unpack(item_, &key, &write_key)
-		self.Do(1779, func() { show = self.ValidateIdentity(F("SHOW ", FV{V: key}), F("SHOW ", FV{V: write_key})) })
-		self.Do(1780, func() { M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show")) })
+		self.DoAssign(1779, func() { show = self.ValidateIdentity(F("SHOW ", FV{V: key}), F("SHOW ", FV{V: write_key})) }, &show)
+		self.Do(1780, func() { Stmt(M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show"))) })
 		self.Do(1781, func() { self.AssertEqual(A(show, "name"), write_key) })
 	}
 	return nil
@@ -817,17 +817,17 @@ func test_mysql_TestMySQL_test_show_events(self *Case, a Args) Value {
 	_ = []Value{key, show}
 	for _, item_ := range Iter(NewList("BINLOG", "RELAYLOG")) {
 		key = item_
-		self.Do(1785, func() { show = self.ValidateIdentity(F("SHOW ", FV{V: key}, " EVENTS")) })
-		self.Do(1786, func() { M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show")) })
+		self.DoAssign(1785, func() { show = self.ValidateIdentity(F("SHOW ", FV{V: key}, " EVENTS")) }, &show)
+		self.Do(1786, func() { Stmt(M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show"))) })
 		self.Do(1787, func() { self.AssertEqual(A(show, "name"), F(FV{V: key}, " EVENTS")) })
-		self.Do(1789, func() { show = self.ValidateIdentity(F("SHOW ", FV{V: key}, " EVENTS IN 'log' FROM 1 LIMIT 2, 3")) })
+		self.DoAssign(1789, func() { show = self.ValidateIdentity(F("SHOW ", FV{V: key}, " EVENTS IN 'log' FROM 1 LIMIT 2, 3")) }, &show)
 		self.Do(1790, func() { self.AssertEqual(M(show, "text", "log"), "log") })
 		self.Do(1791, func() { self.AssertEqual(M(show, "text", "position"), "1") })
 		self.Do(1792, func() { self.AssertEqual(M(show, "text", "limit"), "3") })
 		self.Do(1793, func() { self.AssertEqual(M(show, "text", "offset"), "2") })
-		self.Do(1795, func() { show = self.ValidateIdentity(F("SHOW ", FV{V: key}, " EVENTS LIMIT 1")) })
+		self.DoAssign(1795, func() { show = self.ValidateIdentity(F("SHOW ", FV{V: key}, " EVENTS LIMIT 1")) }, &show)
 		self.Do(1796, func() { self.AssertEqual(M(show, "text", "limit"), "1") })
-		self.Do(1797, func() { M(self, "assertIsNone", M(A(show, "args"), "get", "offset")) })
+		self.Do(1797, func() { Stmt(M(self, "assertIsNone", M(A(show, "args"), "get", "offset"))) })
 	}
 	return nil
 }
@@ -837,23 +837,23 @@ func test_mysql_TestMySQL_test_show_like_or_where(self *Case, a Args) Value {
 	_ = []Value{key, write_key, expected_name, template, show}
 	for _, item_ := range Iter(NewList(NewTuple("CHARSET", "CHARACTER SET"), NewTuple("CHARACTER SET", "CHARACTER SET"), NewTuple("COLLATION", "COLLATION"), NewTuple("DATABASES", "DATABASES"), NewTuple("SCHEMAS", "DATABASES"), NewTuple("FUNCTION STATUS", "FUNCTION STATUS"), NewTuple("PROCEDURE STATUS", "PROCEDURE STATUS"), NewTuple("GLOBAL STATUS", "GLOBAL STATUS"), NewTuple("SESSION STATUS", "STATUS"), NewTuple("STATUS", "STATUS"), NewTuple("GLOBAL VARIABLES", "GLOBAL VARIABLES"), NewTuple("SESSION VARIABLES", "VARIABLES"), NewTuple("VARIABLES", "VARIABLES"))) {
 		Unpack(item_, &key, &write_key)
-		self.Do(1815, func() { expected_name = M(M(write_key, "strip", "GLOBAL"), "strip") })
-		self.Do(1816, func() { template = "SHOW {}" })
-		self.Do(1817, func() { show = self.ValidateIdentity(M(template, "format", key), M(template, "format", write_key)) })
-		self.Do(1818, func() { M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show")) })
+		self.DoAssign(1815, func() { expected_name = M(M(write_key, "strip", "GLOBAL"), "strip") }, &expected_name)
+		self.DoAssign(1816, func() { template = "SHOW {}" }, &template)
+		self.DoAssign(1817, func() { show = self.ValidateIdentity(M(template, "format", key), M(template, "format", write_key)) }, &show)
+		self.Do(1818, func() { Stmt(M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show"))) })
 		self.Do(1819, func() { self.AssertEqual(A(show, "name"), expected_name) })
-		self.Do(1821, func() { template = "SHOW {} LIKE '%foo%'" })
-		self.Do(1822, func() { show = self.ValidateIdentity(M(template, "format", key), M(template, "format", write_key)) })
-		self.Do(1823, func() { M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show")) })
+		self.DoAssign(1821, func() { template = "SHOW {} LIKE '%foo%'" }, &template)
+		self.DoAssign(1822, func() { show = self.ValidateIdentity(M(template, "format", key), M(template, "format", write_key)) }, &show)
+		self.Do(1823, func() { Stmt(M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show"))) })
 		self.Do(1824, func() {
-			M(self, "assertIsInstance", Item(A(show, "args"), "like"), A(G("sqlglot.expressions"), "Literal"))
+			Stmt(M(self, "assertIsInstance", Item(A(show, "args"), "like"), A(G("sqlglot.expressions"), "Literal")))
 		})
 		self.Do(1825, func() { self.AssertEqual(M(show, "text", "like"), "%foo%") })
-		self.Do(1827, func() { template = "SHOW {} WHERE Column_name LIKE '%foo%'" })
-		self.Do(1828, func() { show = self.ValidateIdentity(M(template, "format", key), M(template, "format", write_key)) })
-		self.Do(1829, func() { M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show")) })
+		self.DoAssign(1827, func() { template = "SHOW {} WHERE Column_name LIKE '%foo%'" }, &template)
+		self.DoAssign(1828, func() { show = self.ValidateIdentity(M(template, "format", key), M(template, "format", write_key)) }, &show)
+		self.Do(1829, func() { Stmt(M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show"))) })
 		self.Do(1830, func() {
-			M(self, "assertIsInstance", Item(A(show, "args"), "where"), A(G("sqlglot.expressions"), "Where"))
+			Stmt(M(self, "assertIsInstance", Item(A(show, "args"), "where"), A(G("sqlglot.expressions"), "Where")))
 		})
 		self.Do(1831, func() { self.AssertEqual(M(Item(A(show, "args"), "where"), "sql"), "WHERE Column_name LIKE '%foo%'") })
 	}
@@ -863,18 +863,18 @@ func test_mysql_TestMySQL_test_show_like_or_where(self *Case, a Args) Value {
 func test_mysql_TestMySQL_test_show_columns(self *Case, a Args) Value {
 	var show Value
 	_ = []Value{show}
-	self.Do(1834, func() { show = self.ValidateIdentity("SHOW COLUMNS FROM tbl_name") })
-	self.Do(1835, func() { M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show")) })
+	self.DoAssign(1834, func() { show = self.ValidateIdentity("SHOW COLUMNS FROM tbl_name") }, &show)
+	self.Do(1835, func() { Stmt(M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show"))) })
 	self.Do(1836, func() { self.AssertEqual(A(show, "name"), "COLUMNS") })
 	self.Do(1837, func() { self.AssertEqual(M(show, "text", "target"), "tbl_name") })
-	self.Do(1838, func() { M(self, "assertFalse", Item(A(show, "args"), "full")) })
-	self.Do(1840, func() { show = self.ValidateIdentity("SHOW FULL COLUMNS FROM tbl_name FROM db_name LIKE '%foo%'") })
-	self.Do(1841, func() { M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show")) })
+	self.Do(1838, func() { Stmt(M(self, "assertFalse", Item(A(show, "args"), "full"))) })
+	self.DoAssign(1840, func() { show = self.ValidateIdentity("SHOW FULL COLUMNS FROM tbl_name FROM db_name LIKE '%foo%'") }, &show)
+	self.Do(1841, func() { Stmt(M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show"))) })
 	self.Do(1842, func() { self.AssertEqual(M(show, "text", "target"), "tbl_name") })
-	self.Do(1843, func() { M(self, "assertTrue", Item(A(show, "args"), "full")) })
+	self.Do(1843, func() { Stmt(M(self, "assertTrue", Item(A(show, "args"), "full"))) })
 	self.Do(1844, func() { self.AssertEqual(M(show, "text", "db"), "db_name") })
 	self.Do(1845, func() {
-		M(self, "assertIsInstance", Item(A(show, "args"), "like"), A(G("sqlglot.expressions"), "Literal"))
+		Stmt(M(self, "assertIsInstance", Item(A(show, "args"), "like"), A(G("sqlglot.expressions"), "Literal")))
 	})
 	self.Do(1846, func() { self.AssertEqual(M(show, "text", "like"), "%foo%") })
 	return nil
@@ -885,8 +885,8 @@ func test_mysql_TestMySQL_test_show_name(self *Case, a Args) Value {
 	_ = []Value{key, show}
 	for _, item_ := range Iter(NewList("CREATE DATABASE", "CREATE EVENT", "CREATE FUNCTION", "CREATE PROCEDURE", "CREATE TABLE", "CREATE TRIGGER", "CREATE VIEW", "FUNCTION CODE", "PROCEDURE CODE")) {
 		key = item_
-		self.Do(1860, func() { show = self.ValidateIdentity(F("SHOW ", FV{V: key}, " foo")) })
-		self.Do(1861, func() { M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show")) })
+		self.DoAssign(1860, func() { show = self.ValidateIdentity(F("SHOW ", FV{V: key}, " foo")) }, &show)
+		self.Do(1861, func() { Stmt(M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show"))) })
 		self.Do(1862, func() { self.AssertEqual(A(show, "name"), key) })
 		self.Do(1863, func() { self.AssertEqual(M(show, "text", "target"), "foo") })
 	}
@@ -899,8 +899,8 @@ func test_mysql_TestMySQL_test_show_create_qualified(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewList("CREATE TABLE", "CREATE VIEW", "CREATE FUNCTION", "CREATE PROCEDURE")) {
 		key = item_
 		self.SubTest(func() {
-			self.Do(1868, func() { show = self.ValidateIdentity(F("SHOW ", FV{V: key}, " db_name.foo")) })
-			self.Do(1869, func() { M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show")) })
+			self.DoAssign(1868, func() { show = self.ValidateIdentity(F("SHOW ", FV{V: key}, " db_name.foo")) }, &show)
+			self.Do(1869, func() { Stmt(M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show"))) })
 			self.Do(1870, func() { self.AssertEqual(M(show, "text", "db"), "db_name") })
 			self.Do(1871, func() { self.AssertEqual(M(show, "text", "target"), "foo") })
 		}, Kw("create_stmt", key))
@@ -922,8 +922,8 @@ func test_mysql_TestMySQL_test_if(self *Case, a Args) Value {
 func test_mysql_TestMySQL_test_show_grants(self *Case, a Args) Value {
 	var show Value
 	_ = []Value{show}
-	self.Do(1896, func() { show = self.ValidateIdentity("SHOW GRANTS FOR foo") })
-	self.Do(1897, func() { M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show")) })
+	self.DoAssign(1896, func() { show = self.ValidateIdentity("SHOW GRANTS FOR foo") }, &show)
+	self.Do(1897, func() { Stmt(M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show"))) })
 	self.Do(1898, func() { self.AssertEqual(A(show, "name"), "GRANTS") })
 	self.Do(1899, func() { self.AssertEqual(M(show, "text", "target"), "foo") })
 	return nil
@@ -932,15 +932,15 @@ func test_mysql_TestMySQL_test_show_grants(self *Case, a Args) Value {
 func test_mysql_TestMySQL_test_show_engine(self *Case, a Args) Value {
 	var show Value
 	_ = []Value{show}
-	self.Do(1902, func() { show = self.ValidateIdentity("SHOW ENGINE foo STATUS") })
-	self.Do(1903, func() { M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show")) })
+	self.DoAssign(1902, func() { show = self.ValidateIdentity("SHOW ENGINE foo STATUS") }, &show)
+	self.Do(1903, func() { Stmt(M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show"))) })
 	self.Do(1904, func() { self.AssertEqual(A(show, "name"), "ENGINE") })
 	self.Do(1905, func() { self.AssertEqual(M(show, "text", "target"), "foo") })
-	self.Do(1906, func() { M(self, "assertFalse", Item(A(show, "args"), "mutex")) })
-	self.Do(1908, func() { show = self.ValidateIdentity("SHOW ENGINE foo MUTEX") })
+	self.Do(1906, func() { Stmt(M(self, "assertFalse", Item(A(show, "args"), "mutex"))) })
+	self.DoAssign(1908, func() { show = self.ValidateIdentity("SHOW ENGINE foo MUTEX") }, &show)
 	self.Do(1909, func() { self.AssertEqual(A(show, "name"), "ENGINE") })
 	self.Do(1910, func() { self.AssertEqual(M(show, "text", "target"), "foo") })
-	self.Do(1911, func() { M(self, "assertTrue", Item(A(show, "args"), "mutex")) })
+	self.Do(1911, func() { Stmt(M(self, "assertTrue", Item(A(show, "args"), "mutex"))) })
 	return nil
 }
 
@@ -949,10 +949,10 @@ func test_mysql_TestMySQL_test_show_errors(self *Case, a Args) Value {
 	_ = []Value{key, show}
 	for _, item_ := range Iter(NewList("ERRORS", "WARNINGS")) {
 		key = item_
-		self.Do(1915, func() { show = self.ValidateIdentity(F("SHOW ", FV{V: key})) })
-		self.Do(1916, func() { M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show")) })
+		self.DoAssign(1915, func() { show = self.ValidateIdentity(F("SHOW ", FV{V: key})) }, &show)
+		self.Do(1916, func() { Stmt(M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show"))) })
 		self.Do(1917, func() { self.AssertEqual(A(show, "name"), key) })
-		self.Do(1919, func() { show = self.ValidateIdentity(F("SHOW ", FV{V: key}, " LIMIT 2, 3")) })
+		self.DoAssign(1919, func() { show = self.ValidateIdentity(F("SHOW ", FV{V: key}, " LIMIT 2, 3")) }, &show)
 		self.Do(1920, func() { self.AssertEqual(M(show, "text", "limit"), "3") })
 		self.Do(1921, func() { self.AssertEqual(M(show, "text", "offset"), "2") })
 	}
@@ -962,11 +962,11 @@ func test_mysql_TestMySQL_test_show_errors(self *Case, a Args) Value {
 func test_mysql_TestMySQL_test_show_index(self *Case, a Args) Value {
 	var show Value
 	_ = []Value{show}
-	self.Do(1924, func() { show = self.ValidateIdentity("SHOW INDEX FROM foo") })
-	self.Do(1925, func() { M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show")) })
+	self.DoAssign(1924, func() { show = self.ValidateIdentity("SHOW INDEX FROM foo") }, &show)
+	self.Do(1925, func() { Stmt(M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show"))) })
 	self.Do(1926, func() { self.AssertEqual(A(show, "name"), "INDEX") })
 	self.Do(1927, func() { self.AssertEqual(M(show, "text", "target"), "foo") })
-	self.Do(1929, func() { show = self.ValidateIdentity("SHOW INDEX FROM foo FROM bar") })
+	self.DoAssign(1929, func() { show = self.ValidateIdentity("SHOW INDEX FROM foo FROM bar") }, &show)
 	self.Do(1930, func() { self.AssertEqual(M(show, "text", "db"), "bar") })
 	self.L(1932).ValidateAll("SHOW INDEX FROM bar.foo", Kw("write", NewDict("mysql", "SHOW INDEX FROM foo FROM bar")))
 	return nil
@@ -977,22 +977,22 @@ func test_mysql_TestMySQL_test_show_db_like_or_where_sql(self *Case, a Args) Val
 	_ = []Value{key, show}
 	for _, item_ := range Iter(NewList("OPEN TABLES", "TABLE STATUS", "TRIGGERS")) {
 		key = item_
-		self.Do(1942, func() { show = self.ValidateIdentity(F("SHOW ", FV{V: key})) })
-		self.Do(1943, func() { M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show")) })
+		self.DoAssign(1942, func() { show = self.ValidateIdentity(F("SHOW ", FV{V: key})) }, &show)
+		self.Do(1943, func() { Stmt(M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show"))) })
 		self.Do(1944, func() { self.AssertEqual(A(show, "name"), key) })
-		self.Do(1946, func() { show = self.ValidateIdentity(F("SHOW ", FV{V: key}, " FROM db_name")) })
+		self.DoAssign(1946, func() { show = self.ValidateIdentity(F("SHOW ", FV{V: key}, " FROM db_name")) }, &show)
 		self.Do(1947, func() { self.AssertEqual(A(show, "name"), key) })
 		self.Do(1948, func() { self.AssertEqual(M(show, "text", "db"), "db_name") })
-		self.Do(1950, func() { show = self.ValidateIdentity(F("SHOW ", FV{V: key}, " LIKE '%foo%'")) })
+		self.DoAssign(1950, func() { show = self.ValidateIdentity(F("SHOW ", FV{V: key}, " LIKE '%foo%'")) }, &show)
 		self.Do(1951, func() { self.AssertEqual(A(show, "name"), key) })
 		self.Do(1952, func() {
-			M(self, "assertIsInstance", Item(A(show, "args"), "like"), A(G("sqlglot.expressions"), "Literal"))
+			Stmt(M(self, "assertIsInstance", Item(A(show, "args"), "like"), A(G("sqlglot.expressions"), "Literal")))
 		})
 		self.Do(1953, func() { self.AssertEqual(M(show, "text", "like"), "%foo%") })
-		self.Do(1955, func() { show = self.ValidateIdentity(F("SHOW ", FV{V: key}, " WHERE Column_name LIKE '%foo%'")) })
+		self.DoAssign(1955, func() { show = self.ValidateIdentity(F("SHOW ", FV{V: key}, " WHERE Column_name LIKE '%foo%'")) }, &show)
 		self.Do(1956, func() { self.AssertEqual(A(show, "name"), key) })
 		self.Do(1957, func() {
-			M(self, "assertIsInstance", Item(A(show, "args"), "where"), A(G("sqlglot.expressions"), "Where"))
+			Stmt(M(self, "assertIsInstance", Item(A(show, "args"), "where"), A(G("sqlglot.expressions"), "Where")))
 		})
 		self.Do(1958, func() { self.AssertEqual(M(Item(A(show, "args"), "where"), "sql"), "WHERE Column_name LIKE '%foo%'") })
 	}
@@ -1002,27 +1002,27 @@ func test_mysql_TestMySQL_test_show_db_like_or_where_sql(self *Case, a Args) Val
 func test_mysql_TestMySQL_test_show_processlist(self *Case, a Args) Value {
 	var show Value
 	_ = []Value{show}
-	self.Do(1961, func() { show = self.ValidateIdentity("SHOW PROCESSLIST") })
-	self.Do(1962, func() { M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show")) })
+	self.DoAssign(1961, func() { show = self.ValidateIdentity("SHOW PROCESSLIST") }, &show)
+	self.Do(1962, func() { Stmt(M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show"))) })
 	self.Do(1963, func() { self.AssertEqual(A(show, "name"), "PROCESSLIST") })
-	self.Do(1964, func() { M(self, "assertFalse", Item(A(show, "args"), "full")) })
-	self.Do(1966, func() { show = self.ValidateIdentity("SHOW FULL PROCESSLIST") })
+	self.Do(1964, func() { Stmt(M(self, "assertFalse", Item(A(show, "args"), "full"))) })
+	self.DoAssign(1966, func() { show = self.ValidateIdentity("SHOW FULL PROCESSLIST") }, &show)
 	self.Do(1967, func() { self.AssertEqual(A(show, "name"), "PROCESSLIST") })
-	self.Do(1968, func() { M(self, "assertTrue", Item(A(show, "args"), "full")) })
+	self.Do(1968, func() { Stmt(M(self, "assertTrue", Item(A(show, "args"), "full"))) })
 	return nil
 }
 
 func test_mysql_TestMySQL_test_show_profile(self *Case, a Args) Value {
 	var show Value
 	_ = []Value{show}
-	self.Do(1971, func() { show = self.ValidateIdentity("SHOW PROFILE") })
-	self.Do(1972, func() { M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show")) })
+	self.DoAssign(1971, func() { show = self.ValidateIdentity("SHOW PROFILE") }, &show)
+	self.Do(1972, func() { Stmt(M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show"))) })
 	self.Do(1973, func() { self.AssertEqual(A(show, "name"), "PROFILE") })
-	self.Do(1975, func() { show = self.ValidateIdentity("SHOW PROFILE BLOCK IO") })
+	self.DoAssign(1975, func() { show = self.ValidateIdentity("SHOW PROFILE BLOCK IO") }, &show)
 	self.Do(1976, func() { self.AssertEqual(A(Item(Item(A(show, "args"), "types"), 0), "name"), "BLOCK IO") })
-	self.Do(1978, func() {
+	self.DoAssign(1978, func() {
 		show = self.ValidateIdentity("SHOW PROFILE BLOCK IO, PAGE FAULTS FOR QUERY 1 OFFSET 2 LIMIT 3")
-	})
+	}, &show)
 	self.Do(1981, func() { self.AssertEqual(A(Item(Item(A(show, "args"), "types"), 0), "name"), "BLOCK IO") })
 	self.Do(1982, func() { self.AssertEqual(A(Item(Item(A(show, "args"), "types"), 1), "name"), "PAGE FAULTS") })
 	self.Do(1983, func() { self.AssertEqual(M(show, "text", "query"), "1") })
@@ -1034,13 +1034,13 @@ func test_mysql_TestMySQL_test_show_profile(self *Case, a Args) Value {
 func test_mysql_TestMySQL_test_show_replica_status(self *Case, a Args) Value {
 	var show Value
 	_ = []Value{show}
-	self.Do(1988, func() { show = self.ValidateIdentity("SHOW REPLICA STATUS") })
-	self.Do(1989, func() { M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show")) })
+	self.DoAssign(1988, func() { show = self.ValidateIdentity("SHOW REPLICA STATUS") }, &show)
+	self.Do(1989, func() { Stmt(M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show"))) })
 	self.Do(1990, func() { self.AssertEqual(A(show, "name"), "REPLICA STATUS") })
-	self.Do(1992, func() { show = self.ValidateIdentity("SHOW SLAVE STATUS", "SHOW REPLICA STATUS") })
-	self.Do(1993, func() { M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show")) })
+	self.DoAssign(1992, func() { show = self.ValidateIdentity("SHOW SLAVE STATUS", "SHOW REPLICA STATUS") }, &show)
+	self.Do(1993, func() { Stmt(M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show"))) })
 	self.Do(1994, func() { self.AssertEqual(A(show, "name"), "REPLICA STATUS") })
-	self.Do(1996, func() { show = self.ValidateIdentity("SHOW REPLICA STATUS FOR CHANNEL channel_name") })
+	self.DoAssign(1996, func() { show = self.ValidateIdentity("SHOW REPLICA STATUS FOR CHANNEL channel_name") }, &show)
 	self.Do(1997, func() { self.AssertEqual(M(show, "text", "channel"), "channel_name") })
 	return nil
 }
@@ -1048,21 +1048,21 @@ func test_mysql_TestMySQL_test_show_replica_status(self *Case, a Args) Value {
 func test_mysql_TestMySQL_test_show_tables(self *Case, a Args) Value {
 	var show Value
 	_ = []Value{show}
-	self.Do(2000, func() { show = self.ValidateIdentity("SHOW TABLES") })
-	self.Do(2001, func() { M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show")) })
+	self.DoAssign(2000, func() { show = self.ValidateIdentity("SHOW TABLES") }, &show)
+	self.Do(2001, func() { Stmt(M(self, "assertIsInstance", show, A(G("sqlglot.expressions"), "Show"))) })
 	self.Do(2002, func() { self.AssertEqual(A(show, "name"), "TABLES") })
-	self.Do(2004, func() { show = self.ValidateIdentity("SHOW FULL TABLES FROM db_name LIKE '%foo%'") })
-	self.Do(2005, func() { M(self, "assertTrue", Item(A(show, "args"), "full")) })
+	self.DoAssign(2004, func() { show = self.ValidateIdentity("SHOW FULL TABLES FROM db_name LIKE '%foo%'") }, &show)
+	self.Do(2005, func() { Stmt(M(self, "assertTrue", Item(A(show, "args"), "full"))) })
 	self.Do(2006, func() { self.AssertEqual(M(show, "text", "db"), "db_name") })
 	self.Do(2007, func() {
-		M(self, "assertIsInstance", Item(A(show, "args"), "like"), A(G("sqlglot.expressions"), "Literal"))
+		Stmt(M(self, "assertIsInstance", Item(A(show, "args"), "like"), A(G("sqlglot.expressions"), "Literal")))
 	})
 	self.Do(2008, func() { self.AssertEqual(M(show, "text", "like"), "%foo%") })
-	self.Do(2010, func() { show = self.ValidateIdentity("SHOW TABLES IN test", "SHOW TABLES FROM test") })
+	self.DoAssign(2010, func() { show = self.ValidateIdentity("SHOW TABLES IN test", "SHOW TABLES FROM test") }, &show)
 	self.Do(2011, func() { self.AssertEqual(A(show, "name"), "TABLES") })
 	self.Do(2012, func() { self.AssertEqual(M(show, "text", "db"), "test") })
-	self.Do(2014, func() { show = self.ValidateIdentity("SHOW FULL TABLES IN test", "SHOW FULL TABLES FROM test") })
-	self.Do(2015, func() { M(self, "assertTrue", Item(A(show, "args"), "full")) })
+	self.DoAssign(2014, func() { show = self.ValidateIdentity("SHOW FULL TABLES IN test", "SHOW FULL TABLES FROM test") }, &show)
+	self.Do(2015, func() { Stmt(M(self, "assertTrue", Item(A(show, "args"), "full"))) })
 	self.Do(2016, func() { self.AssertEqual(M(show, "text", "db"), "test") })
 	return nil
 }
@@ -1070,32 +1070,32 @@ func test_mysql_TestMySQL_test_show_tables(self *Case, a Args) Value {
 func test_mysql_TestMySQL_test_set_variable(self *Case, a Args) Value {
 	var cmd, item Value
 	_ = []Value{cmd, item}
-	self.Do(2019, func() { cmd = self.ParseOne("SET SESSION x = 1") })
-	self.Do(2020, func() { item = Item(A(cmd, "expressions"), 0) })
+	self.DoAssign(2019, func() { cmd = self.ParseOne("SET SESSION x = 1") }, &cmd)
+	self.DoAssign(2020, func() { item = Item(A(cmd, "expressions"), 0) }, &item)
 	self.Do(2021, func() { self.AssertEqual(M(item, "text", "kind"), "SESSION") })
-	self.Do(2022, func() { M(self, "assertIsInstance", A(item, "this"), A(G("sqlglot.expressions"), "EQ")) })
+	self.Do(2022, func() { Stmt(M(self, "assertIsInstance", A(item, "this"), A(G("sqlglot.expressions"), "EQ"))) })
 	self.Do(2023, func() { self.AssertEqual(A(A(A(item, "this"), "left"), "name"), "x") })
 	self.Do(2024, func() { self.AssertEqual(A(A(A(item, "this"), "right"), "name"), "1") })
-	self.Do(2026, func() { cmd = self.ParseOne("SET @@GLOBAL.x = @@GLOBAL.y") })
-	self.Do(2027, func() { item = Item(A(cmd, "expressions"), 0) })
+	self.DoAssign(2026, func() { cmd = self.ParseOne("SET @@GLOBAL.x = @@GLOBAL.y") }, &cmd)
+	self.DoAssign(2027, func() { item = Item(A(cmd, "expressions"), 0) }, &item)
 	self.Do(2028, func() { self.AssertEqual(M(item, "text", "kind"), "") })
-	self.Do(2029, func() { M(self, "assertIsInstance", A(item, "this"), A(G("sqlglot.expressions"), "EQ")) })
+	self.Do(2029, func() { Stmt(M(self, "assertIsInstance", A(item, "this"), A(G("sqlglot.expressions"), "EQ"))) })
 	self.Do(2030, func() {
-		M(self, "assertIsInstance", A(A(item, "this"), "left"), A(G("sqlglot.expressions"), "SessionParameter"))
+		Stmt(M(self, "assertIsInstance", A(A(item, "this"), "left"), A(G("sqlglot.expressions"), "SessionParameter")))
 	})
 	self.Do(2031, func() {
-		M(self, "assertIsInstance", A(A(item, "this"), "right"), A(G("sqlglot.expressions"), "SessionParameter"))
+		Stmt(M(self, "assertIsInstance", A(A(item, "this"), "right"), A(G("sqlglot.expressions"), "SessionParameter")))
 	})
-	self.Do(2033, func() { cmd = self.ParseOne("SET NAMES 'charset_name' COLLATE 'collation_name'") })
-	self.Do(2034, func() { item = Item(A(cmd, "expressions"), 0) })
+	self.DoAssign(2033, func() { cmd = self.ParseOne("SET NAMES 'charset_name' COLLATE 'collation_name'") }, &cmd)
+	self.DoAssign(2034, func() { item = Item(A(cmd, "expressions"), 0) }, &item)
 	self.Do(2035, func() { self.AssertEqual(M(item, "text", "kind"), "NAMES") })
 	self.Do(2036, func() { self.AssertEqual(A(item, "name"), "charset_name") })
 	self.Do(2037, func() { self.AssertEqual(M(item, "text", "collate"), "collation_name") })
-	self.Do(2039, func() { cmd = self.ParseOne("SET CHARSET DEFAULT") })
-	self.Do(2040, func() { item = Item(A(cmd, "expressions"), 0) })
+	self.DoAssign(2039, func() { cmd = self.ParseOne("SET CHARSET DEFAULT") }, &cmd)
+	self.DoAssign(2040, func() { item = Item(A(cmd, "expressions"), 0) }, &item)
 	self.Do(2041, func() { self.AssertEqual(M(item, "text", "kind"), "CHARACTER SET") })
 	self.Do(2042, func() { self.AssertEqual(A(A(item, "this"), "name"), "DEFAULT") })
-	self.Do(2044, func() { cmd = self.ParseOne("SET x = 1, y = 2") })
+	self.DoAssign(2044, func() { cmd = self.ParseOne("SET x = 1, y = 2") }, &cmd)
 	self.Do(2045, func() { self.AssertEqual(Len(A(cmd, "expressions")), 2) })
 	return nil
 }
@@ -1154,15 +1154,15 @@ func test_mysql_TestMySQL_test_safe_div(self *Case, a Args) Value {
 func test_mysql_TestMySQL_test_timestamp_trunc(self *Case, a Args) Value {
 	var hive_dialects, dialect, unit, cast Value
 	_ = []Value{hive_dialects, dialect, unit, cast}
-	self.Do(2111, func() { hive_dialects = NewTuple("spark", "databricks") })
+	self.DoAssign(2111, func() { hive_dialects = NewTuple("spark", "databricks") }, &hive_dialects)
 	for _, item_ := range Iter(NewTuple("postgres", "snowflake", Star(hive_dialects))) {
 		dialect = item_
 		for _, item_ := range Iter(NewTuple("SECOND", "DAY", "MONTH", "YEAR")) {
 			unit = item_
 			self.SubTest(func() {
-				self.Do(2120, func() {
+				self.DoAssign(2120, func() {
 					cast = IfV(In(dialect, hive_dialects), func() Value { return "TIMESTAMP('2001-02-16 20:38:40')" }, func() Value { return "CAST('2001-02-16 20:38:40' AS DATETIME)" })
-				})
+				}, &cast)
 				self.Do(2125, func() {
 					self.ValidateAll(F("DATE_ADD('0000-01-01 00:00:00', INTERVAL (TIMESTAMPDIFF(", FV{V: unit}, ", '0000-01-01 00:00:00', ", FV{V: cast}, ")) ", FV{V: unit}, ")"), Kw("read", NewDict(dialect, F("DATE_TRUNC(", FV{V: unit}, ", TIMESTAMP '2001-02-16 20:38:40')"))), Kw("write", NewDict("mysql", F("DATE_ADD('0000-01-01 00:00:00', INTERVAL (TIMESTAMPDIFF(", FV{V: unit}, ", '0000-01-01 00:00:00', ", FV{V: cast}, ")) ", FV{V: unit}, ")"))))
 				})
@@ -1178,7 +1178,7 @@ func test_mysql_TestMySQL_test_at_time_zone(self *Case, a Args) Value {
 	self.Do(2136, func() {
 		self.AssertLogs(func(cm_ Value) {
 			cm = cm_
-			M(self, "validate_identity", "SELECT foo AT TIME ZONE 'UTC'", Kw("write_sql", "SELECT foo"))
+			Stmt(M(self, "validate_identity", "SELECT foo AT TIME ZONE 'UTC'", Kw("write_sql", "SELECT foo")))
 			Assert(In("AT TIME ZONE is not supported", Item(A(cm, "output"), 0)))
 		})
 	})
@@ -1188,7 +1188,7 @@ func test_mysql_TestMySQL_test_at_time_zone(self *Case, a Args) Value {
 func test_mysql_TestMySQL_test_json_value(self *Case, a Args) Value {
 	var json_doc, on_option Value
 	_ = []Value{json_doc, on_option}
-	self.Do(2145, func() { json_doc = `'{"item": "shoes", "price": "49.95"}'` })
+	self.DoAssign(2145, func() { json_doc = `'{"item": "shoes", "price": "49.95"}'` }, &json_doc)
 	self.Do(2146, func() { self.ValidateIdentity(F("SELECT JSON_VALUE(", FV{V: json_doc}, ", '$.price')")) })
 	self.Do(2147, func() {
 		self.ValidateIdentity(F("SELECT JSON_VALUE(", FV{V: json_doc}, ", '$.price' RETURNING DECIMAL(4, 2))"))
@@ -1209,12 +1209,12 @@ func test_mysql_TestMySQL_test_weight_string(self *Case, a Args) Value {
 		sql = item_
 		self.SubTest(func() {
 			self.Do(2163, func() {
-				M(Item(A(self.ValidateIdentity(sql), "selects"), 0), "assert_is", A(G("sqlglot.expressions"), "WeightString"))
+				Stmt(M(Item(A(self.ValidateIdentity(sql), "selects"), 0), "assert_is", A(G("sqlglot.expressions"), "WeightString")))
 			})
 		}, sql)
 	}
 	self.Do(2165, func() {
-		M(Item(A(self.ValidateIdentity("SELECT WEIGHT_STRING('ab', 0, 3, 0)"), "selects"), 0), "assert_is", A(G("sqlglot.expressions"), "Anonymous"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT WEIGHT_STRING('ab', 0, 3, 0)"), "selects"), 0), "assert_is", A(G("sqlglot.expressions"), "Anonymous")))
 	})
 	self.Do(2168, func() {
 		self.AssertEqual(A(Item(A(self.ParseOne("SELECT weight_string('ab', 0, 3, 0)"), "selects"), 0), "name"), "weight_string")
@@ -1225,9 +1225,9 @@ func test_mysql_TestMySQL_test_weight_string(self *Case, a Args) Value {
 func test_mysql_TestMySQL_test_grant(self *Case, a Args) Value {
 	var grant_cmds, sql Value
 	_ = []Value{grant_cmds, sql}
-	self.Do(2173, func() {
+	self.DoAssign(2173, func() {
 		grant_cmds = NewList("GRANT 'role1', 'role2' TO 'user1'@'localhost', 'user2'@'localhost'", "GRANT SELECT ON world.* TO 'role3'", "GRANT SELECT ON db2.invoice TO 'jeffrey'@'localhost'", "GRANT INSERT ON `d%`.* TO u", "GRANT ALL ON test.* TO ''@'localhost'", "GRANT SELECT (col1), INSERT (col1, col2) ON mydb.mytbl TO 'someuser'@'somehost'", "GRANT SELECT, INSERT, UPDATE ON *.* TO u2")
-	})
+	}, &grant_cmds)
 	for _, item_ := range Iter(grant_cmds) {
 		sql = item_
 		self.SubTest(func() {
@@ -1240,9 +1240,9 @@ func test_mysql_TestMySQL_test_grant(self *Case, a Args) Value {
 func test_mysql_TestMySQL_test_revoke(self *Case, a Args) Value {
 	var revoke_cmds, sql Value
 	_ = []Value{revoke_cmds, sql}
-	self.Do(2188, func() {
+	self.DoAssign(2188, func() {
 		revoke_cmds = NewList("REVOKE 'role1', 'role2' FROM 'user1'@'localhost', 'user2'@'localhost'", "REVOKE SELECT ON world.* FROM 'role3'", "REVOKE SELECT ON db2.invoice FROM 'jeffrey'@'localhost'", "REVOKE INSERT ON `d%`.* FROM u", "REVOKE ALL ON test.* FROM ''@'localhost'", "REVOKE SELECT (col1), INSERT (col1, col2) ON mydb.mytbl FROM 'someuser'@'somehost'", "REVOKE SELECT, INSERT, UPDATE ON *.* FROM u2")
-	})
+	}, &revoke_cmds)
 	for _, item_ := range Iter(revoke_cmds) {
 		sql = item_
 		self.SubTest(func() {
@@ -1256,8 +1256,8 @@ func test_mysql_TestMySQL_test_explain(self *Case, a Args) Value {
 	var expression, format Value
 	_ = []Value{expression, format}
 	self.L(2203).ValidateIdentity("EXPLAIN ANALYZE SELECT * FROM t", "DESCRIBE ANALYZE SELECT * FROM t")
-	self.Do(2207, func() { expression = self.ParseOne("EXPLAIN ANALYZE SELECT * FROM t") })
-	self.Do(2208, func() { M(self, "assertIsInstance", expression, A(G("sqlglot.expressions"), "Describe")) })
+	self.DoAssign(2207, func() { expression = self.ParseOne("EXPLAIN ANALYZE SELECT * FROM t") }, &expression)
+	self.Do(2208, func() { Stmt(M(self, "assertIsInstance", expression, A(G("sqlglot.expressions"), "Describe"))) })
 	self.Do(2209, func() { self.AssertEqual(M(expression, "text", "style"), "ANALYZE") })
 	for _, item_ := range Iter(NewTuple("JSON", "TRADITIONAL", "TREE")) {
 		format = item_
@@ -1291,35 +1291,41 @@ func test_mysql_TestMySQL_test_analyze(self *Case, a Args) Value {
 }
 
 func test_mysql_TestMySQL_test_utc_time(self *Case, a Args) Value {
-	self.Do(2257, func() { M(self.ValidateIdentity("UTC_TIME()"), "assert_is", A(G("sqlglot.expressions"), "UtcTime")) })
-	self.Do(2258, func() { M(self.ValidateIdentity("UTC_TIME(6)"), "assert_is", A(G("sqlglot.expressions"), "UtcTime")) })
+	self.Do(2257, func() {
+		Stmt(M(self.ValidateIdentity("UTC_TIME()"), "assert_is", A(G("sqlglot.expressions"), "UtcTime")))
+	})
+	self.Do(2258, func() {
+		Stmt(M(self.ValidateIdentity("UTC_TIME(6)"), "assert_is", A(G("sqlglot.expressions"), "UtcTime")))
+	})
 	self.Do(2259, func() {
-		M(self.ValidateIdentity("UTC_TIMESTAMP()"), "assert_is", A(G("sqlglot.expressions"), "UtcTimestamp"))
+		Stmt(M(self.ValidateIdentity("UTC_TIMESTAMP()"), "assert_is", A(G("sqlglot.expressions"), "UtcTimestamp")))
 	})
 	self.Do(2260, func() {
-		M(self.ValidateIdentity("UTC_TIMESTAMP(6)"), "assert_is", A(G("sqlglot.expressions"), "UtcTimestamp"))
+		Stmt(M(self.ValidateIdentity("UTC_TIMESTAMP(6)"), "assert_is", A(G("sqlglot.expressions"), "UtcTimestamp")))
 	})
 	return nil
 }
 
 func test_mysql_TestMySQL_test_mod(self *Case, a Args) Value {
-	self.Do(2263, func() { M(self.ValidateIdentity("x % y"), "assert_is", A(G("sqlglot.expressions"), "Mod")) })
-	self.Do(2264, func() { M(self.ValidateIdentity("x MOD y", "x % y"), "assert_is", A(G("sqlglot.expressions"), "Mod")) })
+	self.Do(2263, func() { Stmt(M(self.ValidateIdentity("x % y"), "assert_is", A(G("sqlglot.expressions"), "Mod"))) })
+	self.Do(2264, func() {
+		Stmt(M(self.ValidateIdentity("x MOD y", "x % y"), "assert_is", A(G("sqlglot.expressions"), "Mod")))
+	})
 	self.Do(2265, func() {
-		M(self.ValidateIdentity("MOD(x, y)", "x % y"), "assert_is", A(G("sqlglot.expressions"), "Mod"))
+		Stmt(M(self.ValidateIdentity("MOD(x, y)", "x % y"), "assert_is", A(G("sqlglot.expressions"), "Mod")))
 	})
 	return nil
 }
 
 func test_mysql_TestMySQL_test_numeric_trunc(self *Case, a Args) Value {
 	self.Do(2269, func() {
-		M(self.ValidateIdentity("TRUNCATE(3.14159, 2)"), "assert_is", A(G("sqlglot.expressions"), "Trunc"))
+		Stmt(M(self.ValidateIdentity("TRUNCATE(3.14159, 2)"), "assert_is", A(G("sqlglot.expressions"), "Trunc")))
 	})
 	self.Do(2270, func() {
-		M(self.ValidateIdentity("TRUNCATE(price, 0)"), "assert_is", A(G("sqlglot.expressions"), "Trunc"))
+		Stmt(M(self.ValidateIdentity("TRUNCATE(price, 0)"), "assert_is", A(G("sqlglot.expressions"), "Trunc")))
 	})
 	self.Do(2273, func() {
-		M(self.ValidateIdentity("TRUNC(3.14159, 2)", "TRUNCATE(3.14159, 2)"), "assert_is", A(G("sqlglot.expressions"), "Trunc"))
+		Stmt(M(self.ValidateIdentity("TRUNC(3.14159, 2)", "TRUNCATE(3.14159, 2)"), "assert_is", A(G("sqlglot.expressions"), "Trunc")))
 	})
 	self.L(2276).ValidateAll("TRUNCATE(3.14159, 2)", Kw("write", NewDict("mysql", "TRUNCATE(3.14159, 2)", "oracle", "TRUNC(3.14159, 2)", "postgres", "TRUNC(3.14159, 2)", "snowflake", "TRUNC(3.14159, 2)", "tsql", "ROUND(3.14159, 2, 1)")))
 	return nil
@@ -1371,13 +1377,13 @@ func test_mysql_TestMySQL_test_null_ordering_simulation_resolves_ordered_against
 func test_mysql_TestMySQL_test_invisible_column(self *Case, a Args) Value {
 	var expr Value
 	_ = []Value{expr}
-	self.Do(2455, func() { expr = self.ParseOne("CREATE TABLE t (c INT INVISIBLE)") })
+	self.DoAssign(2455, func() { expr = self.ParseOne("CREATE TABLE t (c INT INVISIBLE)") }, &expr)
 	self.Do(2456, func() {
-		M(self, "assertIsNotNone", M(expr, "find", A(G("sqlglot.expressions"), "InvisibleColumnConstraint")))
+		Stmt(M(self, "assertIsNotNone", M(expr, "find", A(G("sqlglot.expressions"), "InvisibleColumnConstraint"))))
 	})
-	self.Do(2458, func() { expr = self.ParseOne("ALTER TABLE t ADD COLUMN c INT INVISIBLE") })
+	self.DoAssign(2458, func() { expr = self.ParseOne("ALTER TABLE t ADD COLUMN c INT INVISIBLE") }, &expr)
 	self.Do(2459, func() {
-		M(self, "assertIsNotNone", M(expr, "find", A(G("sqlglot.expressions"), "InvisibleColumnConstraint")))
+		Stmt(M(self, "assertIsNotNone", M(expr, "find", A(G("sqlglot.expressions"), "InvisibleColumnConstraint"))))
 	})
 	return nil
 }
@@ -1385,20 +1391,20 @@ func test_mysql_TestMySQL_test_invisible_column(self *Case, a Args) Value {
 func test_mysql_TestMySQL_test_unique_key_index_options(self *Case, a Args) Value {
 	var unique, columns Value
 	_ = []Value{unique, columns}
-	self.Do(2462, func() {
+	self.DoAssign(2462, func() {
 		unique = Item(A(A(self.ParseOne("CREATE TABLE t (a INT, UNIQUE KEY u (a) INVISIBLE)"), "this"), "expressions"), 1)
-	})
+	}, &unique)
 	self.Do(2465, func() {
-		M(self, "assertIs", Item(A(Item(Item(A(unique, "args"), "options"), 0), "args"), "visible"), false)
+		Stmt(M(self, "assertIs", Item(A(Item(Item(A(unique, "args"), "options"), 0), "args"), "visible"), false))
 	})
-	self.Do(2467, func() {
+	self.DoAssign(2467, func() {
 		columns = A(A(self.ParseOne("CREATE TABLE t (a INT UNIQUE COMMENT 'c', b INT UNIQUE INVISIBLE)"), "this"), "expressions")
-	})
+	}, &columns)
 	self.Do(2470, func() {
-		M(self, "assertIsInstance", A(Item(A(Item(columns, 0), "constraints"), 1), "kind"), A(G("sqlglot.expressions"), "CommentColumnConstraint"))
+		Stmt(M(self, "assertIsInstance", A(Item(A(Item(columns, 0), "constraints"), 1), "kind"), A(G("sqlglot.expressions"), "CommentColumnConstraint")))
 	})
 	self.Do(2471, func() {
-		M(self, "assertIsInstance", A(Item(A(Item(columns, 1), "constraints"), 1), "kind"), A(G("sqlglot.expressions"), "InvisibleColumnConstraint"))
+		Stmt(M(self, "assertIsInstance", A(Item(A(Item(columns, 1), "constraints"), 1), "kind"), A(G("sqlglot.expressions"), "InvisibleColumnConstraint")))
 	})
 	return nil
 }
@@ -1406,9 +1412,9 @@ func test_mysql_TestMySQL_test_unique_key_index_options(self *Case, a Args) Valu
 func test_mysql_TestMySQL_test_alter_table_auto_increment(self *Case, a Args) Value {
 	var prop Value
 	_ = []Value{prop}
-	self.Do(2474, func() {
+	self.DoAssign(2474, func() {
 		prop = M(self.ParseOne("ALTER TABLE t AUTO_INCREMENT=3000000000"), "find", A(G("sqlglot.expressions"), "AutoIncrementProperty"))
-	})
+	}, &prop)
 	self.Do(2477, func() { self.AssertEqual(M(A(prop, "this"), "to_py"), 3000000000) })
 	return nil
 }

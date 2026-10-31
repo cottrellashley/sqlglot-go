@@ -92,20 +92,20 @@ func test_spark_TestSpark_test_ddl(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewTuple(NewTuple("ALTER TABLE t DROP COLUMN a", nil), NewTuple("ALTER TABLE t DROP COLUMN IF EXISTS a.b", nil), NewTuple("ALTER TABLE t DROP COLUMNS (a, b.c)", nil), NewTuple("ALTER TABLE t DROP COLUMNS (from)", nil), NewTuple("ALTER TABLE t DROP COLUMNS IF EXISTS (a, b.c)", nil), NewTuple("ALTER TABLE t DROP COLUMNS a, b", "ALTER TABLE t DROP COLUMNS (a, b)"))) {
 		Unpack(item_, &sql, &expected)
 		self.SubTest(func() {
-			self.Do(173, func() { ast = self.ValidateIdentity(sql, expected) })
-			self.Do(174, func() { M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "Alter")) })
+			self.DoAssign(173, func() { ast = self.ValidateIdentity(sql, expected) }, &ast)
+			self.Do(174, func() { Stmt(M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "Alter"))) })
 			self.Do(175, func() {
-				M(self, "assertIsInstance", Item(Item(A(ast, "args"), "actions"), 0), A(G("sqlglot.exp"), "Drop"))
+				Stmt(M(self, "assertIsInstance", Item(Item(A(ast, "args"), "actions"), 0), A(G("sqlglot.exp"), "Drop")))
 			})
 		}, sql)
 	}
 	for _, item_ := range Iter(NewTuple(NewTuple("ALTER TABLE t REPLACE COLUMNS (a INT COMMENT 'c', b STRING)", nil), NewTuple("ALTER TABLE t REPLACE COLUMNS (from INT)", nil), NewTuple("ALTER TABLE t REPLACE COLUMNS a INT, b STRING", "ALTER TABLE t REPLACE COLUMNS (a INT, b STRING)"))) {
 		Unpack(item_, &sql, &expected)
 		self.SubTest(func() {
-			self.Do(186, func() { ast = self.ValidateIdentity(sql, expected) })
-			self.Do(187, func() { M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "Alter")) })
+			self.DoAssign(186, func() { ast = self.ValidateIdentity(sql, expected) }, &ast)
+			self.Do(187, func() { Stmt(M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "Alter"))) })
 			self.Do(188, func() {
-				M(self, "assertIsInstance", Item(Item(A(ast, "args"), "actions"), 0), A(G("sqlglot.exp"), "ReplaceColumns"))
+				Stmt(M(self, "assertIsInstance", Item(Item(A(ast, "args"), "actions"), 0), A(G("sqlglot.exp"), "ReplaceColumns")))
 			})
 		}, sql)
 	}
@@ -113,7 +113,7 @@ func test_spark_TestSpark_test_ddl(self *Case, a Args) Value {
 		sql = item_
 		self.SubTest(func() {
 			self.Do(193, func() {
-				M(self, "assertIsInstance", self.ValidateIdentity(sql, Kw("check_command_warning", true)), A(G("sqlglot.exp"), "Command"))
+				Stmt(M(self, "assertIsInstance", self.ValidateIdentity(sql, Kw("check_command_warning", true)), A(G("sqlglot.exp"), "Command")))
 			})
 		}, sql)
 	}
@@ -166,7 +166,7 @@ func test_spark_TestSpark_test_spark(self *Case, a Args) Value {
 	})
 	self.L(351).ValidateAll("CONCAT_WS(' ', NULL, 'Smith')", Kw("write", NewDict("duckdb", "CONCAT_WS(' ', NULL, 'Smith')", "spark", "CONCAT_WS(' ', NULL, 'Smith')", "hive", "CONCAT_WS(' ', NULL, 'Smith')")))
 	self.Do(361, func() {
-		M(self.ValidateIdentity("TRUNC(date_col, 'MM')"), "assert_is", A(G("sqlglot.exp"), "DateTrunc"))
+		Stmt(M(self.ValidateIdentity("TRUNC(date_col, 'MM')"), "assert_is", A(G("sqlglot.exp"), "DateTrunc")))
 	})
 	self.L(364).ValidateAll("CAST(3.14159 AS BIGINT)", Kw("read", NewDict("postgres", "TRUNC(3.14159, 2)")))
 	self.L(369).ValidateIdentity("SELECT APPROX_TOP_K_ACCUMULATE(col, 10)")
@@ -338,15 +338,15 @@ func test_spark_TestSpark_test_bool_or(self *Case, a Args) Value {
 func test_spark_TestSpark_test_grouping_sets_as_group_by_element(self *Case, a Args) Value {
 	var suffix_sql, element_sql, sql, is_suffix, group, suffix_expression, dialect Value
 	_ = []Value{suffix_sql, element_sql, sql, is_suffix, group, suffix_expression, dialect}
-	self.Do(1278, func() { suffix_sql = "SELECT COUNT(1), d, h FROM t GROUP BY d, h GROUPING SETS ((d, h), (d))" })
-	self.Do(1279, func() { element_sql = "SELECT COUNT(1), d, h FROM t GROUP BY d, h, GROUPING SETS ((d, h), (d))" })
+	self.DoAssign(1278, func() { suffix_sql = "SELECT COUNT(1), d, h FROM t GROUP BY d, h GROUPING SETS ((d, h), (d))" }, &suffix_sql)
+	self.DoAssign(1279, func() { element_sql = "SELECT COUNT(1), d, h FROM t GROUP BY d, h, GROUPING SETS ((d, h), (d))" }, &element_sql)
 	for _, item_ := range Iter(NewTuple(NewTuple(suffix_sql, true), NewTuple(element_sql, false), NewTuple("SELECT a FROM t GROUP BY a, GROUPING SETS ((a)), GROUPING SETS ((a))", false), NewTuple("SELECT COUNT(1), d, h FROM t GROUP BY GROUPING SETS ((d, h), (d))", false))) {
 		Unpack(item_, &sql, &is_suffix)
 		self.SubTest(func() {
-			self.Do(1288, func() { group = Item(A(self.ValidateIdentity(sql), "args"), "group") })
-			self.Do(1289, func() { M(self, "assertIs", Bool(M(A(group, "args"), "get", "grouping_sets")), is_suffix) })
+			self.DoAssign(1288, func() { group = Item(A(self.ValidateIdentity(sql), "args"), "group") }, &group)
+			self.Do(1289, func() { Stmt(M(self, "assertIs", Bool(M(A(group, "args"), "get", "grouping_sets")), is_suffix)) })
 			self.Do(1290, func() {
-				M(self, "assertIs", Call(G("any"), func() Value {
+				Stmt(M(self, "assertIs", Call(G("any"), func() Value {
 					var e Value
 					_ = []Value{e}
 					var out []Value
@@ -355,7 +355,7 @@ func test_spark_TestSpark_test_grouping_sets_as_group_by_element(self *Case, a A
 						out = append(out, IsInstance(e, A(G("sqlglot.exp"), "GroupingSets")))
 					}
 					return &List{V: out}
-				}()), Not(is_suffix))
+				}()), Not(is_suffix)))
 			})
 		}, Kw("sql", sql))
 	}
@@ -366,10 +366,10 @@ func test_spark_TestSpark_test_grouping_sets_as_group_by_element(self *Case, a A
 	self.Do(1300, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			M(self, "parse_one", "SELECT a FROM t GROUP BY a GROUPING SETS ((a)), GROUPING SETS ((a))")
+			Stmt(M(self, "parse_one", "SELECT a FROM t GROUP BY a GROUPING SETS ((a)), GROUPING SETS ((a))"))
 		}, G("sqlglot.errors.ParseError"))
 	})
-	self.Do(1303, func() { suffix_expression = self.ParseOne(suffix_sql) })
+	self.DoAssign(1303, func() { suffix_expression = self.ParseOne(suffix_sql) }, &suffix_expression)
 	for _, item_ := range Iter(NewTuple("hive", "spark")) {
 		dialect = item_
 		self.SubTest(func() {
@@ -384,7 +384,7 @@ func test_spark_TestSpark_test_grouping_sets_as_group_by_element(self *Case, a A
 	self.Do(1315, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			M(suffix_expression, "sql", "trino", Kw("unsupported_level", A(G("sqlglot.errors.ErrorLevel"), "RAISE")))
+			Stmt(M(suffix_expression, "sql", "trino", Kw("unsupported_level", A(G("sqlglot.errors.ErrorLevel"), "RAISE"))))
 		}, G("sqlglot.errors.UnsupportedError"))
 	})
 	return nil
@@ -436,25 +436,25 @@ func test_spark_TestSpark_test_explode_projection_to_unnest(self *Case, a Args) 
 func test_spark_TestSpark_test_explode_map(self *Case, a Args) Value {
 	var expression, schema Value
 	_ = []Value{expression, schema}
-	self.Do(1458, func() {
+	self.DoAssign(1458, func() {
 		expression = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), self.ParseOne("SELECT EXPLODE(MAP(1, 'a')) AS (k, v)"))
-	})
+	}, &expression)
 	self.Do(1459, func() {
 		self.AssertEqual(M(expression, "sql", "presto"), "SELECT _u_2.k AS k, _u_2.v AS v FROM UNNEST(MAP(ARRAY[1], ARRAY['a'])) AS _u_2(k, v)")
 	})
-	self.Do(1464, func() { schema = NewDict("tbl", NewDict("cells", "MAP<INT, STRING>")) })
-	self.Do(1465, func() {
+	self.DoAssign(1464, func() { schema = NewDict("tbl", NewDict("cells", "MAP<INT, STRING>")) }, &schema)
+	self.DoAssign(1465, func() {
 		expression = Call(G("sqlglot.optimizer.qualify.qualify"), self.ParseOne("SELECT EXPLODE(cells) AS (cell_id, cell_name) FROM tbl"), Kw("dialect", "spark"), Kw("schema", schema))
-	})
-	self.Do(1470, func() {
+	}, &expression)
+	self.DoAssign(1470, func() {
 		expression = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expression, Kw("dialect", "spark"), Kw("schema", schema))
-	})
+	}, &expression)
 	self.Do(1471, func() {
 		self.AssertEqual(M(expression, "sql", "trino"), `SELECT _u_2."cell_id" AS "cell_id", _u_2."cell_name" AS "cell_name" FROM "tbl" AS "tbl" CROSS JOIN UNNEST("tbl"."cells") AS _u_2("cell_id", "cell_name")`)
 	})
-	self.Do(1476, func() {
+	self.DoAssign(1476, func() {
 		expression = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), self.ParseOne("SELECT EXPLODE(tbl.cells) FROM tbl"), Kw("dialect", "spark"), Kw("schema", schema))
-	})
+	}, &expression)
 	self.Do(1481, func() {
 		self.AssertEqual(M(expression, "sql", "trino"), "SELECT _u_2.key AS key, _u_2.value AS value FROM tbl CROSS JOIN UNNEST(tbl.cells) AS _u_2(key, value)")
 	})
@@ -464,13 +464,13 @@ func test_spark_TestSpark_test_explode_map(self *Case, a Args) Value {
 func test_spark_TestSpark_test_strip_modifiers(self *Case, a Args) Value {
 	var without_modifiers, with_modifiers, query, dialect, name Value
 	_ = []Value{without_modifiers, with_modifiers, query, dialect, name}
-	self.Do(1487, func() { without_modifiers = "SELECT * FROM t" })
-	self.Do(1488, func() { with_modifiers = F(FV{V: without_modifiers}, " CLUSTER BY y DISTRIBUTE BY x SORT BY z") })
-	self.Do(1489, func() { query = self.ParseOne(with_modifiers) })
+	self.DoAssign(1487, func() { without_modifiers = "SELECT * FROM t" }, &without_modifiers)
+	self.DoAssign(1488, func() { with_modifiers = F(FV{V: without_modifiers}, " CLUSTER BY y DISTRIBUTE BY x SORT BY z") }, &with_modifiers)
+	self.DoAssign(1489, func() { query = self.ParseOne(with_modifiers) }, &query)
 	for _, item_ := range Iter(G("sqlglot.dialects.dialect.Dialects")) {
 		dialect = item_
 		self.SubTest(func() {
-			self.Do(1493, func() { name = A(dialect, "value") })
+			self.DoAssign(1493, func() { name = A(dialect, "value") }, &name)
 			if Truth(In(name, NewTuple("", "databricks", "hive", "spark", "spark2"))) {
 				self.Do(1495, func() { self.AssertEqual(M(query, "sql", name), with_modifiers) })
 			} else {
@@ -506,7 +506,7 @@ func test_spark_TestSpark_test_string(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewTuple("hive", "spark2", "spark", "databricks")) {
 		dialect = item_
 		self.SubTest(func() {
-			self.Do(1523, func() { query = Call(G("sqlglot.parse_one"), "STRING(a)", Kw("dialect", dialect)) })
+			self.DoAssign(1523, func() { query = Call(G("sqlglot.parse_one"), "STRING(a)", Kw("dialect", dialect)) }, &query)
 			self.Do(1524, func() { self.AssertEqual(M(query, "sql", dialect), "CAST(a AS STRING)") })
 		}, F("Testing STRING() for ", FV{V: dialect}))
 	}
@@ -519,11 +519,11 @@ func test_spark_TestSpark_test_binary_string(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewTuple("spark2", "spark", "databricks")) {
 		dialect = item_
 		self.SubTest(func() {
-			self.Do(1529, func() { query = Call(G("sqlglot.parse_one"), "X'ab'", Kw("dialect", dialect)) })
+			self.DoAssign(1529, func() { query = Call(G("sqlglot.parse_one"), "X'ab'", Kw("dialect", dialect)) }, &query)
 			self.Do(1530, func() { self.AssertEqual(M(query, "sql", dialect), "X'ab'") })
 		}, F("Testing HEX strings for ", FV{V: dialect}))
 		self.SubTest(func() {
-			self.Do(1533, func() { query = Call(G("sqlglot.parse_one"), "X''", Kw("dialect", dialect)) })
+			self.DoAssign(1533, func() { query = Call(G("sqlglot.parse_one"), "X''", Kw("dialect", dialect)) }, &query)
 			self.Do(1534, func() { self.AssertEqual(M(query, "sql", dialect), "X''") })
 		}, F("Testing empty HEX strings for ", FV{V: dialect}))
 	}
@@ -548,14 +548,14 @@ func test_spark_TestSpark_test_transpile_annotated_exploded_column(self *Case, a
 	for _, item_ := range Iter(NewTuple("", "explode_view.")) {
 		db_prefix = item_
 		self.SubTest(func() {
-			self.Do(1554, func() {
+			self.DoAssign(1554, func() {
 				sql = F("\n                    WITH test_table AS (\n                      SELECT\n                        12345 AS id_column,\n                        ARRAY(\n                          STRUCT('John' AS name, 30 AS age),\n                          STRUCT('Mary' AS name, 20 AS age),\n                          STRUCT('Mike' AS name, 80 AS age),\n                          STRUCT('Dan' AS name, 50 AS age)\n                        ) AS struct_column\n                    )\n\n                    SELECT\n                        id_column,\n                        ", FV{V: db_prefix}, "new_column.name,\n                        ", FV{V: db_prefix}, "new_column.age\n                    FROM test_table\n                    LATERAL VIEW EXPLODE(struct_column) explode_view AS new_column\n                ")
-			})
-			self.Do(1574, func() { expr = self.ParseOne(sql) })
-			self.Do(1575, func() { qualified = Call(G("sqlglot.optimizer.qualify.qualify"), expr, Kw("dialect", "spark")) })
-			self.Do(1576, func() {
+			}, &sql)
+			self.DoAssign(1574, func() { expr = self.ParseOne(sql) }, &expr)
+			self.DoAssign(1575, func() { qualified = Call(G("sqlglot.optimizer.qualify.qualify"), expr, Kw("dialect", "spark")) }, &qualified)
+			self.DoAssign(1576, func() {
 				annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), qualified, Kw("dialect", "spark"))
-			})
+			}, &annotated)
 			self.Do(1578, func() {
 				self.AssertEqual(M(annotated, "sql", "spark"), "WITH `test_table` AS (SELECT 12345 AS `id_column`, ARRAY(STRUCT('John' AS `name`, 30 AS `age`), STRUCT('Mary' AS `name`, 20 AS `age`), STRUCT('Mike' AS `name`, 80 AS `age`), STRUCT('Dan' AS `name`, 50 AS `age`)) AS `struct_column`) SELECT `test_table`.`id_column` AS `id_column`, `explode_view`.`new_column`.`name` AS `name`, `explode_view`.`new_column`.`age` AS `age` FROM `test_table` AS `test_table` LATERAL VIEW EXPLODE(`test_table`.`struct_column`) explode_view AS `new_column`")
 			})
@@ -572,20 +572,20 @@ func test_spark_TestSpark_test_approx_percentile(self *Case, a Args) Value {
 	_ = []Value{approx_quantile_expr}
 	self.L(1588).ValidateAll("PERCENTILE_APPROX(DISTINCT col, 0.3)", Kw("read", NewDict("spark", "APPROX_PERCENTILE(DISTINCT col, 0.3)", "databricks", "APPROX_PERCENTILE(DISTINCT col, 0.3)")))
 	self.L(1595).ValidateAll("PERCENTILE_APPROX(DISTINCT col, 0.3, 200)", Kw("read", NewDict("spark", "APPROX_PERCENTILE(DISTINCT col, 0.3, 200)", "databricks", "APPROX_PERCENTILE(DISTINCT col, 0.3, 200)")))
-	self.Do(1603, func() { approx_quantile_expr = self.ValidateIdentity("PERCENTILE_APPROX(DISTINCT col, 0.3)") })
-	self.Do(1604, func() { M(approx_quantile_expr, "assert_is", A(G("sqlglot.exp"), "ApproxQuantile")) })
-	self.Do(1605, func() { M(A(approx_quantile_expr, "this"), "assert_is", A(G("sqlglot.exp"), "Distinct")) })
+	self.DoAssign(1603, func() { approx_quantile_expr = self.ValidateIdentity("PERCENTILE_APPROX(DISTINCT col, 0.3)") }, &approx_quantile_expr)
+	self.Do(1604, func() { Stmt(M(approx_quantile_expr, "assert_is", A(G("sqlglot.exp"), "ApproxQuantile"))) })
+	self.Do(1605, func() { Stmt(M(A(approx_quantile_expr, "this"), "assert_is", A(G("sqlglot.exp"), "Distinct"))) })
 	self.Do(1606, func() {
-		M(M(A(approx_quantile_expr, "args"), "get", "quantile"), "assert_is", A(G("sqlglot.exp"), "Literal"))
+		Stmt(M(M(A(approx_quantile_expr, "args"), "get", "quantile"), "assert_is", A(G("sqlglot.exp"), "Literal")))
 	})
-	self.Do(1608, func() { approx_quantile_expr = self.ValidateIdentity("PERCENTILE_APPROX(DISTINCT col, 0.3, 200)") })
-	self.Do(1609, func() { M(approx_quantile_expr, "assert_is", A(G("sqlglot.exp"), "ApproxQuantile")) })
-	self.Do(1610, func() { M(A(approx_quantile_expr, "this"), "assert_is", A(G("sqlglot.exp"), "Distinct")) })
+	self.DoAssign(1608, func() { approx_quantile_expr = self.ValidateIdentity("PERCENTILE_APPROX(DISTINCT col, 0.3, 200)") }, &approx_quantile_expr)
+	self.Do(1609, func() { Stmt(M(approx_quantile_expr, "assert_is", A(G("sqlglot.exp"), "ApproxQuantile"))) })
+	self.Do(1610, func() { Stmt(M(A(approx_quantile_expr, "this"), "assert_is", A(G("sqlglot.exp"), "Distinct"))) })
 	self.Do(1611, func() {
-		M(M(A(approx_quantile_expr, "args"), "get", "quantile"), "assert_is", A(G("sqlglot.exp"), "Literal"))
+		Stmt(M(M(A(approx_quantile_expr, "args"), "get", "quantile"), "assert_is", A(G("sqlglot.exp"), "Literal")))
 	})
 	self.Do(1612, func() {
-		M(M(A(approx_quantile_expr, "args"), "get", "accuracy"), "assert_is", A(G("sqlglot.exp"), "Literal"))
+		Stmt(M(M(A(approx_quantile_expr, "args"), "get", "accuracy"), "assert_is", A(G("sqlglot.exp"), "Literal")))
 	})
 	return nil
 }

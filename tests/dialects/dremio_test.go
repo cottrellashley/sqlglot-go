@@ -61,13 +61,13 @@ func test_dremio_TestDremio_test_type_mappings(self *Case, a Args) Value {
 	self.Do(23, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			Call(G("sqlglot.transpile"), "CAST(x AS TIMESTAMPTZ)", Kw("read", "oracle"), Kw("write", "dremio"), Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "IMMEDIATE")))
+			Stmt(Call(G("sqlglot.transpile"), "CAST(x AS TIMESTAMPTZ)", Kw("read", "oracle"), Kw("write", "dremio"), Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "IMMEDIATE"))))
 		}, G("sqlglot.UnsupportedError"))
 	})
 	self.Do(30, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			Call(G("sqlglot.transpile"), "CAST(x AS TIMESTAMPLTZ)", Kw("read", "oracle"), Kw("write", "dremio"), Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "IMMEDIATE")))
+			Stmt(Call(G("sqlglot.transpile"), "CAST(x AS TIMESTAMPLTZ)", Kw("read", "oracle"), Kw("write", "dremio"), Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "IMMEDIATE"))))
 		}, G("sqlglot.UnsupportedError"))
 	})
 	return nil
@@ -88,7 +88,7 @@ func test_dremio_TestDremio_test_typed_division(self *Case, a Args) Value {
 			sql = a.Get(0, "sql", nil)
 			dialect = a.Get(1, "dialect", nil)
 			tree = Call(G("sqlglot.parse_one"), sql, Kw("read", dialect))
-			Call(G("sqlglot.optimizer.annotate_types.annotate_types"), tree, Kw("dialect", dialect))
+			Stmt(Call(G("sqlglot.optimizer.annotate_types.annotate_types"), tree, Kw("dialect", dialect)))
 			return A(A(M(tree, "find", A(G("sqlglot.exp"), "Div")), "type"), "this")
 		})
 	})
@@ -105,7 +105,7 @@ func test_dremio_TestDremio_test_user_defined_types_unsupported(self *Case, a Ar
 	self.Do(57, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			M(self, "parse_one", "CAST(x AS MY_CUSTOM_TYPE)")
+			Stmt(M(self, "parse_one", "CAST(x AS MY_CUSTOM_TYPE)"))
 		}, G("sqlglot.ParseError"))
 	})
 	return nil
@@ -128,7 +128,7 @@ func test_dremio_TestDremio_test_time_travel(self *Case, a Args) Value {
 	self.Do(103, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			Call(G("sqlglot.transpile"), "SELECT * FROM t FOR VERSION BETWEEN '1' AND '2'", Kw("write", "dremio"), Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "IMMEDIATE")))
+			Stmt(Call(G("sqlglot.transpile"), "SELECT * FROM t FOR VERSION BETWEEN '1' AND '2'", Kw("write", "dremio"), Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "IMMEDIATE"))))
 		}, G("sqlglot.UnsupportedError"))
 	})
 	return nil
@@ -157,7 +157,7 @@ func test_dremio_TestDremio_test_multi_arg_distinct_unsupported(self *Case, a Ar
 func test_dremio_TestDremio_test_time_mapping(self *Case, a Args) Value {
 	var ts Value
 	_ = []Value{ts}
-	self.Do(132, func() { ts = "CAST('2025-06-24 12:34:56' AS TIMESTAMP)" })
+	self.DoAssign(132, func() { ts = "CAST('2025-06-24 12:34:56' AS TIMESTAMP)" }, &ts)
 	self.Do(134, func() {
 		self.ValidateAll(F("SELECT TO_CHAR(", FV{V: ts}, ", 'yyyy-mm-dd hh24:mi:ss')"), Kw("read", NewDict("dremio", F("SELECT TO_CHAR(", FV{V: ts}, ", 'yyyy-mm-dd hh24:mi:ss')"), "postgres", F("SELECT TO_CHAR(", FV{V: ts}, ", 'YYYY-MM-DD HH24:MI:SS')"), "oracle", F("SELECT TO_CHAR(", FV{V: ts}, ", 'YYYY-MM-DD HH24:MI:SS')"), "duckdb", F("SELECT STRFTIME(", FV{V: ts}, ", '%Y-%m-%d %H:%M:%S')"))), Kw("write", NewDict("dremio", F("SELECT TO_CHAR(", FV{V: ts}, ", 'yyyy-mm-dd hh24:mi:ss')"), "postgres", F("SELECT TO_CHAR(", FV{V: ts}, ", 'YYYY-MM-DD HH24:MI:SS')"), "oracle", F("SELECT TO_CHAR(", FV{V: ts}, ", 'YYYY-MM-DD HH24:MI:SS')"), "duckdb", F("SELECT STRFTIME(", FV{V: ts}, ", '%Y-%m-%d %H:%M:%S')"))))
 	})
@@ -170,33 +170,33 @@ func test_dremio_TestDremio_test_time_mapping(self *Case, a Args) Value {
 func test_dremio_TestDremio_test_to_char_special(self *Case, a Args) Value {
 	var to_char Value
 	_ = []Value{to_char}
-	self.Do(168, func() {
+	self.DoAssign(168, func() {
 		to_char = M(self.ValidateIdentity("TO_CHAR(5555, '#')"), "assert_is", A(G("sqlglot.exp"), "ToChar"))
-	})
+	}, &to_char)
 	self.Do(169, func() { Assert(Is(Item(A(to_char, "args"), "is_numeric"), true)) })
-	self.Do(171, func() {
+	self.DoAssign(171, func() {
 		to_char = M(self.ValidateIdentity("TO_CHAR(3.14, '#.#')"), "assert_is", A(G("sqlglot.exp"), "ToChar"))
-	})
+	}, &to_char)
 	self.Do(172, func() { Assert(Is(Item(A(to_char, "args"), "is_numeric"), true)) })
-	self.Do(174, func() {
+	self.DoAssign(174, func() {
 		to_char = M(self.ValidateIdentity("TO_CHAR(columnname, '#.##')"), "assert_is", A(G("sqlglot.exp"), "ToChar"))
-	})
+	}, &to_char)
 	self.Do(175, func() { Assert(Is(Item(A(to_char, "args"), "is_numeric"), true)) })
-	self.Do(178, func() {
+	self.DoAssign(178, func() {
 		to_char = M(self.ValidateIdentity("TO_CHAR(5555)"), "assert_is", A(G("sqlglot.exp"), "ToChar"))
-	})
+	}, &to_char)
 	self.Do(179, func() { Assert(Not(M(A(to_char, "args"), "get", "is_numeric"))) })
-	self.Do(181, func() {
+	self.DoAssign(181, func() {
 		to_char = M(self.ValidateIdentity("TO_CHAR(3.14, columnname)"), "assert_is", A(G("sqlglot.exp"), "ToChar"))
-	})
+	}, &to_char)
 	self.Do(182, func() { Assert(Not(M(A(to_char, "args"), "get", "is_numeric"))) })
-	self.Do(184, func() {
+	self.DoAssign(184, func() {
 		to_char = M(self.ValidateIdentity("TO_CHAR(123, 'abcd')"), "assert_is", A(G("sqlglot.exp"), "ToChar"))
-	})
+	}, &to_char)
 	self.Do(185, func() { Assert(Not(M(A(to_char, "args"), "get", "is_numeric"))) })
-	self.Do(187, func() {
+	self.DoAssign(187, func() {
 		to_char = M(self.ValidateIdentity("TO_CHAR(3.14, UPPER('abcd'))"), "assert_is", A(G("sqlglot.exp"), "ToChar"))
-	})
+	}, &to_char)
 	self.Do(188, func() { Assert(Not(M(A(to_char, "args"), "get", "is_numeric"))) })
 	return nil
 }
@@ -257,13 +257,13 @@ func test_dremio_TestDremio_test_datetype(self *Case, a Args) Value {
 func test_dremio_TestDremio_test_regexp_split(self *Case, a Args) Value {
 	var ast, regexp_split, reordered Value
 	_ = []Value{ast, regexp_split, reordered}
-	self.Do(254, func() { ast = self.ValidateIdentity("SELECT REGEXP_SPLIT(tags, ',', 'ALL', 1000) AS t") })
-	self.Do(255, func() { regexp_split = M(ast, "find", A(G("sqlglot.exp"), "RegexpSplit")) })
+	self.DoAssign(254, func() { ast = self.ValidateIdentity("SELECT REGEXP_SPLIT(tags, ',', 'ALL', 1000) AS t") }, &ast)
+	self.DoAssign(255, func() { regexp_split = M(ast, "find", A(G("sqlglot.exp"), "RegexpSplit")) }, &regexp_split)
 	self.Do(256, func() { self.AssertEqual(M(regexp_split, "text", "mode"), "ALL") })
 	self.Do(257, func() { self.AssertEqual(M(regexp_split, "text", "limit"), "1000") })
-	self.Do(263, func() {
+	self.DoAssign(263, func() {
 		reordered = M(G("sqlglot.exp"), "RegexpSplit", Kw("this", M(G("sqlglot.exp"), "column", "tags")), Kw("expression", M(A(G("sqlglot.exp"), "Literal"), "string", ",")), Kw("limit", M(A(G("sqlglot.exp"), "Literal"), "number", 1000)), Kw("mode", M(A(G("sqlglot.exp"), "Literal"), "string", "ALL")))
-	})
+	}, &reordered)
 	self.Do(269, func() {
 		self.AssertEqual(M(reordered, "sql", Kw("dialect", "dremio")), "REGEXP_SPLIT(tags, ',', 'ALL', 1000)")
 	})

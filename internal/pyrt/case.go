@@ -70,6 +70,9 @@ type Case struct {
 	label []string
 	// skipped counts the validate_all sub-cases skipped because a dialect is not ported.
 	skipped int
+	// statementSkipped records that a whole statement was skipped because it needed a dialect
+	// that is not ported; later checks of what it logged are skipped too.
+	statementSkipped bool
 }
 
 // RunClass runs the test methods of a converted class as subtests.
@@ -108,7 +111,11 @@ func (s *Case) report(r any) {
 		switch {
 		case x.Class == UnportedDialectError:
 			s.skipped++
+			s.statementSkipped = true
 			s.T.Logf("%s: skipped: dialect %q is not ported", s.where(), x.Msg)
+		case x.Class == AssertionError && x.LogCheck && s.statementSkipped:
+			s.skipped++
+			s.T.Logf("%s: skipped: checks the logs of a statement that needed a dialect that is not ported (%s)", s.where(), x.Msg)
 		case x.Class == NotPortedError:
 			s.T.Errorf("%s: not ported: %s", s.where(), x.Msg)
 		case x.Class == AssertionError:
@@ -152,6 +159,24 @@ func (s *Case) Do(line int, f func()) {
 	f()
 }
 
+// DoAssign is Do for an assignment statement: if the statement is skipped because it needs a
+// dialect that is not ported, its targets become skipped values, so the statements that use
+// them are skipped too.
+func (s *Case) DoAssign(line int, f func(), targets ...*Value) {
+	s.line = line
+	defer func() {
+		if r := recover(); r != nil {
+			if e, ok := r.(*PyErr); ok && e.Class == UnportedDialectError {
+				for _, t := range targets {
+					*t = &SkippedV{e.Msg}
+				}
+			}
+			s.report(r)
+		}
+	}()
+	f()
+}
+
 // guard runs f, reporting failures (used by the Case methods called directly).
 func (s *Case) guard(f func() Value) (res Value) {
 	defer func() {
@@ -185,6 +210,19 @@ func (s *Case) SubTest(f func(), args ...Value) {
 
 func fail(format string, args ...any) {
 	panic(&PyErr{Class: AssertionError, Msg: fmt.Sprintf(format, args...)})
+}
+
+// failLog is fail for assertions about logged messages.
+func failLog(format string, args ...any) {
+	panic(&PyErr{Class: AssertionError, Msg: fmt.Sprintf(format, args...), LogCheck: true})
+}
+
+// Stmt evaluates an expression statement: a discarded result that needed a dialect that is
+// not ported skips the statement.
+func Stmt(v Value) {
+	if sk, ok := v.(*SkippedV); ok {
+		skipNow(sk)
+	}
 }
 
 // Dialect is self.dialect.

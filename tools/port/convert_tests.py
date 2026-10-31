@@ -47,6 +47,12 @@ PYTHON_ONLY = {
         "python-only: patches Snowflake.parser_class with a Python subclass; see TestPatchDialectParser in dialect_extension_test.go",
     ("tests/dialects/test_dialect.py", "TestDialect.test_custom_dialect"):
         "python-only: subclasses Dialect and SnowflakeParser inline; see TestCustomDialect in dialect_extension_test.go",
+    ("tests/test_expressions.py", "TestExprs.test_eq_on_same_instance_short_circuits"):
+        "python-only: inspects the private hash cache of an expression",
+    ("tests/test_expressions.py", "TestExprs.test_convert"):
+        "python-only: converts namedtuples, plain objects and pytz datetimes; see TestConvertValue in exp/convert_test.go",
+    ("tests/test_expressions.py", "TestExprs.test_convert_python39"):
+        "python-only: converts zoneinfo datetimes; see TestConvertValue in exp/convert_test.go",
     ("tests/test_serde.py", "TestSerde.test_custom_expression"):
         "python-only: subclasses exp.Expression at module level; see TestSerdeRegisteredKind in exp/serde_test.go",
     ("tests/test_schema.py", "TestSchema.test_custom_schema"):
@@ -539,17 +545,29 @@ class Converter:
             self.stmts += 1
             return [f"self.L({node.lineno}).{self.expr(v, ctx)[len('self.'):]}"]
         code = self.expr(v, ctx)
-        if not isinstance(v, ast.Call) and not code.startswith("NotPorted"):
+        if code.startswith(("Call(", "M(")):
+            code = f"Stmt({code})"
+        elif not isinstance(v, ast.Call) and not code.startswith("NotPorted"):
             code = "_ = " + code
         return self.wrap(code, node, ctx, raw)
 
     def s_Assign(self, node, ctx, raw):
         value = self.expr(node.value, ctx)
         if len(node.targets) == 1:
-            return self.wrap(self.assign_target(node.targets[0], value, ctx), node, ctx, raw)
-        tmp = ctx.declare(ctx.fresh("multi"))
-        parts = [f"{tmp} = {value}"] + [self.assign_target(t, tmp, ctx) for t in node.targets]
-        return self.wrap("; ".join(parts), node, ctx, raw)
+            code = self.assign_target(node.targets[0], value, ctx)
+        else:
+            tmp = ctx.declare(ctx.fresh("multi"))
+            parts = [f"{tmp} = {value}"] + [self.assign_target(t, tmp, ctx) for t in node.targets]
+            code = "; ".join(parts)
+        names = []
+        for t in node.targets:
+            for n in ast.walk(t):
+                if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Store) and n.id in ctx.locals:
+                    names.append("&" + ctx.locals[n.id])
+        if not raw and ctx.kind == "method" and names:
+            self.stmts += 1
+            return [f"self.DoAssign({node.lineno}, func() {{ {code} }}, {', '.join(dict.fromkeys(names))})"]
+        return self.wrap(code, node, ctx, raw)
 
     def s_AnnAssign(self, node, ctx, raw):
         if node.value is None:
@@ -753,7 +771,8 @@ class Converter:
             binds.append(f"{go} = Tuple(a.Pos[min(len(a.Pos), {len(plist) - start}):])")
         if args.kwarg:
             go = ctx.declare(args.kwarg.arg)
-            binds.append(f"{go} = KwDict(a)")
+            named = [p.arg for p in plist[start:]] + [p.arg for p in args.kwonlyargs]
+            binds.append(f"{go} = KwDict(a{''.join(', ' + go_str(n) for n in named)})")
         return binds
 
     def function(self, node, outer):
@@ -775,7 +794,10 @@ class Converter:
         return "\n".join(lines)
 
     def method(self, node, cls_name):
-        ctx = FuncCtx(self, "method")
+        # Test methods report failures per statement; helper methods (validate, check_file, ...)
+        # let exceptions propagate to the calling statement, like Python.
+        is_test = node.name.startswith("test") or node.name in ("setUp", "setUpClass")
+        ctx = FuncCtx(self, "method" if is_test else "helper")
         for n in assigned_names(node.body):
             ctx.declare(n)
         binds = self.params(node.args, ctx)

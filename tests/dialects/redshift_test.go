@@ -51,9 +51,9 @@ func test_redshift_TestRedshift_test_sha2_type(self *Case, a Args) Value {
 		for _, item_ := range Iter(NewTuple("'abc'", "value")) {
 			value = item_
 			self.SubTest(func() {
-				self.Do(25, func() {
+				self.DoAssign(25, func() {
 					expression = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), self.ValidateIdentity(F("SELECT SHA2(", FV{V: value}, ", ", FV{V: bits}, ") AS hash FROM t")), Kw("dialect", self.Dialect()))
-				})
+				}, &expression)
 				self.Do(29, func() {
 					self.AssertEqual(A(Item(A(expression, "selects"), 0), "type"), M(A(G("sqlglot.exp"), "DataType"), "build", expected))
 				})
@@ -71,14 +71,14 @@ func test_redshift_TestRedshift_test_sha2_argument_types(self *Case, a Args) Val
 		for _, item_ := range Iter(NewTuple(NewTuple(nil, nil), NewTuple(A(A(G("sqlglot.exp"), "DType"), "UNKNOWN"), A(A(G("sqlglot.exp"), "DType"), "UNKNOWN")), NewTuple(A(A(G("sqlglot.exp"), "DType"), "VARCHAR"), A(A(G("sqlglot.exp"), "DType"), "INT")), NewTuple(nil, A(A(G("sqlglot.exp"), "DType"), "INT")), NewTuple(A(A(G("sqlglot.exp"), "DType"), "VARCHAR"), nil), NewTuple(A(A(G("sqlglot.exp"), "DType"), "UNKNOWN"), A(A(G("sqlglot.exp"), "DType"), "INT")), NewTuple(A(A(G("sqlglot.exp"), "DType"), "VARCHAR"), A(A(G("sqlglot.exp"), "DType"), "UNKNOWN")))) {
 			Unpack(item_, &value_type, &bits_type)
 			self.SubTest(func() {
-				self.Do(43, func() { expression = self.ParseOne(F("SHA2(value, ", FV{V: bits}, ")")) })
+				self.DoAssign(43, func() { expression = self.ParseOne(F("SHA2(value, ", FV{V: bits}, ")")) }, &expression)
 				self.Do(44, func() { SetA(A(expression, "this"), "type", value_type) })
 				self.Do(45, func() { SetA(Item(A(expression, "args"), "length"), "type", bits_type) })
-				self.Do(46, func() {
+				self.DoAssign(46, func() {
 					annotator = Call(G("sqlglot.optimizer.annotate_types.TypeAnnotator"), Call(G("sqlglot.schema.MappingSchema"), Kw("dialect", self.Dialect())))
-				})
+				}, &annotator)
 				self.Do(47, func() {
-					Call(Item(Item(A(annotator, "expression_metadata"), A(G("sqlglot.exp"), "SHA2")), "annotator"), annotator, expression)
+					Stmt(Call(Item(Item(A(annotator, "expression_metadata"), A(G("sqlglot.exp"), "SHA2")), "annotator"), annotator, expression))
 				})
 				self.Do(48, func() { self.AssertEqual(A(expression, "type"), M(A(G("sqlglot.exp"), "DataType"), "build", expected)) })
 			}, Kw("bits", bits), Kw("value_type", value_type), Kw("bits_type", bits_type))
@@ -93,9 +93,9 @@ func test_redshift_TestRedshift_test_sha2_cte_type(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewTuple("CAST('abc' AS VARCHAR(20))", "CAST(NULL AS VARCHAR(20))")) {
 		value = item_
 		self.SubTest(func() {
-			self.Do(53, func() {
+			self.DoAssign(53, func() {
 				expression = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), self.ValidateIdentity(F("WITH cte AS (SELECT ", FV{V: value}, " AS value, 256 AS bits) SELECT SHA2(value, 128) AS invalid_bits, SHA2(value, 256) AS valid_bits, SHA2(value, bits) AS variable_bits FROM cte")), Kw("dialect", self.Dialect()))
-			})
+			}, &expression)
 			self.Do(62, func() {
 				self.AssertEqual(func() Value {
 					var projection Value
@@ -198,7 +198,7 @@ func test_redshift_TestRedshift_test_identity(self *Case, a Args) Value {
 	self.L(445).ValidateIdentity(`SELECT tablename, "column" FROM pg_table_def WHERE "column" LIKE '%start\\_%' LIMIT 5`)
 	self.L(448).ValidateIdentity(`SELECT JSON_EXTRACT_PATH_TEXT('{"f2":{"f3":1},"f4":{"f5":99,"f6":"star"}', 'f4', 'f6', TRUE)`)
 	self.Do(451, func() {
-		M(A(self.ValidateIdentity(`DATE_PART(year, "somecol")`, `EXTRACT(YEAR FROM "somecol")`), "this"), "assert_is", A(G("sqlglot.exp"), "Var"))
+		Stmt(M(A(self.ValidateIdentity(`DATE_PART(year, "somecol")`, `EXTRACT(YEAR FROM "somecol")`), "this"), "assert_is", A(G("sqlglot.exp"), "Var")))
 	})
 	self.L(455).ValidateIdentity("SELECT CONCAT('abc', 'def')", "SELECT 'abc' || 'def'")
 	self.L(459).ValidateIdentity("SELECT TOP 1 x FROM y", "SELECT x FROM y LIMIT 1")
@@ -243,7 +243,7 @@ func test_redshift_TestRedshift_test_identity(self *Case, a Args) Value {
 func test_redshift_TestRedshift_test_values(self *Case, a Args) Value {
 	var values, values_query, union_query, values_sql Value
 	_ = []Value{values, values_query, union_query, values_sql}
-	self.Do(590, func() {
+	self.DoAssign(590, func() {
 		values = func() Value {
 			var v Value
 			_ = []Value{v}
@@ -254,8 +254,8 @@ func test_redshift_TestRedshift_test_values(self *Case, a Args) Value {
 			}
 			return &List{V: out}
 		}()
-	})
-	self.Do(591, func() {
+	}, &values)
+	self.DoAssign(591, func() {
 		values_query = F("SELECT * FROM (VALUES ", FV{V: M(", ", "join", func() Value {
 			var v Value
 			_ = []Value{v}
@@ -266,8 +266,8 @@ func test_redshift_TestRedshift_test_values(self *Case, a Args) Value {
 			}
 			return &List{V: out}
 		}())}, ")")
-	})
-	self.Do(592, func() {
+	}, &values_query)
+	self.DoAssign(592, func() {
 		union_query = F("SELECT * FROM (", FV{V: M(" UNION ALL ", "join", func() Value {
 			var v Value
 			_ = []Value{v}
@@ -278,13 +278,13 @@ func test_redshift_TestRedshift_test_values(self *Case, a Args) Value {
 			}
 			return &List{V: out}
 		}())}, ")")
-	})
+	}, &union_query)
 	self.Do(593, func() {
 		self.AssertEqual(Item(Call(G("sqlglot.transpile"), values_query, Kw("write", "redshift")), 0), union_query)
 	})
-	self.Do(595, func() {
+	self.DoAssign(595, func() {
 		values_sql = Item(Call(G("sqlglot.transpile"), "SELECT * FROM (VALUES (1), (2))", Kw("write", "redshift"), Kw("pretty", true)), 0)
-	})
+	}, &values_sql)
 	self.Do(596, func() {
 		self.AssertEqual(values_sql, "SELECT\n  *\nFROM (\n  SELECT\n    1\n  UNION ALL\n  SELECT\n    2\n)")
 	})
@@ -345,31 +345,31 @@ func test_redshift_TestRedshift_test_column_unnesting(self *Case, a Args) Value 
 	_ = []Value{ast, joins}
 	self.L(734).ValidateIdentity("SELECT c.*, o FROM bloo AS c, c.c_orders AS o")
 	self.L(735).ValidateIdentity("SELECT c.*, o, l FROM bloo AS c, c.c_orders AS o, o.o_lineitems AS l")
-	self.Do(739, func() {
+	self.DoAssign(739, func() {
 		ast = Call(G("sqlglot.parse_one"), "SELECT * FROM t.t JOIN t.c1 ON c1.c2 = t.c3", Kw("read", "redshift"))
-	})
-	self.Do(740, func() { M(A(Item(A(ast, "args"), "from_"), "this"), "assert_is", A(G("sqlglot.exp"), "Table")) })
+	}, &ast)
+	self.Do(740, func() { Stmt(M(A(Item(A(ast, "args"), "from_"), "this"), "assert_is", A(G("sqlglot.exp"), "Table"))) })
 	self.Do(741, func() {
-		M(A(Item(Item(A(ast, "args"), "joins"), 0), "this"), "assert_is", A(G("sqlglot.exp"), "Table"))
+		Stmt(M(A(Item(Item(A(ast, "args"), "joins"), 0), "this"), "assert_is", A(G("sqlglot.exp"), "Table")))
 	})
 	self.Do(742, func() { self.AssertEqual(M(ast, "sql", "redshift"), "SELECT * FROM t.t JOIN t.c1 ON c1.c2 = t.c3") })
-	self.Do(744, func() {
+	self.DoAssign(744, func() {
 		ast = Call(G("sqlglot.parse_one"), "SELECT * FROM t AS t CROSS JOIN t.c1", Kw("read", "redshift"))
-	})
-	self.Do(745, func() { M(A(Item(A(ast, "args"), "from_"), "this"), "assert_is", A(G("sqlglot.exp"), "Table")) })
+	}, &ast)
+	self.Do(745, func() { Stmt(M(A(Item(A(ast, "args"), "from_"), "this"), "assert_is", A(G("sqlglot.exp"), "Table"))) })
 	self.Do(746, func() {
-		M(A(Item(Item(A(ast, "args"), "joins"), 0), "this"), "assert_is", A(G("sqlglot.exp"), "Unnest"))
+		Stmt(M(A(Item(Item(A(ast, "args"), "joins"), 0), "this"), "assert_is", A(G("sqlglot.exp"), "Unnest")))
 	})
 	self.Do(747, func() { self.AssertEqual(M(ast, "sql", "redshift"), "SELECT * FROM t AS t CROSS JOIN t.c1") })
-	self.Do(749, func() {
+	self.DoAssign(749, func() {
 		ast = Call(G("sqlglot.parse_one"), "SELECT * FROM x AS a, a.b AS c, c.d.e AS f, f.g.h.i.j.k AS l", Kw("read", "redshift"))
-	})
-	self.Do(752, func() { joins = Item(A(ast, "args"), "joins") })
-	self.Do(753, func() { M(A(Item(A(ast, "args"), "from_"), "this"), "assert_is", A(G("sqlglot.exp"), "Table")) })
-	self.Do(754, func() { M(A(Item(joins, 0), "this"), "assert_is", A(G("sqlglot.exp"), "Unnest")) })
-	self.Do(755, func() { M(A(Item(joins, 1), "this"), "assert_is", A(G("sqlglot.exp"), "Unnest")) })
+	}, &ast)
+	self.DoAssign(752, func() { joins = Item(A(ast, "args"), "joins") }, &joins)
+	self.Do(753, func() { Stmt(M(A(Item(A(ast, "args"), "from_"), "this"), "assert_is", A(G("sqlglot.exp"), "Table"))) })
+	self.Do(754, func() { Stmt(M(A(Item(joins, 0), "this"), "assert_is", A(G("sqlglot.exp"), "Unnest"))) })
+	self.Do(755, func() { Stmt(M(A(Item(joins, 1), "this"), "assert_is", A(G("sqlglot.exp"), "Unnest"))) })
 	self.Do(756, func() {
-		M(Item(A(M(A(Item(joins, 2), "this"), "assert_is", A(G("sqlglot.exp"), "Unnest")), "expressions"), 0), "assert_is", A(G("sqlglot.exp"), "Dot"))
+		Stmt(M(Item(A(M(A(Item(joins, 2), "this"), "assert_is", A(G("sqlglot.exp"), "Unnest")), "expressions"), 0), "assert_is", A(G("sqlglot.exp"), "Dot")))
 	})
 	self.Do(757, func() {
 		self.AssertEqual(M(ast, "sql", "redshift"), "SELECT * FROM x AS a, a.b AS c, c.d.e AS f, f.g.h.i.j.k AS l")
@@ -390,9 +390,9 @@ func test_redshift_TestRedshift_test_time(self *Case, a Args) Value {
 func test_redshift_TestRedshift_test_grant(self *Case, a Args) Value {
 	var grant_cmds, sql Value
 	_ = []Value{grant_cmds, sql}
-	self.Do(774, func() {
+	self.DoAssign(774, func() {
 		grant_cmds = NewList("GRANT SELECT ON ALL TABLES IN SCHEMA qa_tickit TO fred", "GRANT USAGE ON DATASHARE salesshare TO NAMESPACE '13b8833d-17c6-4f16-8fe4-1a018f5ed00d'", "GRANT USAGE FOR SCHEMAS IN DATABASE Sales_db TO ROLE Sales", "GRANT EXECUTE FOR FUNCTIONS IN SCHEMA Sales_schema TO bob", "GRANT SELECT FOR TABLES IN DATABASE Sales_db TO alice WITH GRANT OPTION", "GRANT ALL FOR TABLES IN SCHEMA ShareSchema DATABASE ShareDb TO ROLE Sales", "GRANT ASSUMEROLE ON 'arn:aws:iam::123456789012:role/Redshift-Exfunc' TO reg_user1 FOR EXTERNAL FUNCTION", "GRANT ROLE sample_role1 TO ROLE sample_role2")
-	})
+	}, &grant_cmds)
 	for _, item_ := range Iter(grant_cmds) {
 		sql = item_
 		self.SubTest(func() {
@@ -415,9 +415,9 @@ func test_redshift_TestRedshift_test_grant(self *Case, a Args) Value {
 func test_redshift_TestRedshift_test_revoke(self *Case, a Args) Value {
 	var revoke_cmds, sql Value
 	_ = []Value{revoke_cmds, sql}
-	self.Do(807, func() {
+	self.DoAssign(807, func() {
 		revoke_cmds = NewList("REVOKE SELECT ON ALL TABLES IN SCHEMA qa_tickit FROM fred", "REVOKE USAGE ON DATASHARE salesshare FROM NAMESPACE '13b8833d-17c6-4f16-8fe4-1a018f5ed00d'", "REVOKE USAGE FOR SCHEMAS IN DATABASE Sales_db FROM ROLE Sales", "REVOKE EXECUTE FOR FUNCTIONS IN SCHEMA Sales_schema FROM bob", "REVOKE SELECT FOR TABLES IN DATABASE Sales_db FROM alice", "REVOKE ROLE sample_role1 FROM ROLE sample_role2")
-	})
+	}, &revoke_cmds)
 	for _, item_ := range Iter(revoke_cmds) {
 		sql = item_
 		self.SubTest(func() {
@@ -441,12 +441,12 @@ func test_redshift_TestRedshift_test_analyze(self *Case, a Args) Value {
 
 func test_redshift_TestRedshift_test_cast(self *Case, a Args) Value {
 	self.Do(832, func() {
-		M(A(self.ValidateIdentity(`1::"int"`, "CAST(1 AS INTEGER)"), "to"), "is_type", A(A(A(G("sqlglot.exp"), "DataType"), "Type"), "INT"))
+		Stmt(M(A(self.ValidateIdentity(`1::"int"`, "CAST(1 AS INTEGER)"), "to"), "is_type", A(A(A(G("sqlglot.exp"), "DataType"), "Type"), "INT")))
 	})
 	self.Do(834, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			Call(G("sqlglot.parse_one"), `1::"udt"`, Kw("read", "redshift"))
+			Stmt(Call(G("sqlglot.parse_one"), `1::"udt"`, Kw("read", "redshift")))
 		}, G("sqlglot.ParseError"))
 	})
 	self.L(838).ValidateIdentity(`CAST(65 AS "char")`)
@@ -466,9 +466,9 @@ func test_redshift_TestRedshift_test_fetch_to_limit(self *Case, a Args) Value {
 func test_redshift_TestRedshift_test_to_timestamp(self *Case, a Args) Value {
 	var expr Value
 	_ = []Value{expr}
-	self.Do(857, func() {
+	self.DoAssign(857, func() {
 		expr = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), Call(G("sqlglot.parse_one"), "SELECT TO_TIMESTAMP('2023-01-01', 'YYYY-MM-DD')", Kw("dialect", "redshift")), Kw("dialect", "redshift"))
-	})
+	}, &expr)
 	self.Do(861, func() {
 		self.AssertEqual(A(A(Item(A(expr, "expressions"), 0), "type"), "this"), A(A(A(G("sqlglot.exp"), "DataType"), "Type"), "TIMESTAMPTZ"))
 	})

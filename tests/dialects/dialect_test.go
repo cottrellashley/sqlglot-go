@@ -138,9 +138,9 @@ var test_dialect_TestDialect = &Class{
 func test_dialect_TestDialect_test_preserve_original_names(self *Case, a Args) Value {
 	var expression, dialect, sql Value
 	_ = []Value{expression, dialect, sql}
-	self.Do(123, func() {
+	self.DoAssign(123, func() {
 		expression = M(G("sqlglot.exp"), "select", Call(G("sqlglot.parse_one"), "abs(1)", Kw("read", "clickhouse")), Call(G("sqlglot.parse_one"), "abs(2)", Kw("read", "bigquery")), Call(G("sqlglot.parse_one"), "abs(3)", Kw("read", "drill")))
-	})
+	}, &expression)
 	for _, item_ := range Iter(NewTuple(NewTuple("clickhouse", "SELECT abs(1), ABS(2), ABS(3)"), NewTuple("bigquery", "SELECT ABS(1), abs(2), ABS(3)"), NewTuple("drill", "SELECT ABS(1), ABS(2), abs(3)"))) {
 		Unpack(item_, &dialect, &sql)
 		self.SubTest(func() {
@@ -153,14 +153,14 @@ func test_dialect_TestDialect_test_preserve_original_names(self *Case, a Args) V
 func test_dialect_TestDialect_test_enum(self *Case, a Args) Value {
 	var dialect_by_key, dialect Value
 	_ = []Value{dialect_by_key, dialect}
-	self.Do(137, func() { dialect_by_key = A(G("sqlglot.Dialect"), "classes") })
+	self.DoAssign(137, func() { dialect_by_key = A(G("sqlglot.Dialect"), "classes") }, &dialect_by_key)
 	for _, item_ := range Iter(G("sqlglot.Dialects")) {
 		dialect = item_
-		self.Do(139, func() { M(self, "assertIsNotNone", Item(G("sqlglot.Dialect"), dialect)) })
-		self.Do(140, func() { M(self, "assertIsNotNone", M(G("sqlglot.Dialect"), "get", dialect)) })
-		self.Do(141, func() { M(self, "assertIsNotNone", M(G("sqlglot.Dialect"), "get_or_raise", dialect)) })
-		self.Do(142, func() { M(self, "assertIsNotNone", Item(G("sqlglot.Dialect"), A(dialect, "value"))) })
-		self.Do(143, func() { M(self, "assertIn", dialect, dialect_by_key) })
+		self.Do(139, func() { Stmt(M(self, "assertIsNotNone", Item(G("sqlglot.Dialect"), dialect))) })
+		self.Do(140, func() { Stmt(M(self, "assertIsNotNone", M(G("sqlglot.Dialect"), "get", dialect))) })
+		self.Do(141, func() { Stmt(M(self, "assertIsNotNone", M(G("sqlglot.Dialect"), "get_or_raise", dialect))) })
+		self.Do(142, func() { Stmt(M(self, "assertIsNotNone", Item(G("sqlglot.Dialect"), A(dialect, "value")))) })
+		self.Do(143, func() { Stmt(M(self, "assertIn", dialect, dialect_by_key)) })
 	}
 	return nil
 }
@@ -178,43 +178,43 @@ func test_dialect_TestDialect_test_get_or_raise(self *Case, a Args) Value {
 func test_dialect_TestDialect_test_compare_dialects(self *Case, a Args) Value {
 	var bigquery_class, bigquery_object, bigquery_string, snowflake_class, snowflake_object, snowflake_string Value
 	_ = []Value{bigquery_class, bigquery_object, bigquery_string, snowflake_class, snowflake_object, snowflake_string}
-	self.Do(208, func() { bigquery_class = Item(G("sqlglot.Dialect"), "bigquery") })
-	self.Do(209, func() { bigquery_object = Call(G("sqlglot.dialects.BigQuery")) })
-	self.Do(210, func() { bigquery_string = "bigquery" })
-	self.Do(212, func() { snowflake_class = Item(G("sqlglot.Dialect"), "snowflake") })
-	self.Do(213, func() { snowflake_object = Call(G("sqlglot.dialects.Snowflake")) })
-	self.Do(214, func() { snowflake_string = "snowflake" })
+	self.DoAssign(208, func() { bigquery_class = Item(G("sqlglot.Dialect"), "bigquery") }, &bigquery_class)
+	self.DoAssign(209, func() { bigquery_object = Call(G("sqlglot.dialects.BigQuery")) }, &bigquery_object)
+	self.DoAssign(210, func() { bigquery_string = "bigquery" }, &bigquery_string)
+	self.DoAssign(212, func() { snowflake_class = Item(G("sqlglot.Dialect"), "snowflake") }, &snowflake_class)
+	self.DoAssign(213, func() { snowflake_object = Call(G("sqlglot.dialects.Snowflake")) }, &snowflake_object)
+	self.DoAssign(214, func() { snowflake_string = "snowflake" }, &snowflake_string)
 	self.Do(216, func() { self.AssertEqual(snowflake_class, snowflake_class) })
 	self.Do(217, func() { self.AssertEqual(snowflake_class, snowflake_object) })
 	self.Do(218, func() { self.AssertEqual(snowflake_class, snowflake_string) })
 	self.Do(219, func() { self.AssertEqual(snowflake_object, snowflake_object) })
 	self.Do(220, func() { self.AssertEqual(snowflake_object, snowflake_string) })
-	self.Do(222, func() { M(self, "assertNotEqual", snowflake_class, bigquery_class) })
-	self.Do(223, func() { M(self, "assertNotEqual", snowflake_class, bigquery_object) })
-	self.Do(224, func() { M(self, "assertNotEqual", snowflake_class, bigquery_string) })
-	self.Do(225, func() { M(self, "assertNotEqual", snowflake_object, bigquery_object) })
-	self.Do(226, func() { M(self, "assertNotEqual", snowflake_object, bigquery_string) })
-	self.Do(228, func() { M(self, "assertTrue", In(snowflake_class, NewSet("snowflake", "bigquery"))) })
-	self.Do(229, func() { M(self, "assertTrue", In(snowflake_object, NewSet("snowflake", "bigquery"))) })
-	self.Do(230, func() { M(self, "assertFalse", In(snowflake_class, NewSet("bigquery", "redshift"))) })
-	self.Do(231, func() { M(self, "assertFalse", In(snowflake_object, NewSet("bigquery", "redshift"))) })
+	self.Do(222, func() { Stmt(M(self, "assertNotEqual", snowflake_class, bigquery_class)) })
+	self.Do(223, func() { Stmt(M(self, "assertNotEqual", snowflake_class, bigquery_object)) })
+	self.Do(224, func() { Stmt(M(self, "assertNotEqual", snowflake_class, bigquery_string)) })
+	self.Do(225, func() { Stmt(M(self, "assertNotEqual", snowflake_object, bigquery_object)) })
+	self.Do(226, func() { Stmt(M(self, "assertNotEqual", snowflake_object, bigquery_string)) })
+	self.Do(228, func() { Stmt(M(self, "assertTrue", In(snowflake_class, NewSet("snowflake", "bigquery")))) })
+	self.Do(229, func() { Stmt(M(self, "assertTrue", In(snowflake_object, NewSet("snowflake", "bigquery")))) })
+	self.Do(230, func() { Stmt(M(self, "assertFalse", In(snowflake_class, NewSet("bigquery", "redshift")))) })
+	self.Do(231, func() { Stmt(M(self, "assertFalse", In(snowflake_object, NewSet("bigquery", "redshift")))) })
 	return nil
 }
 
 func test_dialect_TestDialect_test_compare_dialect_versions(self *Case, a Args) Value {
 	var ddb_v1, ddb_v1_2, ddb_v2, ddb_latest Value
 	_ = []Value{ddb_v1, ddb_v1_2, ddb_v2, ddb_latest}
-	self.Do(234, func() { ddb_v1 = M(G("sqlglot.Dialect"), "get_or_raise", "duckdb, version=1.0") })
-	self.Do(235, func() {
+	self.DoAssign(234, func() { ddb_v1 = M(G("sqlglot.Dialect"), "get_or_raise", "duckdb, version=1.0") }, &ddb_v1)
+	self.DoAssign(235, func() {
 		ddb_v1_2 = M(G("sqlglot.Dialect"), "get_or_raise", "duckdb, normalization_strategy=case_sensitive, version=1.0")
-	})
-	self.Do(238, func() { ddb_v2 = M(G("sqlglot.Dialect"), "get_or_raise", "duckdb, version=2.2.4") })
-	self.Do(239, func() { ddb_latest = M(G("sqlglot.Dialect"), "get_or_raise", "duckdb") })
-	self.Do(241, func() { M(self, "assertTrue", Gt(A(ddb_latest, "version"), A(ddb_v2, "version"))) })
-	self.Do(242, func() { M(self, "assertTrue", Lt(A(ddb_v1, "version"), A(ddb_v2, "version"))) })
-	self.Do(244, func() { M(self, "assertTrue", Eq(A(ddb_v1, "version"), A(ddb_v1_2, "version"))) })
+	}, &ddb_v1_2)
+	self.DoAssign(238, func() { ddb_v2 = M(G("sqlglot.Dialect"), "get_or_raise", "duckdb, version=2.2.4") }, &ddb_v2)
+	self.DoAssign(239, func() { ddb_latest = M(G("sqlglot.Dialect"), "get_or_raise", "duckdb") }, &ddb_latest)
+	self.Do(241, func() { Stmt(M(self, "assertTrue", Gt(A(ddb_latest, "version"), A(ddb_v2, "version")))) })
+	self.Do(242, func() { Stmt(M(self, "assertTrue", Lt(A(ddb_v1, "version"), A(ddb_v2, "version")))) })
+	self.Do(244, func() { Stmt(M(self, "assertTrue", Eq(A(ddb_v1, "version"), A(ddb_v1_2, "version")))) })
 	self.Do(245, func() {
-		M(self, "assertTrue", Eq(A(ddb_latest, "version"), A(M(G("sqlglot.Dialect"), "get_or_raise", "duckdb"), "version")))
+		Stmt(M(self, "assertTrue", Eq(A(ddb_latest, "version"), A(M(G("sqlglot.Dialect"), "get_or_raise", "duckdb"), "version"))))
 	})
 	return nil
 }
@@ -226,13 +226,13 @@ func test_dialect_TestDialect_test_decimal_literals(self *Case, a Args) Value {
 		dialect = item_
 		for _, item_ := range Iter(NewTuple(NewTuple("10.50", "DECIMAL(3, 1)", "DECIMAL(4, 2)"), NewTuple("0", "DECIMAL(1, 0)", "DECIMAL(1, 0)"), NewTuple("0.00", "DECIMAL(1, 0)", "DECIMAL(2, 2)"), NewTuple("0.01", "DECIMAL(2, 2)", "DECIMAL(2, 2)"), NewTuple("0001.50", "DECIMAL(2, 1)", "DECIMAL(3, 2)"), NewTuple("1E-18", "DECIMAL(18, 18)", "DECIMAL(18, 18)"), NewTuple("1.234567890123456789E2", "DECIMAL(19, 16)", "DECIMAL(19, 16)"), NewTuple("12345678901234567890.123456789012345678", "DECIMAL(38, 18)", "DECIMAL(38, 18)"), NewTuple("12345678901234567890.123456789012345670", "DECIMAL(37, 17)", "DECIMAL(38, 18)"))) {
 			Unpack(item_, &literal, &hive_type, &spark_type)
-			self.Do(260, func() {
+			self.DoAssign(260, func() {
 				data_type = IfV(Eq(dialect, "hive"), func() Value { return hive_type }, func() Value { return spark_type })
-			})
+			}, &data_type)
 			for _, item_ := range Iter(NewTuple("", "-", "+")) {
 				sign = item_
 				self.SubTest(func() {
-					self.Do(263, func() { prefix = IfV(Eq(sign, "-"), func() Value { return "-" }, func() Value { return "" }) })
+					self.DoAssign(263, func() { prefix = IfV(Eq(sign, "-"), func() Value { return "-" }, func() Value { return "" }) }, &prefix)
 					self.Do(264, func() {
 						self.AssertEqual(M(Call(G("sqlglot.parse_one"), F(FV{V: sign}, FV{V: literal}, "bd"), Kw("read", dialect)), "sql", dialect), F(FV{V: prefix}, "CAST('", FV{V: literal}, "' AS ", FV{V: data_type}, ")"))
 					})
@@ -249,9 +249,9 @@ func test_dialect_TestDialect_test_decimal_literals(self *Case, a Args) Value {
 				}, Kw("dialect", dialect), Kw("literal", literal))
 			}
 		}
-		self.Do(277, func() {
+		self.DoAssign(277, func() {
 			data_type = IfV(Eq(dialect, "hive"), func() Value { return "DECIMAL(3, 1)" }, func() Value { return "DECIMAL(4, 2)" })
-		})
+		}, &data_type)
 		for _, item_ := range Iter(NewTuple(NewTuple("CAST(10.50 AS DECIMAL)", "CAST(10.50 AS DECIMAL)"), NewTuple("10.50::DECIMAL", "CAST(10.50 AS DECIMAL)"), NewTuple("CAST(10.50BD AS DECIMAL)", F("CAST(CAST('10.50' AS ", FV{V: data_type}, ") AS DECIMAL)")))) {
 			Unpack(item_, &sql, &expected)
 			self.SubTest(func() {
@@ -270,7 +270,7 @@ func test_dialect_TestDialect_test_spark2_negative_scale_decimal_literals(self *
 	for _, item_ := range Iter(NewTuple(NewTuple("1E3", 1, -3), NewTuple("0E3", 1, -3), NewTuple("1.20E3", 3, -1), NewTuple("1E38", 1, -38))) {
 		Unpack(item_, &literal, &precision, &scale)
 		self.SubTest(func() {
-			self.Do(294, func() { expression = Call(G("sqlglot.parse_one"), F(FV{V: literal}, "BD"), Kw("read", "spark2")) })
+			self.DoAssign(294, func() { expression = Call(G("sqlglot.parse_one"), F(FV{V: literal}, "BD"), Kw("read", "spark2")) }, &expression)
 			self.Do(295, func() { self.AssertEqual(M(expression, "sql", "spark2"), F(FV{V: literal}, "BD")) })
 			self.Do(296, func() {
 				self.AssertEqual(func() Value {
@@ -315,10 +315,10 @@ func test_dialect_TestDialect_test_cast(self *Case, a Args) Value {
 	self.L(566).ValidateAll("CAST(a AS DECIMAL)", Kw("read", NewDict("oracle", "CAST(a AS NUMBER)")), Kw("write", NewDict("oracle", "CAST(a AS NUMBER)")))
 	self.L(571).ValidateAll("CAST('127.0.0.1/32' AS INET)", Kw("read", NewDict("postgres", "INET '127.0.0.1/32'")))
 	self.Do(575, func() {
-		M(self, "assertIsNotNone", M(self.ValidateIdentity("CREATE TABLE foo (bar INT AS (foo))"), "find", A(G("sqlglot.exp"), "ComputedColumnConstraint")))
+		Stmt(M(self, "assertIsNotNone", M(self.ValidateIdentity("CREATE TABLE foo (bar INT AS (foo))"), "find", A(G("sqlglot.exp"), "ComputedColumnConstraint"))))
 	})
 	self.Do(580, func() {
-		M(self, "assertIsNotNone", M(self.ValidateIdentity("CREATE TABLE foo (t1 INT, t2 INT, bar INT AS (t1 * t2 * 2))"), "find", A(G("sqlglot.exp"), "ComputedColumnConstraint")))
+		Stmt(M(self, "assertIsNotNone", M(self.ValidateIdentity("CREATE TABLE foo (t1 INT, t2 INT, bar INT AS (t1 * t2 * 2))"), "find", A(G("sqlglot.exp"), "ComputedColumnConstraint"))))
 	})
 	return nil
 }
@@ -336,13 +336,13 @@ func test_dialect_TestDialect_test_heredoc_strings(self *Case, a Args) Value {
 		self.Do(614, func() {
 			self.AssertRaises(func(cm_ Value) {
 				_ = cm_
-				Call(G("sqlglot.parse_one"), "SELECT $tag1$invalid heredoc string$tag2$", Kw("dialect", dialect))
+				Stmt(Call(G("sqlglot.parse_one"), "SELECT $tag1$invalid heredoc string$tag2$", Kw("dialect", dialect)))
 			}, G("sqlglot.TokenError"))
 		})
 		self.Do(618, func() {
 			self.AssertRaises(func(cm_ Value) {
 				_ = cm_
-				Call(G("sqlglot.parse_one"), "SELECT $tag1$invalid heredoc string", Kw("dialect", dialect))
+				Stmt(Call(G("sqlglot.parse_one"), "SELECT $tag1$invalid heredoc string", Kw("dialect", dialect)))
 			}, G("sqlglot.TokenError"))
 		})
 		self.Do(622, func() {
@@ -500,23 +500,19 @@ func test_dialect_TestDialect__validate_array_sort(self *Case, a Args) Value {
 	read = a.Get(0, "read", nil)
 	sql = a.Get(1, "sql", nil)
 	write = a.Get(2, "write", nil)
-	self.Do(1443, func() { expression = Call(G("sqlglot.parse_one"), sql, Kw("read", read)) })
+	expression = Call(G("sqlglot.parse_one"), sql, Kw("read", read))
 	for _, item_ := range Iter(M(write, "items")) {
 		Unpack(item_, &dialect, &expected)
 		self.SubTest(func() {
 			if Truth(IsInstance(expected, G("tuple"))) {
-				self.Do(1447, func() { Unpack(expected, &expected, &warning) })
-				self.Do(1448, func() {
-					self.AssertLogs(func(cm_ Value) {
-						cm = cm_
-						M(self, "assertEqual", M(expression, "sql", dialect), expected)
-					}, G("sqlglot.generator.logger"), Kw("level", "WARNING"))
-				})
-				self.Do(1450, func() { M(self, "assertIn", warning, Item(A(cm, "output"), 0)) })
+				Unpack(expected, &expected, &warning)
+				self.AssertLogs(func(cm_ Value) {
+					cm = cm_
+					Stmt(M(self, "assertEqual", M(expression, "sql", dialect), expected))
+				}, G("sqlglot.generator.logger"), Kw("level", "WARNING"))
+				Stmt(M(self, "assertIn", warning, Item(A(cm, "output"), 0)))
 			} else {
-				self.Do(1452, func() {
-					self.AssertEqual(M(expression, "sql", dialect, Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE"))), expected)
-				})
+				Stmt(M(self, "assertEqual", M(expression, "sql", dialect, Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE"))), expected))
 			}
 		}, F(FV{V: read}, ": ", FV{V: sql}, " -> ", FV{V: dialect}))
 	}
@@ -534,58 +530,58 @@ func test_dialect_TestDialect_test_array(self *Case, a Args) Value {
 	self.L(1522).ValidateIdentity("SELECT ARRAY_INTERSECT(x, y, z)")
 	self.L(1524).ValidateAll("ARRAY_REVERSE(x)", Kw("read", NewDict("clickhouse", "arrayReverse(x)", "bigquery", "ARRAY_REVERSE(x)", "snowflake", "ARRAY_REVERSE(x)", "duckdb", "ARRAY_REVERSE(x)")), Kw("write", NewDict("clickhouse", "arrayReverse(x)", "bigquery", "ARRAY_REVERSE(x)", "snowflake", "ARRAY_REVERSE(x)", "duckdb", "ARRAY_REVERSE(x)")))
 	self.L(1540).ValidateAll("ARRAY_SLICE(x, 1, 3)", Kw("read", NewDict("clickhouse", "arraySlice(x, 1, 3)", "bigquery", "ARRAY_SLICE(x, 1, 3)", "snowflake", "ARRAY_SLICE(x, 1, 3)", "duckdb", "ARRAY_SLICE(x, 1, 3)", "spark2", "SLICE(x, 1, 3)", "spark", "SLICE(x, 1, 3)", "databricks", "SLICE(x, 1, 3)", "presto", "SLICE(x, 1, 3)", "trino", "SLICE(x, 1, 3)")), Kw("write", NewDict("clickhouse", "arraySlice(x, 1, 3)", "bigquery", "ARRAY_SLICE(x, 1, 3)", "snowflake", "ARRAY_SLICE(x, 1, 3)", "duckdb", "ARRAY_SLICE(x, 1, 3)", "spark2", "SLICE(x, 1, 3)", "spark", "SLICE(x, 1, 3)", "databricks", "SLICE(x, 1, 3)", "presto", "SLICE(x, 1, 3)", "trino", "SLICE(x, 1, 3)")))
-	self.Do(1567, func() { hive = NewTuple("SORT_ARRAY(x)", "Hive's SORT_ARRAY only sorts ascending with NULLs first") })
-	self.Do(1568, func() { trino_order = "ARRAY_SORT can't sort ascending with NULLs first or descending with NULLs last" })
-	self.Do(1571, func() { risingwave = NewTuple("ARRAY_SORT(x)", "ARRAY_SORT only sorts ascending with NULLs last") })
-	self.Do(1572, func() {
+	self.DoAssign(1567, func() { hive = NewTuple("SORT_ARRAY(x)", "Hive's SORT_ARRAY only sorts ascending with NULLs first") }, &hive)
+	self.DoAssign(1568, func() { trino_order = "ARRAY_SORT can't sort ascending with NULLs first or descending with NULLs last" }, &trino_order)
+	self.DoAssign(1571, func() { risingwave = NewTuple("ARRAY_SORT(x)", "ARRAY_SORT only sorts ascending with NULLs last") }, &risingwave)
+	self.DoAssign(1572, func() {
 		asc_nulls_last = NewDict("duckdb", "LIST_SORT(x)", "hive", hive, "risingwave", "ARRAY_SORT(x)", "snowflake", "ARRAY_SORT(x)", "spark", "ARRAY_SORT(x)", "trino", "ARRAY_SORT(x)")
-	})
-	self.Do(1580, func() {
+	}, &asc_nulls_last)
+	self.DoAssign(1580, func() {
 		asc_nulls_first = NewDict("duckdb", "LIST_SORT(x, 'ASC', 'NULLS FIRST')", "hive", "SORT_ARRAY(x)", "risingwave", risingwave, "snowflake", "ARRAY_SORT(x, TRUE, TRUE)", "spark", "SORT_ARRAY(x)", "trino", NewTuple("ARRAY_SORT(x)", trino_order))
-	})
-	self.Do(1588, func() {
+	}, &asc_nulls_first)
+	self.DoAssign(1588, func() {
 		desc_nulls_last = NewDict("duckdb", "ARRAY_REVERSE_SORT(x)", "hive", hive, "risingwave", risingwave, "snowflake", "ARRAY_SORT(x, FALSE, FALSE)", "spark", "SORT_ARRAY(x, FALSE)", "trino", NewTuple("REVERSE(ARRAY_SORT(x))", trino_order))
-	})
-	self.Do(1596, func() {
+	}, &desc_nulls_last)
+	self.DoAssign(1596, func() {
 		desc_nulls_first = NewDict("duckdb", "LIST_SORT(x, 'DESC', 'NULLS FIRST')", "hive", hive, "risingwave", risingwave, "snowflake", "ARRAY_SORT(x, FALSE)", "spark", "REVERSE(ARRAY_SORT(x))", "trino", "REVERSE(ARRAY_SORT(x))")
-	})
+	}, &desc_nulls_first)
 	for _, item_ := range Iter(NewTuple(NewTuple("trino", "ARRAY_SORT(x)", asc_nulls_last), NewTuple("spark", "ARRAY_SORT(x)", asc_nulls_last), NewTuple("snowflake", "ARRAY_SORT(x)", asc_nulls_last), NewTuple("duckdb", "LIST_SORT(x)", asc_nulls_last), NewTuple("spark", "SORT_ARRAY(x)", asc_nulls_first), NewTuple("hive", "SORT_ARRAY(x)", asc_nulls_first), NewTuple("duckdb", "LIST_SORT(x, 'ASC', 'NULLS FIRST')", asc_nulls_first), NewTuple("spark", "SORT_ARRAY(x, FALSE)", desc_nulls_last), NewTuple("duckdb", "LIST_SORT(x, 'DESC')", desc_nulls_last), NewTuple("duckdb", "ARRAY_REVERSE_SORT(x)", desc_nulls_last), NewTuple("snowflake", "ARRAY_SORT(x, FALSE)", desc_nulls_first), NewTuple("duckdb", "LIST_SORT(x, 'DESC', 'NULLS FIRST')", desc_nulls_first))) {
 		Unpack(item_, &read, &sql, &write)
-		self.Do(1618, func() { M(self, "_validate_array_sort", read, sql, write) })
+		self.Do(1618, func() { Stmt(M(self, "_validate_array_sort", read, sql, write)) })
 	}
-	self.Do(1621, func() {
+	self.DoAssign(1621, func() {
 		unsupported = NewDict("duckdb", NewTuple("LIST_SORT(x)", "LIST_SORT only takes literal orders"), "hive", hive, "risingwave", risingwave, "trino", NewTuple("ARRAY_SORT(x)", trino_order))
-	})
-	self.Do(1627, func() { spark_nulls = "SORT_ARRAY puts NULLs first exactly when ascending" })
+	}, &unsupported)
+	self.DoAssign(1627, func() { spark_nulls = "SORT_ARRAY puts NULLs first exactly when ascending" }, &spark_nulls)
 	self.Do(1628, func() {
-		M(self, "_validate_array_sort", "spark", "SORT_ARRAY(x, y)", NewDict(StarStar(unsupported), "snowflake", "ARRAY_SORT(x, y, y)", "spark", "SORT_ARRAY(x, y)"))
+		Stmt(M(self, "_validate_array_sort", "spark", "SORT_ARRAY(x, y)", NewDict(StarStar(unsupported), "snowflake", "ARRAY_SORT(x, y, y)", "spark", "SORT_ARRAY(x, y)")))
 	})
 	self.Do(1633, func() {
-		M(self, "_validate_array_sort", "snowflake", "ARRAY_SORT(x, y)", NewDict(StarStar(unsupported), "snowflake", "ARRAY_SORT(x, y)", "spark", NewTuple("SORT_ARRAY(x, y)", spark_nulls)))
+		Stmt(M(self, "_validate_array_sort", "snowflake", "ARRAY_SORT(x, y)", NewDict(StarStar(unsupported), "snowflake", "ARRAY_SORT(x, y)", "spark", NewTuple("SORT_ARRAY(x, y)", spark_nulls))))
 	})
 	self.Do(1642, func() {
-		M(self, "_validate_array_sort", "snowflake", "ARRAY_SORT(x, TRUE, y)", NewDict(StarStar(unsupported), "snowflake", "ARRAY_SORT(x, TRUE, y)", "spark", NewTuple("SORT_ARRAY(x, TRUE)", spark_nulls)))
+		Stmt(M(self, "_validate_array_sort", "snowflake", "ARRAY_SORT(x, TRUE, y)", NewDict(StarStar(unsupported), "snowflake", "ARRAY_SORT(x, TRUE, y)", "spark", NewTuple("SORT_ARRAY(x, TRUE)", spark_nulls))))
 	})
 	self.Do(1651, func() {
-		M(self, "_validate_array_sort", "snowflake", "ARRAY_SORT(x, y, FALSE)", NewDict(StarStar(unsupported), "snowflake", "ARRAY_SORT(x, y, FALSE)", "spark", NewTuple("SORT_ARRAY(x, y)", spark_nulls)))
+		Stmt(M(self, "_validate_array_sort", "snowflake", "ARRAY_SORT(x, y, FALSE)", NewDict(StarStar(unsupported), "snowflake", "ARRAY_SORT(x, y, FALSE)", "spark", NewTuple("SORT_ARRAY(x, y)", spark_nulls))))
 	})
 	self.Do(1660, func() {
-		M(self, "_validate_array_sort", "trino", "ARRAY_SORT(x, (a, b) -> a - b)", NewDict("duckdb", NewTuple("LIST_SORT(x)", "DuckDB's LIST_SORT does not support a comparator."), "hive", NewTuple("SORT_ARRAY(x)", "Hive's SORT_ARRAY does not support a comparator."), "snowflake", NewTuple("ARRAY_SORT(x)", "Snowflake's ARRAY_SORT does not support a comparator."), "spark", "ARRAY_SORT(x, (a, b) -> a - b)", "trino", "ARRAY_SORT(x, (a, b) -> a - b)"))
+		Stmt(M(self, "_validate_array_sort", "trino", "ARRAY_SORT(x, (a, b) -> a - b)", NewDict("duckdb", NewTuple("LIST_SORT(x)", "DuckDB's LIST_SORT does not support a comparator."), "hive", NewTuple("SORT_ARRAY(x)", "Hive's SORT_ARRAY does not support a comparator."), "snowflake", NewTuple("ARRAY_SORT(x)", "Snowflake's ARRAY_SORT does not support a comparator."), "spark", "ARRAY_SORT(x, (a, b) -> a - b)", "trino", "ARRAY_SORT(x, (a, b) -> a - b)")))
 	})
-	self.Do(1676, func() { distinct_nulls = "ARRAY_AGG(DISTINCT) only puts NULLs first when ascending" })
-	self.Do(1677, func() {
+	self.DoAssign(1676, func() { distinct_nulls = "ARRAY_AGG(DISTINCT) only puts NULLs first when ascending" }, &distinct_nulls)
+	self.DoAssign(1677, func() {
 		unfoldable = "is only supported on an ARRAY_AGG without ORDER BY or LIMIT and with a literal order"
-	})
+	}, &unfoldable)
 	for _, item_ := range Iter(NewTuple(NewTuple("trino", "ARRAY_SORT(ARRAY_AGG(x))", "ARRAY_AGG(x ORDER BY x IS NULL, x)"), NewTuple("duckdb", "LIST_SORT(LIST(x), 'ASC', 'NULLS FIRST')", "ARRAY_AGG(x ORDER BY x)"), NewTuple("duckdb", "ARRAY_REVERSE_SORT(LIST(x))", "ARRAY_AGG(x ORDER BY x DESC)"), NewTuple("duckdb", "LIST_SORT(LIST(x), 'DESC', 'NULLS FIRST')", "ARRAY_AGG(x ORDER BY x IS NULL DESC, x DESC)"), NewTuple("duckdb", "LIST_SORT(LIST(DISTINCT x), 'ASC', 'NULLS FIRST')", "ARRAY_AGG(DISTINCT x ORDER BY x)"), NewTuple("trino", "ARRAY_DISTINCT(ARRAY_AGG(x))", "ARRAY_AGG(DISTINCT x)"), NewTuple("trino", "ARRAY_SORT(ARRAY_AGG(DISTINCT x))", NewTuple("ARRAY_AGG(DISTINCT x ORDER BY x)", distinct_nulls)), NewTuple("trino", "ARRAY_SORT(ARRAY_DISTINCT(ARRAY_AGG(x)))", NewTuple("ARRAY_AGG(DISTINCT x ORDER BY x)", distinct_nulls)), NewTuple("duckdb", "LIST_SORT(LIST(DISTINCT x), 'DESC', 'NULLS FIRST')", NewTuple("ARRAY_AGG(DISTINCT x ORDER BY x DESC)", distinct_nulls)), NewTuple("spark", "SORT_ARRAY(COLLECT_LIST(x), y)", NewTuple("ARRAY_SORT(ARRAY_AGG(x) FILTER(WHERE x IS NOT NULL))", F("ARRAY_SORT ", FV{V: unfoldable}))), NewTuple("trino", "ARRAY_SORT(ARRAY_AGG(x ORDER BY y))", NewTuple("ARRAY_SORT(ARRAY_AGG(x ORDER BY y))", F("ARRAY_SORT ", FV{V: unfoldable}))), NewTuple("", "ARRAY_SORT(ARRAY_AGG(x LIMIT 2))", NewTuple("ARRAY_SORT(ARRAY_AGG(x LIMIT 2))", F("ARRAY_SORT ", FV{V: unfoldable}))), NewTuple("trino", "ARRAY_SORT(ARRAY_AGG(x), (a, b) -> 0)", NewTuple("ARRAY_SORT(ARRAY_AGG(x), (a, b) -> 0)", F("ARRAY_SORT ", FV{V: unfoldable}))), NewTuple("trino", "ARRAY_SORT(x)", NewTuple("ARRAY_SORT(x)", F("ARRAY_SORT ", FV{V: unfoldable}))), NewTuple("trino", "ARRAY_DISTINCT(x)", NewTuple("ARRAY_DISTINCT(x)", F("ARRAY_DISTINCT ", FV{V: unfoldable}))))) {
 		Unpack(item_, &read, &sql, &expected)
-		self.Do(1736, func() { M(self, "_validate_array_sort", read, sql, NewDict("bigquery", expected)) })
+		self.Do(1736, func() { Stmt(M(self, "_validate_array_sort", read, sql, NewDict("bigquery", expected))) })
 	}
 	self.L(1739).ValidateAll("ARRAY_PREPEND(arr, x)", Kw("read", NewDict("duckdb", "LIST_PREPEND(x, arr)", "postgres", "ARRAY_PREPEND(x, arr)")), Kw("write", NewDict("duckdb", "LIST_PREPEND(x, arr)", "postgres", "ARRAY_PREPEND(x, arr)")))
 	self.L(1752).ValidateAll("ARRAY_APPEND(arr, x)", Kw("read", NewDict("duckdb", "LIST_APPEND(arr, x)", "postgres", "ARRAY_APPEND(arr, x)")), Kw("write", NewDict("duckdb", "LIST_APPEND(arr, x)", "postgres", "ARRAY_APPEND(arr, x)")))
 	for _, item_ := range Iter(NewTuple("snowflake", "databricks", "spark")) {
 		source_dialect = item_
 		self.SubTest(func() {
-			self.Do(1767, func() { expr = Call(G("sqlglot.parse_one"), "ARRAY_APPEND(arr, x)", Kw("dialect", source_dialect)) })
+			self.DoAssign(1767, func() { expr = Call(G("sqlglot.parse_one"), "ARRAY_APPEND(arr, x)", Kw("dialect", source_dialect)) }, &expr)
 			self.Do(1768, func() {
 				self.AssertEqual(M(expr, "sql", "duckdb"), "CASE WHEN arr IS NULL THEN NULL ELSE LIST_APPEND(arr, x) END")
 			})
@@ -597,7 +593,7 @@ func test_dialect_TestDialect_test_array(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewTuple(NewTuple("duckdb", "LIST_APPEND(arr, x)"), NewTuple("postgres", "ARRAY_APPEND(arr, x)"))) {
 		Unpack(item_, &source_dialect, &source_sql)
 		self.SubTest(func() {
-			self.Do(1783, func() { expr = Call(G("sqlglot.parse_one"), source_sql, Kw("dialect", source_dialect)) })
+			self.DoAssign(1783, func() { expr = Call(G("sqlglot.parse_one"), source_sql, Kw("dialect", source_dialect)) }, &expr)
 			self.Do(1784, func() { self.AssertEqual(M(expr, "sql", "snowflake"), "ARRAY_APPEND(COALESCE(arr, []), x)") })
 			self.Do(1788, func() { self.AssertEqual(M(expr, "sql", "databricks"), "ARRAY_APPEND(COALESCE(arr, ARRAY()), x)") })
 			self.Do(1792, func() { self.AssertEqual(M(expr, "sql", "spark"), "ARRAY_APPEND(COALESCE(arr, ARRAY()), x)") })
@@ -606,14 +602,14 @@ func test_dialect_TestDialect_test_array(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewTuple(NewTuple("duckdb", "LIST_APPEND(arr, x)"), NewTuple("postgres", "ARRAY_APPEND(arr, x)"), NewTuple("snowflake", "ARRAY_APPEND(arr, x)"), NewTuple("databricks", "ARRAY_APPEND(arr, x)"), NewTuple("spark", "ARRAY_APPEND(arr, x)"))) {
 		Unpack(item_, &dialect, &sql)
 		self.SubTest(func() {
-			self.Do(1806, func() { expr = Call(G("sqlglot.parse_one"), sql, Kw("dialect", dialect)) })
+			self.DoAssign(1806, func() { expr = Call(G("sqlglot.parse_one"), sql, Kw("dialect", dialect)) }, &expr)
 			self.Do(1807, func() { self.AssertEqual(M(expr, "sql", dialect), sql) })
 		}, F("Identity: ", FV{V: dialect}, " → ", FV{V: dialect}))
 	}
 	for _, item_ := range Iter(NewTuple("snowflake", "databricks", "spark")) {
 		source_dialect = item_
 		self.SubTest(func() {
-			self.Do(1814, func() { expr = Call(G("sqlglot.parse_one"), "ARRAY_PREPEND(arr, x)", Kw("dialect", source_dialect)) })
+			self.DoAssign(1814, func() { expr = Call(G("sqlglot.parse_one"), "ARRAY_PREPEND(arr, x)", Kw("dialect", source_dialect)) }, &expr)
 			self.Do(1815, func() {
 				self.AssertEqual(M(expr, "sql", "duckdb"), "CASE WHEN arr IS NULL THEN NULL ELSE LIST_PREPEND(x, arr) END")
 			})
@@ -625,7 +621,7 @@ func test_dialect_TestDialect_test_array(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewTuple(NewTuple("duckdb", "LIST_PREPEND(x, arr)"), NewTuple("postgres", "ARRAY_PREPEND(x, arr)"))) {
 		Unpack(item_, &source_dialect, &source_sql)
 		self.SubTest(func() {
-			self.Do(1832, func() { expr = Call(G("sqlglot.parse_one"), source_sql, Kw("dialect", source_dialect)) })
+			self.DoAssign(1832, func() { expr = Call(G("sqlglot.parse_one"), source_sql, Kw("dialect", source_dialect)) }, &expr)
 			self.Do(1833, func() { self.AssertEqual(M(expr, "sql", "snowflake"), "ARRAY_PREPEND(COALESCE(arr, []), x)") })
 			self.Do(1837, func() { self.AssertEqual(M(expr, "sql", "databricks"), "ARRAY_PREPEND(COALESCE(arr, ARRAY()), x)") })
 			self.Do(1841, func() { self.AssertEqual(M(expr, "sql", "spark"), "ARRAY_PREPEND(COALESCE(arr, ARRAY()), x)") })
@@ -634,14 +630,14 @@ func test_dialect_TestDialect_test_array(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewTuple(NewTuple("duckdb", "LIST_PREPEND(x, arr)"), NewTuple("postgres", "ARRAY_PREPEND(x, arr)"), NewTuple("snowflake", "ARRAY_PREPEND(arr, x)"), NewTuple("databricks", "ARRAY_PREPEND(arr, x)"), NewTuple("spark", "ARRAY_PREPEND(arr, x)"))) {
 		Unpack(item_, &dialect, &sql)
 		self.SubTest(func() {
-			self.Do(1855, func() { expr = Call(G("sqlglot.parse_one"), sql, Kw("dialect", dialect)) })
+			self.DoAssign(1855, func() { expr = Call(G("sqlglot.parse_one"), sql, Kw("dialect", dialect)) }, &expr)
 			self.Do(1856, func() { self.AssertEqual(M(expr, "sql", dialect), sql) })
 		}, F("ARRAY_PREPEND identity: ", FV{V: dialect}, " → ", FV{V: dialect}))
 	}
 	for _, item_ := range Iter(NewTuple(NewTuple("snowflake", "ARRAY_CAT(arr1, arr2)"), NewTuple("redshift", "ARRAY_CONCAT(arr1, arr2)"))) {
 		Unpack(item_, &source_dialect, &source_sql)
 		self.SubTest(func() {
-			self.Do(1864, func() { expr = Call(G("sqlglot.parse_one"), source_sql, Kw("dialect", source_dialect)) })
+			self.DoAssign(1864, func() { expr = Call(G("sqlglot.parse_one"), source_sql, Kw("dialect", source_dialect)) }, &expr)
 			self.Do(1865, func() {
 				self.AssertEqual(M(expr, "sql", "duckdb"), "CASE WHEN arr1 IS NULL OR arr2 IS NULL THEN NULL ELSE LIST_CONCAT(arr1, arr2) END")
 			})
@@ -653,7 +649,7 @@ func test_dialect_TestDialect_test_array(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewTuple(NewTuple("duckdb", "LIST_CONCAT(arr1, arr2)"), NewTuple("postgres", "ARRAY_CAT(arr1, arr2)"))) {
 		Unpack(item_, &source_dialect, &source_sql)
 		self.SubTest(func() {
-			self.Do(1880, func() { expr = Call(G("sqlglot.parse_one"), source_sql, Kw("dialect", source_dialect)) })
+			self.DoAssign(1880, func() { expr = Call(G("sqlglot.parse_one"), source_sql, Kw("dialect", source_dialect)) }, &expr)
 			self.Do(1881, func() {
 				self.AssertEqual(M(expr, "sql", "snowflake"), "ARRAY_CAT(COALESCE(arr1, []), COALESCE(arr2, []))")
 			})
@@ -665,32 +661,32 @@ func test_dialect_TestDialect_test_array(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewTuple(NewTuple("duckdb", "LIST_CONCAT(arr1, arr2)"), NewTuple("postgres", "ARRAY_CAT(arr1, arr2)"), NewTuple("snowflake", "ARRAY_CAT(arr1, arr2)"), NewTuple("redshift", "ARRAY_CONCAT(arr1, arr2)"))) {
 		Unpack(item_, &dialect, &sql)
 		self.SubTest(func() {
-			self.Do(1898, func() { expr = Call(G("sqlglot.parse_one"), sql, Kw("dialect", dialect)) })
+			self.DoAssign(1898, func() { expr = Call(G("sqlglot.parse_one"), sql, Kw("dialect", dialect)) }, &expr)
 			self.Do(1899, func() { self.AssertEqual(M(expr, "sql", dialect), sql) })
 		}, F("ARRAY_CAT identity: ", FV{V: dialect}, " → ", FV{V: dialect}))
 	}
 	for _, item_ := range Iter(NewTuple(NewTuple("snowflake", "ARRAY_CAT(arr1, arr2, arr3)", "CASE WHEN arr1 IS NULL OR arr2 IS NULL OR arr3 IS NULL THEN NULL ELSE LIST_CONCAT(arr1, arr2, arr3) END"), NewTuple("redshift", "ARRAY_CONCAT(arr1, arr2, arr3)", "CASE WHEN arr1 IS NULL OR arr2 IS NULL OR arr3 IS NULL THEN NULL ELSE LIST_CONCAT(arr1, arr2, arr3) END"))) {
 		Unpack(item_, &source_dialect, &source_sql, &expected)
 		self.SubTest(func() {
-			self.Do(1916, func() { expr = Call(G("sqlglot.parse_one"), source_sql, Kw("dialect", source_dialect)) })
+			self.DoAssign(1916, func() { expr = Call(G("sqlglot.parse_one"), source_sql, Kw("dialect", source_dialect)) }, &expr)
 			self.Do(1917, func() { self.AssertEqual(M(expr, "sql", "duckdb"), expected) })
 		}, F("ARRAY_CAT variadic NULL propagation: ", FV{V: source_dialect}, " → DuckDB"))
 	}
 	for _, item_ := range Iter(NewTuple(NewTuple("duckdb", "LIST_CONCAT(arr1, arr2, arr3)", "ARRAY_CAT(COALESCE(arr1, []), ARRAY_CAT(COALESCE(arr2, []), COALESCE(arr3, [])))", "ARRAY_CONCAT(COALESCE(arr1, ARRAY()), ARRAY_CONCAT(COALESCE(arr2, ARRAY()), COALESCE(arr3, ARRAY())))"), NewTuple("postgres", "ARRAY_CAT(arr1, arr2, arr3)", "ARRAY_CAT(COALESCE(arr1, []), ARRAY_CAT(COALESCE(arr2, []), COALESCE(arr3, [])))", "ARRAY_CONCAT(COALESCE(arr1, ARRAY()), ARRAY_CONCAT(COALESCE(arr2, ARRAY()), COALESCE(arr3, ARRAY())))"))) {
 		Unpack(item_, &source_dialect, &source_sql, &expected_snowflake, &expected_redshift)
 		self.SubTest(func() {
-			self.Do(1937, func() { expr = Call(G("sqlglot.parse_one"), source_sql, Kw("dialect", source_dialect)) })
+			self.DoAssign(1937, func() { expr = Call(G("sqlglot.parse_one"), source_sql, Kw("dialect", source_dialect)) }, &expr)
 			self.Do(1938, func() { self.AssertEqual(M(expr, "sql", "snowflake"), expected_snowflake) })
 			self.Do(1939, func() { self.AssertEqual(M(expr, "sql", "redshift"), expected_redshift) })
 		}, F("ARRAY_CAT variadic COALESCE wrapping: ", FV{V: source_dialect}, " → Snowflake/Redshift"))
 	}
-	self.Do(1942, func() { expr = Call(G("sqlglot.parse_one"), "ARRAY_CAT(arr1, arr2)", Kw("dialect", "postgres")) })
+	self.DoAssign(1942, func() { expr = Call(G("sqlglot.parse_one"), "ARRAY_CAT(arr1, arr2)", Kw("dialect", "postgres")) }, &expr)
 	self.Do(1943, func() {
 		self.AssertEqual(M(expr, "sql", "snowflake"), "ARRAY_CAT(COALESCE(arr1, []), COALESCE(arr2, []))")
 	})
-	self.Do(1949, func() { expr = Call(G("sqlglot.parse_one"), "ARRAY_CAT([1, 2], arr2)", Kw("dialect", "snowflake")) })
+	self.DoAssign(1949, func() { expr = Call(G("sqlglot.parse_one"), "ARRAY_CAT([1, 2], arr2)", Kw("dialect", "snowflake")) }, &expr)
 	self.Do(1950, func() { self.AssertEqual(M(expr, "sql", "duckdb"), "LIST_CONCAT([1, 2], arr2)") })
-	self.Do(1953, func() { expr = Call(G("sqlglot.parse_one"), "ARRAY_CAT(arr1)", Kw("dialect", "snowflake")) })
+	self.DoAssign(1953, func() { expr = Call(G("sqlglot.parse_one"), "ARRAY_CAT(arr1)", Kw("dialect", "snowflake")) }, &expr)
 	self.Do(1954, func() { self.AssertEqual(M(expr, "sql", "duckdb"), "LIST_CONCAT(arr1)") })
 	self.L(1957).ValidateAll("ARRAY_MAX(x)", Kw("read", NewDict("athena", "array_max(x)", "clickhouse", "arrayMax(x)", "databricks", "array_max(x)", "duckdb", "list_max(x)", "presto", "array_max(x)", "snowflake", "ARRAY_MAX(x)", "spark", "array_max(x)", "trino", "array_max(x)")), Kw("write", NewDict("athena", "ARRAY_MAX(x)", "clickhouse", "arrayMax(x)", "databricks", "ARRAY_MAX(x)", "duckdb", "LIST_MAX(x)", "presto", "ARRAY_MAX(x)", "snowflake", "ARRAY_MAX(x)", "spark", "ARRAY_MAX(x)", "trino", "ARRAY_MAX(x)")))
 	self.L(1982).ValidateAll("ARRAY_MIN(x)", Kw("read", NewDict("athena", "array_min(x)", "clickhouse", "arrayMin(x)", "databricks", "array_min(x)", "duckdb", "list_min(x)", "presto", "array_min(x)", "snowflake", "ARRAY_MIN(x)", "spark", "array_min(x)", "trino", "array_min(x)")), Kw("write", NewDict("athena", "ARRAY_MIN(x)", "clickhouse", "arrayMin(x)", "databricks", "ARRAY_MIN(x)", "duckdb", "LIST_MIN(x)", "presto", "ARRAY_MIN(x)", "snowflake", "ARRAY_MIN(x)", "spark", "ARRAY_MIN(x)", "trino", "ARRAY_MIN(x)")))
@@ -704,15 +700,15 @@ func test_dialect_TestDialect_test_order_by(self *Case, a Args) Value {
 	_ = []Value{order_by_all_sql, dialect}
 	self.L(2044).ValidateIdentity("SELECT c FROM t ORDER BY a, b,", "SELECT c FROM t ORDER BY a, b")
 	self.L(2049).ValidateAll("SELECT fname, lname, age FROM person ORDER BY age DESC NULLS FIRST, fname ASC NULLS LAST, lname", Kw("write", NewDict("bigquery", "SELECT fname, lname, age FROM person ORDER BY age DESC NULLS FIRST, fname ASC NULLS LAST, lname", "duckdb", "SELECT fname, lname, age FROM person ORDER BY age DESC NULLS FIRST, fname ASC, lname NULLS FIRST", "presto", "SELECT fname, lname, age FROM person ORDER BY age DESC NULLS FIRST, fname ASC, lname NULLS FIRST", "hive", "SELECT fname, lname, age FROM person ORDER BY age DESC NULLS FIRST, fname ASC NULLS LAST, lname", "spark", "SELECT fname, lname, age FROM person ORDER BY age DESC NULLS FIRST, fname ASC NULLS LAST, lname")))
-	self.Do(2060, func() { order_by_all_sql = "SELECT * FROM t ORDER BY ALL" })
+	self.DoAssign(2060, func() { order_by_all_sql = "SELECT * FROM t ORDER BY ALL" }, &order_by_all_sql)
 	self.Do(2061, func() {
-		M(A(M(self.ValidateIdentity(order_by_all_sql), "find", A(G("sqlglot.exp"), "Ordered")), "this"), "assert_is", A(G("sqlglot.exp"), "Column"))
+		Stmt(M(A(M(self.ValidateIdentity(order_by_all_sql), "find", A(G("sqlglot.exp"), "Ordered")), "this"), "assert_is", A(G("sqlglot.exp"), "Column")))
 	})
 	for _, item_ := range Iter(NewTuple("duckdb", "spark", "databricks")) {
 		dialect = item_
 		self.SubTest(func() {
 			self.Do(2065, func() {
-				M(A(M(Call(G("sqlglot.parse_one"), order_by_all_sql, Kw("read", dialect)), "find", A(G("sqlglot.exp"), "Ordered")), "this"), "assert_is", A(G("sqlglot.exp"), "Var"))
+				Stmt(M(A(M(Call(G("sqlglot.parse_one"), order_by_all_sql, Kw("read", dialect)), "find", A(G("sqlglot.exp"), "Ordered")), "this"), "assert_is", A(G("sqlglot.exp"), "Var")))
 			})
 		}, F("Testing ORDER BY ALL in ", FV{V: dialect}))
 	}
@@ -826,20 +822,20 @@ func test_dialect_TestDialect_test_operators(self *Case, a Args) Value {
 func test_dialect_TestDialect_test_typeddiv(self *Case, a Args) Value {
 	var typed_div, div, typed_div_dialect, div_dialect, INT_, FLOAT_, expression, types, dialect, expected Value
 	_ = []Value{typed_div, div, typed_div_dialect, div_dialect, INT_, FLOAT_, expression, types, dialect, expected}
-	self.Do(2984, func() {
+	self.DoAssign(2984, func() {
 		typed_div = M(G("sqlglot.exp"), "Div", Kw("this", M(G("sqlglot.exp"), "column", "a")), Kw("expression", M(G("sqlglot.exp"), "column", "b")), Kw("typed", true))
-	})
-	self.Do(2985, func() {
+	}, &typed_div)
+	self.DoAssign(2985, func() {
 		div = M(G("sqlglot.exp"), "Div", Kw("this", M(G("sqlglot.exp"), "column", "a")), Kw("expression", M(G("sqlglot.exp"), "column", "b")))
-	})
-	self.Do(2986, func() { typed_div_dialect = "presto" })
-	self.Do(2987, func() { div_dialect = "hive" })
-	self.Do(2988, func() { INT_ = A(A(A(G("sqlglot.exp"), "DataType"), "Type"), "INT") })
-	self.Do(2989, func() { FLOAT_ = A(A(A(G("sqlglot.exp"), "DataType"), "Type"), "FLOAT") })
+	}, &div)
+	self.DoAssign(2986, func() { typed_div_dialect = "presto" }, &typed_div_dialect)
+	self.DoAssign(2987, func() { div_dialect = "hive" }, &div_dialect)
+	self.DoAssign(2988, func() { INT_ = A(A(A(G("sqlglot.exp"), "DataType"), "Type"), "INT") }, &INT_)
+	self.DoAssign(2989, func() { FLOAT_ = A(A(A(G("sqlglot.exp"), "DataType"), "Type"), "FLOAT") }, &FLOAT_)
 	for _, item_ := range Iter(NewList(NewTuple(typed_div, NewTuple(nil, nil), typed_div_dialect, "a / b"), NewTuple(typed_div, NewTuple(nil, nil), div_dialect, "a / b"), NewTuple(div, NewTuple(nil, nil), typed_div_dialect, "CAST(a AS DOUBLE) / b"), NewTuple(div, NewTuple(nil, nil), div_dialect, "a / b"), NewTuple(typed_div, NewTuple(INT_, INT_), typed_div_dialect, "a / b"), NewTuple(typed_div, NewTuple(INT_, INT_), div_dialect, "CAST(a / b AS BIGINT)"), NewTuple(div, NewTuple(INT_, INT_), typed_div_dialect, "CAST(a AS DOUBLE) / b"), NewTuple(div, NewTuple(INT_, INT_), div_dialect, "a / b"), NewTuple(typed_div, NewTuple(FLOAT_, FLOAT_), typed_div_dialect, "a / b"), NewTuple(typed_div, NewTuple(FLOAT_, FLOAT_), div_dialect, "a / b"), NewTuple(div, NewTuple(FLOAT_, FLOAT_), typed_div_dialect, "a / b"), NewTuple(div, NewTuple(FLOAT_, FLOAT_), div_dialect, "a / b"), NewTuple(typed_div, NewTuple(INT_, FLOAT_), typed_div_dialect, "a / b"), NewTuple(typed_div, NewTuple(INT_, FLOAT_), div_dialect, "a / b"), NewTuple(div, NewTuple(INT_, FLOAT_), typed_div_dialect, "a / b"), NewTuple(div, NewTuple(INT_, FLOAT_), div_dialect, "a / b"))) {
 		Unpack(item_, &expression, &types, &dialect, &expected)
 		self.SubTest(func() {
-			self.Do(3010, func() { expression = M(expression, "copy") })
+			self.DoAssign(3010, func() { expression = M(expression, "copy") }, &expression)
 			self.Do(3011, func() { SetA(A(expression, "left"), "type", Item(types, 0)) })
 			self.Do(3012, func() { SetA(A(expression, "right"), "type", Item(types, 1)) })
 			self.Do(3013, func() { self.AssertEqual(expected, M(expression, "sql", Kw("dialect", dialect))) })
@@ -851,14 +847,14 @@ func test_dialect_TestDialect_test_typeddiv(self *Case, a Args) Value {
 func test_dialect_TestDialect_test_safediv(self *Case, a Args) Value {
 	var safe_div, div, safe_div_dialect, div_dialect, expression, dialect, expected Value
 	_ = []Value{safe_div, div, safe_div_dialect, div_dialect, expression, dialect, expected}
-	self.Do(3016, func() {
+	self.DoAssign(3016, func() {
 		safe_div = M(G("sqlglot.exp"), "Div", Kw("this", M(G("sqlglot.exp"), "column", "a")), Kw("expression", M(G("sqlglot.exp"), "column", "b")), Kw("safe", true))
-	})
-	self.Do(3017, func() {
+	}, &safe_div)
+	self.DoAssign(3017, func() {
 		div = M(G("sqlglot.exp"), "Div", Kw("this", M(G("sqlglot.exp"), "column", "a")), Kw("expression", M(G("sqlglot.exp"), "column", "b")))
-	})
-	self.Do(3018, func() { safe_div_dialect = "mysql" })
-	self.Do(3019, func() { div_dialect = "snowflake" })
+	}, &div)
+	self.DoAssign(3018, func() { safe_div_dialect = "mysql" }, &safe_div_dialect)
+	self.DoAssign(3019, func() { div_dialect = "snowflake" }, &div_dialect)
 	for _, item_ := range Iter(NewList(NewTuple(safe_div, safe_div_dialect, "a / b"), NewTuple(safe_div, div_dialect, "a / NULLIF(b, 0)"), NewTuple(div, safe_div_dialect, "a / b"), NewTuple(div, div_dialect, "a / b"))) {
 		Unpack(item_, &expression, &dialect, &expected)
 		self.SubTest(func() {
@@ -879,13 +875,13 @@ func test_dialect_TestDialect_test_fetch_first_implicit_count(self *Case, a Args
 	for _, item_ := range Iter(NewTuple("mysql", "sqlite", "duckdb", "bigquery", "spark", "redshift")) {
 		dialect = item_
 		self.SubTest(func() {
-			self.Do(3070, func() {
+			self.DoAssign(3070, func() {
 				once = M(Call(G("sqlglot.parse_one"), "SELECT * FROM t FETCH FIRST ROWS ONLY", Kw("read", dialect)), "sql", Kw("dialect", dialect))
-			})
+			}, &once)
 			self.Do(3073, func() { self.AssertEqual(once, "SELECT * FROM t LIMIT 1") })
-			self.Do(3074, func() {
+			self.DoAssign(3074, func() {
 				twice = M(Call(G("sqlglot.parse_one"), once, Kw("read", dialect)), "sql", Kw("dialect", dialect))
-			})
+			}, &twice)
 			self.Do(3075, func() { self.AssertEqual(once, twice) })
 		}, Kw("dialect", dialect))
 	}
@@ -922,7 +918,7 @@ func test_dialect_TestDialect_test_alias(self *Case, a Args) Value {
 			self.Do(3230, func() {
 				self.AssertRaises(func(cm_ Value) {
 					_ = cm_
-					Call(G("sqlglot.parse_one"), "SELECT 1 'foo'", Kw("dialect", dialect))
+					Stmt(Call(G("sqlglot.parse_one"), "SELECT 1 'foo'", Kw("dialect", dialect)))
 				}, G("sqlglot.ParseError"))
 			})
 		}, F("string alias: ", FV{V: dialect}))
@@ -993,9 +989,9 @@ func test_dialect_TestDialect_test_update(self *Case, a Args) Value {
 func test_dialect_TestDialect_test_merge(self *Case, a Args) Value {
 	var sql Value
 	_ = []Value{sql}
-	self.Do(3382, func() {
+	self.DoAssign(3382, func() {
 		sql = "MERGE INTO target AS t USING source AS s ON t.id = s.id WHEN MATCHED THEN UPDATE SET a = s.x OR s.y, b = s.x AND s.y WHEN NOT MATCHED THEN INSERT (id) VALUES (s.id)"
-	})
+	}, &sql)
 	self.Do(3383, func() {
 		self.ValidateAll(sql, Kw("read", func() Value {
 			var dialect Value
@@ -1063,7 +1059,7 @@ func test_dialect_TestDialect_test_cast_to_user_defined_type(self *Case, a Args)
 	self.Do(3616, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			Call(G("sqlglot.parse_one"), "CAST(x AS some_udt)", Kw("read", "bigquery"))
+			Stmt(Call(G("sqlglot.parse_one"), "CAST(x AS some_udt)", Kw("read", "bigquery")))
 		}, G("sqlglot.ParseError"))
 	})
 	return nil
@@ -1091,19 +1087,19 @@ func test_dialect_TestDialect_test_window_exclude(self *Case, a Args) Value {
 func test_dialect_TestDialect_test_partition_by_excluding(self *Case, a Args) Value {
 	var window, partition Value
 	_ = []Value{window, partition}
-	self.Do(3675, func() {
+	self.DoAssign(3675, func() {
 		window = self.ValidateIdentity("LAG(revenue) OVER (PARTITION BY EXCLUDING orders.order_date, orders.order_year ORDER BY orders.order_date)")
-	})
+	}, &window)
 	self.Do(3678, func() {
-		M(self, "assertIsInstance", Item(Item(A(window, "args"), "partition_by"), 0), A(G("sqlglot.exp"), "PartitionByExcluding"))
+		Stmt(M(self, "assertIsInstance", Item(Item(A(window, "args"), "partition_by"), 0), A(G("sqlglot.exp"), "PartitionByExcluding")))
 	})
 	for _, item_ := range Iter(NewTuple("excluding", "excluding, a", "excluding.a")) {
 		partition = item_
-		self.Do(3681, func() {
+		self.DoAssign(3681, func() {
 			window = self.ValidateIdentity(F("SUM(a) OVER (PARTITION BY ", FV{V: partition}, " ORDER BY a)"))
-		})
+		}, &window)
 		self.Do(3682, func() {
-			M(self, "assertIsInstance", Item(Item(A(window, "args"), "partition_by"), 0), A(G("sqlglot.exp"), "Column"))
+			Stmt(M(self, "assertIsInstance", Item(Item(A(window, "args"), "partition_by"), 0), A(G("sqlglot.exp"), "Column")))
 		})
 	}
 	return nil
@@ -1116,24 +1112,24 @@ func test_dialect_TestDialect_test_per(self *Case, a Args) Value {
 		sql = item_
 		self.Do(3695, func() { self.ValidateIdentity(sql) })
 	}
-	self.Do(3697, func() {
+	self.DoAssign(3697, func() {
 		per = A(self.ValidateIdentity("AVG(LAG(AGG(revenue)) OVER (PARTITION BY customer ORDER BY year) PER (customer))"), "this")
-	})
-	self.Do(3700, func() { M(self, "assertIsInstance", per, A(G("sqlglot.exp"), "Per")) })
-	self.Do(3701, func() { M(self, "assertIsInstance", A(per, "this"), A(G("sqlglot.exp"), "Window")) })
-	self.Do(3703, func() { window = self.ValidateIdentity("LAG(AVG(AGG(revenue) PER (customer))) OVER (ORDER BY year)") })
-	self.Do(3706, func() { M(self, "assertIsInstance", window, A(G("sqlglot.exp"), "Window")) })
+	}, &per)
+	self.Do(3700, func() { Stmt(M(self, "assertIsInstance", per, A(G("sqlglot.exp"), "Per"))) })
+	self.Do(3701, func() { Stmt(M(self, "assertIsInstance", A(per, "this"), A(G("sqlglot.exp"), "Window"))) })
+	self.DoAssign(3703, func() { window = self.ValidateIdentity("LAG(AVG(AGG(revenue) PER (customer))) OVER (ORDER BY year)") }, &window)
+	self.Do(3706, func() { Stmt(M(self, "assertIsInstance", window, A(G("sqlglot.exp"), "Window"))) })
 	self.Do(3707, func() {
-		M(self, "assertIsInstance", A(A(A(window, "this"), "this"), "this"), A(G("sqlglot.exp"), "Per"))
+		Stmt(M(self, "assertIsInstance", A(A(A(window, "this"), "this"), "this"), A(G("sqlglot.exp"), "Per")))
 	})
-	self.Do(3709, func() { nested = A(self.ValidateIdentity("AVG(AVG(AGG(x) PER (c)) PER (d))"), "this") })
-	self.Do(3710, func() { M(self, "assertIsInstance", nested, A(G("sqlglot.exp"), "Per")) })
-	self.Do(3711, func() { M(self, "assertIsInstance", A(A(nested, "this"), "this"), A(G("sqlglot.exp"), "Per")) })
+	self.DoAssign(3709, func() { nested = A(self.ValidateIdentity("AVG(AVG(AGG(x) PER (c)) PER (d))"), "this") }, &nested)
+	self.Do(3710, func() { Stmt(M(self, "assertIsInstance", nested, A(G("sqlglot.exp"), "Per"))) })
+	self.Do(3711, func() { Stmt(M(self, "assertIsInstance", A(A(nested, "this"), "this"), A(G("sqlglot.exp"), "Per"))) })
 	self.Do(3713, func() {
-		M(self, "assertIsInstance", Item(A(self.ValidateIdentity("SELECT per FROM t"), "expressions"), 0), A(G("sqlglot.exp"), "Column"))
+		Stmt(M(self, "assertIsInstance", Item(A(self.ValidateIdentity("SELECT per FROM t"), "expressions"), 0), A(G("sqlglot.exp"), "Column")))
 	})
 	self.Do(3716, func() {
-		M(self, "assertIsInstance", Item(A(self.ValidateIdentity("SELECT SUM(x) per FROM t", "SELECT SUM(x) AS per FROM t"), "expressions"), 0), A(G("sqlglot.exp"), "Alias"))
+		Stmt(M(self, "assertIsInstance", Item(A(self.ValidateIdentity("SELECT SUM(x) per FROM t", "SELECT SUM(x) AS per FROM t"), "expressions"), 0), A(G("sqlglot.exp"), "Alias")))
 	})
 	return nil
 }
@@ -1150,25 +1146,25 @@ func test_dialect_TestDialect_test_nested_ctes(self *Case, a Args) Value {
 func test_dialect_TestDialect_test_unsupported_null_ordering(self *Case, a Args) Value {
 	var with_last_nulls, with_small_nulls, with_large_nulls, sql, sql_nulls_last, sql_nulls_first, read_dialect, desc, nulls_first, expected_sql, sort_order, null_order, expression Value
 	_ = []Value{with_last_nulls, with_small_nulls, with_large_nulls, sql, sql_nulls_last, sql_nulls_first, read_dialect, desc, nulls_first, expected_sql, sort_order, null_order, expression}
-	self.Do(3838, func() { with_last_nulls = "duckdb" })
-	self.Do(3839, func() { with_small_nulls = "spark" })
-	self.Do(3840, func() { with_large_nulls = "postgres" })
-	self.Do(3842, func() { sql = "SELECT * FROM t ORDER BY c" })
-	self.Do(3843, func() { sql_nulls_last = "SELECT * FROM t ORDER BY CASE WHEN c IS NULL THEN 1 ELSE 0 END, c" })
-	self.Do(3844, func() { sql_nulls_first = "SELECT * FROM t ORDER BY CASE WHEN c IS NULL THEN 1 ELSE 0 END DESC, c" })
+	self.DoAssign(3838, func() { with_last_nulls = "duckdb" }, &with_last_nulls)
+	self.DoAssign(3839, func() { with_small_nulls = "spark" }, &with_small_nulls)
+	self.DoAssign(3840, func() { with_large_nulls = "postgres" }, &with_large_nulls)
+	self.DoAssign(3842, func() { sql = "SELECT * FROM t ORDER BY c" }, &sql)
+	self.DoAssign(3843, func() { sql_nulls_last = "SELECT * FROM t ORDER BY CASE WHEN c IS NULL THEN 1 ELSE 0 END, c" }, &sql_nulls_last)
+	self.DoAssign(3844, func() { sql_nulls_first = "SELECT * FROM t ORDER BY CASE WHEN c IS NULL THEN 1 ELSE 0 END DESC, c" }, &sql_nulls_first)
 	for _, item_ := range Iter(NewTuple(NewTuple(with_last_nulls, false, nil, sql_nulls_last), NewTuple(with_last_nulls, true, nil, sql), NewTuple(with_last_nulls, false, true, sql), NewTuple(with_last_nulls, true, true, sql_nulls_first), NewTuple(with_last_nulls, false, false, sql_nulls_last), NewTuple(with_last_nulls, true, false, sql), NewTuple(with_small_nulls, false, nil, sql), NewTuple(with_small_nulls, true, nil, sql), NewTuple(with_small_nulls, false, true, sql), NewTuple(with_small_nulls, true, true, sql_nulls_first), NewTuple(with_small_nulls, false, false, sql_nulls_last), NewTuple(with_small_nulls, true, false, sql), NewTuple(with_large_nulls, false, nil, sql_nulls_last), NewTuple(with_large_nulls, true, nil, sql_nulls_first), NewTuple(with_large_nulls, false, true, sql), NewTuple(with_large_nulls, true, true, sql_nulls_first), NewTuple(with_large_nulls, false, false, sql_nulls_last), NewTuple(with_large_nulls, true, false, sql))) {
 		Unpack(item_, &read_dialect, &desc, &nulls_first, &expected_sql)
 		self.SubTest(func() {
-			self.Do(3869, func() { sort_order = IfV(desc, func() Value { return " DESC" }, func() Value { return "" }) })
-			self.Do(3870, func() {
+			self.DoAssign(3869, func() { sort_order = IfV(desc, func() Value { return " DESC" }, func() Value { return "" }) }, &sort_order)
+			self.DoAssign(3870, func() {
 				null_order = IfV(nulls_first, func() Value { return " NULLS FIRST" }, func() Value {
 					return IfV(IsNot(nulls_first, nil), func() Value { return " NULLS LAST" }, func() Value { return "" })
 				})
-			})
-			self.Do(3876, func() { expected_sql = F(FV{V: expected_sql}, FV{V: sort_order}) })
-			self.Do(3877, func() {
+			}, &null_order)
+			self.DoAssign(3876, func() { expected_sql = F(FV{V: expected_sql}, FV{V: sort_order}) }, &expected_sql)
+			self.DoAssign(3877, func() {
 				expression = Call(G("sqlglot.parse_one"), F(FV{V: sql}, FV{V: sort_order}, FV{V: null_order}), Kw("read", read_dialect))
-			})
+			}, &expression)
 			self.Do(3879, func() { self.AssertEqual(M(expression, "sql", Kw("dialect", "mysql")), expected_sql) })
 			self.Do(3880, func() { self.AssertEqual(M(expression, "sql", Kw("dialect", "tsql")), expected_sql) })
 		}, F("read: ", FV{V: read_dialect}, ", descending: ", FV{V: desc}, ", nulls first: ", FV{V: nulls_first}))
@@ -1212,10 +1208,10 @@ func test_dialect_TestDialect_test_create_sequence(self *Case, a Args) Value {
 func test_dialect_TestDialect_test_reserved_keywords(self *Case, a Args) Value {
 	var order, dialect Value
 	_ = []Value{order, dialect}
-	self.Do(3989, func() { order = M(M(G("sqlglot.exp"), "select", "*"), "from_", "order") })
+	self.DoAssign(3989, func() { order = M(M(G("sqlglot.exp"), "select", "*"), "from_", "order") }, &order)
 	for _, item_ := range Iter(NewTuple("duckdb", "presto", "redshift")) {
 		dialect = item_
-		self.Do(3992, func() { dialect = M(G("sqlglot.Dialect"), "get_or_raise", dialect) })
+		self.DoAssign(3992, func() { dialect = M(G("sqlglot.Dialect"), "get_or_raise", dialect) }, &dialect)
 		self.Do(3993, func() {
 			self.AssertEqual(M(order, "sql", Kw("dialect", dialect)), F("SELECT * FROM ", FV{V: A(dialect, "IDENTIFIER_START")}, "order", FV{V: A(dialect, "IDENTIFIER_END")}))
 		})
@@ -1231,9 +1227,9 @@ func test_dialect_TestDialect_test_string_functions(self *Case, a Args) Value {
 	_ = []Value{pad_func, ch_alias, fill_pattern}
 	for _, item_ := range Iter(NewTuple("LPAD", "RPAD")) {
 		pad_func = item_
-		self.Do(4010, func() {
+		self.DoAssign(4010, func() {
 			ch_alias = IfV(Eq(pad_func, "LPAD"), func() Value { return "LEFTPAD" }, func() Value { return "RIGHTPAD" })
-		})
+		}, &ch_alias)
 		for _, item_ := range Iter(NewTuple("", ", ' '")) {
 			fill_pattern = item_
 			self.SubTest(func() {
@@ -1273,14 +1269,14 @@ func test_dialect_TestDialect_test_set_operation_precedence(self *Case, a Args) 
 	self.L(4173).ValidateAll("(SELECT 1 UNION SELECT 2) INTERSECT SELECT 3", Kw("read", NewDict("postgres", "(SELECT 1 UNION SELECT 2) INTERSECT SELECT 3", "oracle", "(SELECT 1 UNION SELECT 2) INTERSECT SELECT 3")), Kw("write", NewDict("postgres", "(SELECT 1 UNION SELECT 2) INTERSECT SELECT 3", "oracle", "(SELECT 1 UNION SELECT 2) INTERSECT SELECT 3", "sqlite", "SELECT 1 UNION SELECT 2 INTERSECT SELECT 3")))
 	self.L(4185).ValidateAll("(SELECT 1 UNION SELECT 2) /* keep */ INTERSECT SELECT 3", Kw("write", NewDict("sqlite", "SELECT 1 /* keep */ UNION SELECT 2 INTERSECT SELECT 3")))
 	self.L(4189).ValidateAll("((SELECT 1 AS x, 2 AS x UNION SELECT 3, 4)) INTERSECT SELECT 1, 2", Kw("write", NewDict("sqlite", "SELECT 1 AS x, 2 AS x UNION SELECT 3, 4 INTERSECT SELECT 1, 2")))
-	self.Do(4195, func() { expected = "SELECT 1" })
+	self.DoAssign(4195, func() { expected = "SELECT 1" }, &expected)
 	for _, item_ := range Iter(Call(G("range"), 200)) {
 		underscore1 = item_
-		self.Do(4197, func() { expected = F("(", FV{V: expected}, " UNION SELECT 1) INTERSECT SELECT 1") })
+		self.DoAssign(4197, func() { expected = F("(", FV{V: expected}, " UNION SELECT 1) INTERSECT SELECT 1") }, &expected)
 	}
-	self.Do(4198, func() {
+	self.DoAssign(4198, func() {
 		expression = Call(G("sqlglot.parse_one"), Add("SELECT 1", Mul(" UNION SELECT 1 INTERSECT SELECT 1", 200)), Kw("read", "hive"))
-	})
+	}, &expression)
 	self.Do(4199, func() { self.AssertEqual(M(expression, "sql", "postgres"), expected) })
 	self.Do(4202, func() {
 		self.AssertEqual(M(Call(G("sqlglot.parse_one"), "SELECT 1 UNION", Kw("error_level", A(G("sqlglot.ErrorLevel"), "IGNORE"))), "sql"), "SELECT 1 UNION")
@@ -1300,7 +1296,7 @@ func test_dialect_TestDialect_test_normalize(self *Case, a Args) Value {
 		}, F("Testing NORMALIZE('str'", FV{V: form}, ") roundtrip"))
 	}
 	self.Do(4223, func() {
-		M(self, "assertIsInstance", M(A(Call(G("sqlglot.parse_one"), "NORMALIZE('str', NFD)"), "args"), "get", "form"), A(G("sqlglot.exp"), "Var"))
+		Stmt(M(self, "assertIsInstance", M(A(Call(G("sqlglot.parse_one"), "NORMALIZE('str', NFD)"), "args"), "get", "form"), A(G("sqlglot.exp"), "Var")))
 	})
 	return nil
 }
@@ -1311,17 +1307,17 @@ func test_dialect_TestDialect_test_coalesce(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewTuple("COALESCE", "IFNULL", "NVL")) {
 		func_ = item_
 		self.Do(4233, func() {
-			M(self, "assertIsInstance", A(self.ParseOne(F(FV{V: func_}, "(1, 2)")), "expressions"), G("list"))
+			Stmt(M(self, "assertIsInstance", A(self.ParseOne(F(FV{V: func_}, "(1, 2)")), "expressions"), G("list")))
 		})
 	}
-	self.Do(4236, func() { coalesce = self.ParseOne("COALESCE(x, y, z)") })
-	self.Do(4237, func() { M(self, "assertIsInstance", A(coalesce, "expressions"), G("list")) })
-	self.Do(4238, func() { M(self, "assertIsNone", M(A(coalesce, "args"), "get", "is_nvl")) })
-	self.Do(4241, func() { oracle_nvl = Call(G("sqlglot.parse_one"), "NVL(x, y)", Kw("read", "oracle")) })
-	self.Do(4242, func() { M(self, "assertIsInstance", A(oracle_nvl, "expressions"), G("list")) })
-	self.Do(4243, func() { M(self, "assertTrue", M(A(oracle_nvl, "args"), "get", "is_nvl")) })
+	self.DoAssign(4236, func() { coalesce = self.ParseOne("COALESCE(x, y, z)") }, &coalesce)
+	self.Do(4237, func() { Stmt(M(self, "assertIsInstance", A(coalesce, "expressions"), G("list"))) })
+	self.Do(4238, func() { Stmt(M(self, "assertIsNone", M(A(coalesce, "args"), "get", "is_nvl"))) })
+	self.DoAssign(4241, func() { oracle_nvl = Call(G("sqlglot.parse_one"), "NVL(x, y)", Kw("read", "oracle")) }, &oracle_nvl)
+	self.Do(4242, func() { Stmt(M(self, "assertIsInstance", A(oracle_nvl, "expressions"), G("list"))) })
+	self.Do(4243, func() { Stmt(M(self, "assertTrue", M(A(oracle_nvl, "args"), "get", "is_nvl"))) })
 	self.Do(4246, func() {
-		M(self, "assertIsInstance", A(Call(G("sqlglot.parse_one"), "ISNULL(x, y)", Kw("read", "tsql")), "expressions"), G("list"))
+		Stmt(M(self, "assertIsInstance", A(Call(G("sqlglot.parse_one"), "ISNULL(x, y)", Kw("read", "tsql")), "expressions"), G("list")))
 	})
 	return nil
 }
@@ -1427,7 +1423,7 @@ func test_dialect_TestDialect_test_current_schema(self *Case, a Args) Value {
 func test_dialect_TestDialect_test_integer_hex_strings(self *Case, a Args) Value {
 	var integer_dialects, read_dialect, write_dialect, other_integer_dialects Value
 	_ = []Value{integer_dialects, read_dialect, write_dialect, other_integer_dialects}
-	self.Do(4567, func() { integer_dialects = NewTuple("bigquery", "clickhouse") })
+	self.DoAssign(4567, func() { integer_dialects = NewTuple("bigquery", "clickhouse") }, &integer_dialects)
 	for _, item_ := range Iter(integer_dialects) {
 		read_dialect = item_
 		for _, item_ := range Iter(NewTuple("", "duckdb", "databricks", "snowflake", "spark", "redshift")) {
@@ -1456,10 +1452,10 @@ func test_dialect_TestDialect_test_ascii(self *Case, a Args) Value {
 func test_dialect_TestDialect_test_between(self *Case, a Args) Value {
 	var between Value
 	_ = []Value{between}
-	self.Do(4616, func() { between = M(M(G("sqlglot.exp"), "column", "x"), "between", 1, 2) })
+	self.DoAssign(4616, func() { between = M(M(G("sqlglot.exp"), "column", "x"), "between", 1, 2) }, &between)
 	self.Do(4617, func() { self.AssertEqual(M(between, "sql", "postgres"), "x BETWEEN 1 AND 2") })
 	self.Do(4618, func() { self.AssertEqual(M(between, "sql", "redshift"), "x BETWEEN 1 AND 2") })
-	self.Do(4619, func() { M(self, "assertFalse", In("symmetric", A(between, "args"))) })
+	self.Do(4619, func() { Stmt(M(self, "assertFalse", In("symmetric", A(between, "args")))) })
 	self.L(4621).ValidateAll("SELECT x BETWEEN 2 AND 10", Kw("read", NewDict("", "SELECT x BETWEEN 2 AND 10", "clickhouse", "SELECT x BETWEEN 2 AND 10", "dremio", "SELECT x BETWEEN 2 AND 10", "duckdb", "SELECT x BETWEEN 2 AND 10", "materialize", "SELECT x BETWEEN 2 AND 10", "mysql", "SELECT x BETWEEN 2 AND 10", "oracle", "SELECT x BETWEEN 2 AND 10", "postgres", "SELECT x BETWEEN 2 AND 10", "redshift", "SELECT x BETWEEN 2 AND 10", "risingwave", "SELECT x BETWEEN 2 AND 10", "tsql", "SELECT x BETWEEN 2 AND 10")), Kw("write", NewDict("", "SELECT x BETWEEN 2 AND 10", "clickhouse", "SELECT x BETWEEN 2 AND 10", "dremio", "SELECT x BETWEEN 2 AND 10", "duckdb", "SELECT x BETWEEN 2 AND 10", "materialize", "SELECT x BETWEEN 2 AND 10", "mysql", "SELECT x BETWEEN 2 AND 10", "oracle", "SELECT x BETWEEN 2 AND 10", "postgres", "SELECT x BETWEEN 2 AND 10", "redshift", "SELECT x BETWEEN 2 AND 10", "risingwave", "SELECT x BETWEEN 2 AND 10", "tsql", "SELECT x BETWEEN 2 AND 10")))
 	self.L(4651).ValidateAll("SELECT x BETWEEN SYMMETRIC 10 AND 2", Kw("write", NewDict("", "SELECT (x BETWEEN 10 AND 2 OR x BETWEEN 2 AND 10)", "clickhouse", "SELECT (x BETWEEN 10 AND 2 OR x BETWEEN 2 AND 10)", "dremio", "SELECT x BETWEEN SYMMETRIC 10 AND 2", "duckdb", "SELECT (x BETWEEN 10 AND 2 OR x BETWEEN 2 AND 10)", "materialize", "SELECT (x BETWEEN 10 AND 2 OR x BETWEEN 2 AND 10)", "mysql", "SELECT (x BETWEEN 10 AND 2 OR x BETWEEN 2 AND 10)", "oracle", "SELECT (x BETWEEN 10 AND 2 OR x BETWEEN 2 AND 10)", "postgres", "SELECT x BETWEEN SYMMETRIC 10 AND 2", "redshift", "SELECT (x BETWEEN 10 AND 2 OR x BETWEEN 2 AND 10)", "risingwave", "SELECT (x BETWEEN 10 AND 2 OR x BETWEEN 2 AND 10)", "tsql", "SELECT (x BETWEEN 10 AND 2 OR x BETWEEN 2 AND 10)")))
 	self.L(4668).ValidateAll("SELECT x BETWEEN ASYMMETRIC 10 AND 2", Kw("write", NewDict("", "SELECT x BETWEEN 10 AND 2", "clickhouse", "SELECT x BETWEEN 10 AND 2", "dremio", "SELECT x BETWEEN ASYMMETRIC 10 AND 2", "duckdb", "SELECT x BETWEEN 10 AND 2", "materialize", "SELECT x BETWEEN 10 AND 2", "mysql", "SELECT x BETWEEN 10 AND 2", "oracle", "SELECT x BETWEEN 10 AND 2", "postgres", "SELECT x BETWEEN ASYMMETRIC 10 AND 2", "redshift", "SELECT x BETWEEN 10 AND 2", "risingwave", "SELECT x BETWEEN 10 AND 2", "tsql", "SELECT x BETWEEN 10 AND 2")))
@@ -1471,9 +1467,9 @@ func test_dialect_TestDialect_test_like_quantifiers(self *Case, a Args) Value {
 	_ = []Value{quantifier, connector}
 	for _, item_ := range Iter(NewTuple("ANY", "ALL")) {
 		quantifier = item_
-		self.Do(4687, func() {
+		self.DoAssign(4687, func() {
 			connector = IfV(Eq(quantifier, "ANY"), func() Value { return "OR" }, func() Value { return "AND" })
-		})
+		}, &connector)
 		self.SubTest(func() {
 			self.Do(4690, func() {
 				self.ValidateAll(F("SELECT col LIKE ", FV{V: quantifier}, " (x, y, z)"), Kw("read", NewDict("", F("SELECT col LIKE ", FV{V: quantifier}, " (x, y, z)"), "bigquery", F("SELECT col LIKE ", FV{V: quantifier}, " (x, y, z)"), "snowflake", F("SELECT col LIKE ", FV{V: quantifier}, " (x, y, z)"), "spark", F("SELECT col LIKE ", FV{V: quantifier}, " (x, y, z)"), "databricks", F("SELECT col LIKE ", FV{V: quantifier}, " (x, y, z)"))), Kw("write", NewDict("bigquery", F("SELECT col LIKE ", FV{V: quantifier}, " (x, y, z)"), "snowflake", F("SELECT col LIKE ", FV{V: quantifier}, " (x, y, z)"), "spark", F("SELECT col LIKE ", FV{V: quantifier}, " (x, y, z)"), "databricks", F("SELECT col LIKE ", FV{V: quantifier}, " (x, y, z)"), "duckdb", F("SELECT (col LIKE x ", FV{V: connector}, " col LIKE y) ", FV{V: connector}, " col LIKE z"))))
@@ -1649,9 +1645,9 @@ func test_dialect_TestDialect_test_regexp_replace(self *Case, a Args) Value {
 		for _, item_ := range Iter(NewTuple("", "bigquery", "presto", "trino", "spark", "databricks")) {
 			read_dialect = item_
 			self.SubTest(func() {
-				self.Do(5517, func() {
+				self.DoAssign(5517, func() {
 					sql = M(Call(G("sqlglot.parse_one"), "REGEXP_REPLACE('aaa', 'a', 'b')", Kw("read", read_dialect)), "sql", target_dialect)
-				})
+				}, &sql)
 				self.Do(5520, func() { self.AssertEqual(sql, "REGEXP_REPLACE('aaa', 'a', 'b', 'g')") })
 			}, F("Testing REGEXP_REPLACE appending 'g' flag from ", FV{V: read_dialect}, " to ", FV{V: target_dialect}))
 		}
@@ -1668,9 +1664,9 @@ func test_dialect_TestDialect_test_subquery_unwrap(self *Case, a Args) Value {
 func test_dialect_TestDialect_test_initcap(self *Case, a Args) Value {
 	var delimiter_chars, dialect, read_dialect, write_dialect, escaped_delimiters, assert_default_duckdb_sql, default_chars, assert_custom_duckdb_sql Value
 	_ = []Value{delimiter_chars, dialect, read_dialect, write_dialect, escaped_delimiters, assert_default_duckdb_sql, default_chars, assert_custom_duckdb_sql}
-	self.Do(5534, func() {
+	self.DoAssign(5534, func() {
 		delimiter_chars = NewDict("", A(G("sqlglot.Dialect"), "INITCAP_DEFAULT_DELIMITER_CHARS"), "bigquery", A(G("sqlglot.dialects.BigQuery"), "INITCAP_DEFAULT_DELIMITER_CHARS"), "snowflake", A(G("sqlglot.dialects.Snowflake"), "INITCAP_DEFAULT_DELIMITER_CHARS"), "spark", A(G("sqlglot.dialects.Spark2"), "INITCAP_DEFAULT_DELIMITER_CHARS"))
-	})
+	}, &delimiter_chars)
 	self.SubTest(func() {
 		self.Do(5542, func() {
 			self.AssertEqual(M(M(G("sqlglot.exp"), "Initcap", Kw("this", M(A(G("sqlglot.exp"), "Literal"), "string", "col"))), "sql"), "INITCAP('col')")
@@ -1692,9 +1688,9 @@ func test_dialect_TestDialect_test_initcap(self *Case, a Args) Value {
 		for _, item_ := range Iter(NewTuple("bigquery", "snowflake")) {
 			write_dialect = item_
 			self.SubTest(func() {
-				self.Do(5556, func() {
+				self.DoAssign(5556, func() {
 					escaped_delimiters = M(M(A(G("sqlglot.exp"), "Literal"), "string", Item(delimiter_chars, read_dialect)), "sql", write_dialect)
-				})
+				}, &escaped_delimiters)
 				self.Do(5559, func() {
 					self.AssertEqual(M(Call(G("sqlglot.parse_one"), "INITCAP(col)", Kw("read", read_dialect)), "sql", write_dialect), F("INITCAP(col, ", FV{V: escaped_delimiters}, ")"))
 				})
@@ -1720,14 +1716,14 @@ func test_dialect_TestDialect_test_initcap(self *Case, a Args) Value {
 				return &List{V: out}
 			}()
 			expression = Call(G("sqlglot.parse_one"), "INITCAP(col)", Kw("read", read_dialect))
-			M(self, "assert_duckdb_sql", expression, Kw("includes", NewTuple("ARRAY_TO_STRING(", "REGEXP_MATCHES(", "LIST_TRANSFORM(")), Kw("chr_chars", chr_chars))
+			Stmt(M(self, "assert_duckdb_sql", expression, Kw("includes", NewTuple("ARRAY_TO_STRING(", "REGEXP_MATCHES(", "LIST_TRANSFORM(")), Kw("chr_chars", chr_chars)))
 			return nil
 		})
 	})
 	for _, item_ := range Iter(M(delimiter_chars, "items")) {
 		Unpack(item_, &dialect, &default_chars)
 		self.SubTest(func() {
-			self.Do(5575, func() { Call(assert_default_duckdb_sql, dialect, default_chars) })
+			self.Do(5575, func() { Stmt(Call(assert_default_duckdb_sql, dialect, default_chars)) })
 		}, F("DuckDB rewrite for ", FV{V: OrV(dialect, func() Value { return "default" })}, " default delimiters"))
 	}
 	self.Do(5577, func() {
@@ -1742,27 +1738,29 @@ func test_dialect_TestDialect_test_initcap(self *Case, a Args) Value {
 				dialect = item_
 				self.SubTest(func() {
 					expression = Call(G("sqlglot.parse_one"), query, Kw("read", dialect))
-					M(self, "assert_duckdb_sql", expression, Kw("includes", includes), Kw("excludes", excludes), Kw("chr_chars", chr_chars))
+					Stmt(M(self, "assert_duckdb_sql", expression, Kw("includes", includes), Kw("excludes", excludes), Kw("chr_chars", chr_chars)))
 				}, F("DuckDB generation for ", FV{V: query}, " from ", FV{V: dialect}))
 			}
 			return nil
 		})
 	})
 	self.Do(5591, func() {
-		Call(assert_custom_duckdb_sql, "INITCAP(col, '')", Kw("includes", NewTuple("UPPER(LEFT(")), Kw("excludes", NewTuple("REGEXP_MATCHES(")))
+		Stmt(Call(assert_custom_duckdb_sql, "INITCAP(col, '')", Kw("includes", NewTuple("UPPER(LEFT(")), Kw("excludes", NewTuple("REGEXP_MATCHES("))))
 	})
 	self.Do(5594, func() {
-		Call(assert_custom_duckdb_sql, "INITCAP(col, NULL)", Kw("includes", NewTuple("REGEXP_MATCHES(", "REPLACE(")))
+		Stmt(Call(assert_custom_duckdb_sql, "INITCAP(col, NULL)", Kw("includes", NewTuple("REGEXP_MATCHES(", "REPLACE("))))
 	})
-	self.Do(5595, func() { Call(assert_custom_duckdb_sql, "INITCAP(col, ' ')", Kw("includes", NewTuple("' '"))) })
+	self.Do(5595, func() { Stmt(Call(assert_custom_duckdb_sql, "INITCAP(col, ' ')", Kw("includes", NewTuple("' '")))) })
 	self.Do(5596, func() {
-		Call(assert_custom_duckdb_sql, "INITCAP(col, '@')", Kw("includes", NewTuple("'@'")), Kw("excludes", NewTuple("CHR(")))
+		Stmt(Call(assert_custom_duckdb_sql, "INITCAP(col, '@')", Kw("includes", NewTuple("'@'")), Kw("excludes", NewTuple("CHR("))))
 	})
-	self.Do(5597, func() { Call(assert_custom_duckdb_sql, "INITCAP(col, '_@')", Kw("includes", NewTuple("'_@'"))) })
-	self.Do(5598, func() { Call(assert_custom_duckdb_sql, `INITCAP(col, '\\\\')`, Kw("includes", NewTuple(`\\`))) })
-	self.Do(5599, func() { Call(assert_custom_duckdb_sql, "INITCAP(col, '\u000b')", Kw("chr_chars", NewTuple("\u000b"))) })
+	self.Do(5597, func() { Stmt(Call(assert_custom_duckdb_sql, "INITCAP(col, '_@')", Kw("includes", NewTuple("'_@'")))) })
+	self.Do(5598, func() { Stmt(Call(assert_custom_duckdb_sql, `INITCAP(col, '\\\\')`, Kw("includes", NewTuple(`\\`)))) })
+	self.Do(5599, func() {
+		Stmt(Call(assert_custom_duckdb_sql, "INITCAP(col, '\u000b')", Kw("chr_chars", NewTuple("\u000b"))))
+	})
 	self.Do(5603, func() {
-		Call(assert_custom_duckdb_sql, "INITCAP(col, (SELECT delimiter FROM settings LIMIT 1))", Kw("includes", NewTuple("SELECT delimiter FROM settings", "REPLACE(")))
+		Stmt(Call(assert_custom_duckdb_sql, "INITCAP(col, (SELECT delimiter FROM settings LIMIT 1))", Kw("includes", NewTuple("SELECT delimiter FROM settings", "REPLACE("))))
 	})
 	return nil
 }
@@ -1770,17 +1768,19 @@ func test_dialect_TestDialect_test_initcap(self *Case, a Args) Value {
 func test_dialect_TestDialect_test_initcap_custom_delimiter_warning(self *Case, a Args) Value {
 	var expression, dialect, cm Value
 	_ = []Value{expression, dialect, cm}
-	self.Do(5609, func() { expression = Call(G("sqlglot.parse_one"), "INITCAP(col, '_')", Kw("read", "bigquery")) })
+	self.DoAssign(5609, func() { expression = Call(G("sqlglot.parse_one"), "INITCAP(col, '_')", Kw("read", "bigquery")) }, &expression)
 	for _, item_ := range Iter(NewTuple("postgres", "presto")) {
 		dialect = item_
 		self.SubTest(func() {
 			self.Do(5612, func() {
 				self.AssertLogs(func(cm_ Value) {
 					cm = cm_
-					M(expression, "sql", dialect)
+					Stmt(M(expression, "sql", dialect))
 				}, G("sqlglot.generator.logger"), Kw("level", "WARNING"))
 			})
-			self.Do(5614, func() { M(self, "assertIn", "INITCAP does not support custom delimiters", Item(A(cm, "output"), 0)) })
+			self.Do(5614, func() {
+				Stmt(M(self, "assertIn", "INITCAP does not support custom delimiters", Item(A(cm, "output"), 0)))
+			})
 		}, F("INITCAP unsupported custom delimiters warning for ", FV{V: dialect}))
 	}
 	return nil
@@ -1789,14 +1789,14 @@ func test_dialect_TestDialect_test_initcap_custom_delimiter_warning(self *Case, 
 func test_dialect_TestDialect_test_parse_at_time_zone(self *Case, a Args) Value {
 	var parsed_expr Value
 	_ = []Value{parsed_expr}
-	self.Do(5617, func() {
+	self.DoAssign(5617, func() {
 		parsed_expr = Item(A(self.ValidateIdentity("SELECT CAST('2001-02-17 08:38:40' AS TIMESTAMP) AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Tokyo'"), "expressions"), 0)
-	})
+	}, &parsed_expr)
 	self.Do(5620, func() { self.AssertEqual(M(M(A(parsed_expr, "args"), "get", "zone"), "sql"), "'Asia/Tokyo'") })
 	self.Do(5621, func() { self.AssertEqual(M(M(A(A(parsed_expr, "this"), "args"), "get", "zone"), "sql"), "'UTC'") })
-	self.Do(5623, func() {
+	self.DoAssign(5623, func() {
 		parsed_expr = Item(A(self.ValidateIdentity("SELECT CAST('2001-02-17 08:38:40' AS TIMESTAMP) AT TIME ZONE INTERVAL '3' HOURS AT TIME ZONE 'Asia/Tokyo'"), "expressions"), 0)
-	})
+	}, &parsed_expr)
 	self.Do(5626, func() {
 		self.AssertEqual(M(M(A(parsed_expr, "args"), "get", "zone"), "sql", "postgres"), "'Asia/Tokyo'")
 	})
@@ -1816,13 +1816,13 @@ func test_dialect_TestDialect_test_underscore_scientific_notation(self *Case, a 
 			for _, item_ := range Iter(NewTuple("", "-", "+")) {
 				sign = item_
 				self.SubTest(func() {
-					self.Do(5634, func() { number = F("1_2", FV{V: notation}, FV{V: sign}, "1_0") })
-					self.Do(5635, func() { expected = F("12", FV{V: notation}, FV{V: sign}, "10") })
+					self.DoAssign(5634, func() { number = F("1_2", FV{V: notation}, FV{V: sign}, "1_0") }, &number)
+					self.DoAssign(5635, func() { expected = F("12", FV{V: notation}, FV{V: sign}, "10") }, &expected)
 					self.Do(5636, func() {
 						self.AssertEqual(M(Call(G("sqlglot.parse_one"), number, Kw("read", dialect)), "sql", dialect), expected)
 					})
-					self.Do(5638, func() { number = F("12.3_4", FV{V: notation}, FV{V: sign}, "5_6_7") })
-					self.Do(5639, func() { expected = F("12.34", FV{V: notation}, FV{V: sign}, "567") })
+					self.DoAssign(5638, func() { number = F("12.3_4", FV{V: notation}, FV{V: sign}, "5_6_7") }, &number)
+					self.DoAssign(5639, func() { expected = F("12.34", FV{V: notation}, FV{V: sign}, "567") }, &expected)
 					self.Do(5640, func() {
 						self.AssertEqual(M(Call(G("sqlglot.parse_one"), number, Kw("read", dialect)), "sql", dialect), expected)
 					})
@@ -1830,8 +1830,8 @@ func test_dialect_TestDialect_test_underscore_scientific_notation(self *Case, a 
 			}
 		}
 		self.SubTest(func() {
-			self.Do(5643, func() { ast = Call(G("sqlglot.parse_one"), "1_2_3_4_5", Kw("read", dialect)) })
-			self.Do(5644, func() { M(self, "assertTrue", A(ast, "is_int")) })
+			self.DoAssign(5643, func() { ast = Call(G("sqlglot.parse_one"), "1_2_3_4_5", Kw("read", dialect)) }, &ast)
+			self.Do(5644, func() { Stmt(M(self, "assertTrue", A(ast, "is_int"))) })
 			self.Do(5645, func() { self.AssertEqual(M(ast, "to_py"), 12345) })
 			self.Do(5646, func() { self.AssertEqual(M(ast, "sql", dialect), "12345") })
 		}, F("Testing underscore separated numbers for ", FV{V: dialect}))
@@ -1845,18 +1845,18 @@ func test_dialect_TestDialect_test_localtime_and_localtimestamp(self *Case, a Ar
 	for _, item_ := range Iter(NewTuple("LOCALTIME", "LOCALTIMESTAMP")) {
 		func_ = item_
 		self.SubTest(func() {
-			self.Do(5651, func() {
+			self.DoAssign(5651, func() {
 				dialects = NewDict("postgres", F("SELECT ", FV{V: func_}), "duckdb", F("SELECT ", FV{V: func_}), "redshift", F("SELECT ", FV{V: func_}), "presto", F("SELECT ", FV{V: func_}), "trino", F("SELECT ", FV{V: func_}), "mysql", F("SELECT ", FV{V: func_}), "singlestore", F("SELECT ", FV{V: func_}))
-			})
+			}, &dialects)
 			if Truth(Eq(func_, "LOCALTIMESTAMP")) {
 				self.Do(5662, func() { SetItem(dialects, "oracle", F("SELECT ", FV{V: func_})) })
 			}
 			self.Do(5664, func() { self.ValidateAll(F("SELECT ", FV{V: func_}), Kw("read", dialects), Kw("write", dialects)) })
 		}, F("Testing ", FV{V: func_}))
 		self.SubTest(func() {
-			self.Do(5671, func() {
+			self.DoAssign(5671, func() {
 				dialects = NewDict("postgres", F("SELECT ", FV{V: func_}, "(2)"), "redshift", F("SELECT ", FV{V: func_}, "(2)"), "presto", F("SELECT ", FV{V: func_}, "(2)"), "trino", F("SELECT ", FV{V: func_}, "(2)"), "mysql", F("SELECT ", FV{V: func_}, "(2)"), "singlestore", F("SELECT ", FV{V: func_}, "(2)"))
-			})
+			}, &dialects)
 			if Truth(Eq(func_, "LOCALTIMESTAMP")) {
 				self.Do(5681, func() { SetItem(dialects, "oracle", F("SELECT ", FV{V: func_}, "(2)")) })
 			}
@@ -1864,14 +1864,14 @@ func test_dialect_TestDialect_test_localtime_and_localtimestamp(self *Case, a Ar
 				self.ValidateAll(F("SELECT ", FV{V: func_}, "(2)"), Kw("read", dialects), Kw("write", dialects))
 			})
 		}, F("Testing ", FV{V: func_}, " with precision"))
-		self.Do(5689, func() {
+		self.DoAssign(5689, func() {
 			exp_type = IfV(Eq(func_, "LOCALTIME"), func() Value { return A(G("sqlglot.exp"), "Localtime") }, func() Value { return A(G("sqlglot.exp"), "Localtimestamp") })
-		})
+		}, &exp_type)
 		for _, item_ := range Iter(NewTuple(func_, F(FV{V: func_}, "(2)"))) {
 			func_variant = item_
 			self.SubTest(func() {
 				self.Do(5693, func() {
-					M(Item(A(self.ValidateIdentity(F("SELECT ", FV{V: func_variant})), "selects"), 0), "assert_is", exp_type)
+					Stmt(M(Item(A(self.ValidateIdentity(F("SELECT ", FV{V: func_variant})), "selects"), 0), "assert_is", exp_type))
 				})
 			}, F("Testing ", FV{V: func_variant}, " function node"))
 		}
@@ -1884,9 +1884,9 @@ func test_dialect_TestDialect_test_localtime_and_localtimestamp(self *Case, a Ar
 				continue
 			}
 			self.SubTest(func() {
-				self.Do(5711, func() { sql = F("SELECT ", FV{V: func_}) })
-				self.Do(5712, func() { select_ = Call(G("sqlglot.parse_one"), sql, Kw("dialect", dialect)) })
-				self.Do(5713, func() { M(Item(A(select_, "selects"), 0), "assert_is", A(G("sqlglot.exp"), "Column")) })
+				self.DoAssign(5711, func() { sql = F("SELECT ", FV{V: func_}) }, &sql)
+				self.DoAssign(5712, func() { select_ = Call(G("sqlglot.parse_one"), sql, Kw("dialect", dialect)) }, &select_)
+				self.Do(5713, func() { Stmt(M(Item(A(select_, "selects"), 0), "assert_is", A(G("sqlglot.exp"), "Column"))) })
 				self.Do(5714, func() { self.AssertEqual(M(select_, "sql", dialect), sql) })
 			}, F("Testing ", FV{V: func_}, " identifier in ", FV{V: dialect}))
 		}
@@ -1897,27 +1897,27 @@ func test_dialect_TestDialect_test_localtime_and_localtimestamp(self *Case, a Ar
 func test_dialect_TestDialect_test_current_catalog(self *Case, a Args) Value {
 	var sql, unsupported_dialects, dialect, select_, supported_dialects Value
 	_ = []Value{sql, unsupported_dialects, dialect, select_, supported_dialects}
-	self.Do(5717, func() { sql = "SELECT CURRENT_CATALOG" })
-	self.Do(5719, func() {
+	self.DoAssign(5717, func() { sql = "SELECT CURRENT_CATALOG" }, &sql)
+	self.DoAssign(5719, func() {
 		unsupported_dialects = NewList("bigquery", "mysql", "oracle", "clickhouse", "snowflake", "spark", "databricks", "presto")
-	})
+	}, &unsupported_dialects)
 	for _, item_ := range Iter(unsupported_dialects) {
 		dialect = item_
 		self.SubTest(func() {
-			self.Do(5732, func() { select_ = Call(G("sqlglot.parse_one"), sql, Kw("dialect", dialect)) })
-			self.Do(5733, func() { M(Item(A(select_, "selects"), 0), "assert_is", A(G("sqlglot.exp"), "Column")) })
+			self.DoAssign(5732, func() { select_ = Call(G("sqlglot.parse_one"), sql, Kw("dialect", dialect)) }, &select_)
+			self.Do(5733, func() { Stmt(M(Item(A(select_, "selects"), 0), "assert_is", A(G("sqlglot.exp"), "Column"))) })
 			self.Do(5734, func() { self.AssertEqual(M(select_, "sql", dialect), sql) })
 		}, F("Testing CURRENT_CATALOG as Column in ", FV{V: dialect}))
 	}
-	self.Do(5736, func() { supported_dialects = NewList("postgres", "duckdb", "trino", "databricks") })
+	self.DoAssign(5736, func() { supported_dialects = NewList("postgres", "duckdb", "trino", "databricks") }, &supported_dialects)
 	for _, item_ := range Iter(supported_dialects) {
 		dialect = item_
 		self.SubTest(func() {
 			if Truth(Eq(dialect, "databricks")) {
-				self.Do(5746, func() { sql = "SELECT CURRENT_CATALOG()" })
+				self.DoAssign(5746, func() { sql = "SELECT CURRENT_CATALOG()" }, &sql)
 			}
-			self.Do(5747, func() { select_ = Call(G("sqlglot.parse_one"), sql, Kw("dialect", dialect)) })
-			self.Do(5748, func() { M(Item(A(select_, "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CurrentCatalog")) })
+			self.DoAssign(5747, func() { select_ = Call(G("sqlglot.parse_one"), sql, Kw("dialect", dialect)) }, &select_)
+			self.Do(5748, func() { Stmt(M(Item(A(select_, "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CurrentCatalog"))) })
 			self.Do(5750, func() { self.AssertEqual(M(select_, "sql", dialect), sql) })
 		}, F("Testing CURRENT_CATALOG expression in ", FV{V: dialect}))
 	}
@@ -1927,25 +1927,25 @@ func test_dialect_TestDialect_test_current_catalog(self *Case, a Args) Value {
 func test_dialect_TestDialect_test_session_user(self *Case, a Args) Value {
 	var no_paren_sql, func_sql, dialect, select_, no_paren_dialects Value
 	_ = []Value{no_paren_sql, func_sql, dialect, select_, no_paren_dialects}
-	self.Do(5753, func() { no_paren_sql = "SELECT SESSION_USER" })
-	self.Do(5754, func() { func_sql = "SELECT SESSION_USER()" })
+	self.DoAssign(5753, func() { no_paren_sql = "SELECT SESSION_USER" }, &no_paren_sql)
+	self.DoAssign(5754, func() { func_sql = "SELECT SESSION_USER()" }, &func_sql)
 	for _, item_ := range Iter(NewTuple("bigquery", "mysql")) {
 		dialect = item_
 		self.SubTest(func() {
-			self.Do(5759, func() { select_ = Call(G("sqlglot.parse_one"), no_paren_sql, Kw("dialect", dialect)) })
-			self.Do(5760, func() { M(Item(A(select_, "selects"), 0), "assert_is", A(G("sqlglot.exp"), "Column")) })
+			self.DoAssign(5759, func() { select_ = Call(G("sqlglot.parse_one"), no_paren_sql, Kw("dialect", dialect)) }, &select_)
+			self.Do(5760, func() { Stmt(M(Item(A(select_, "selects"), 0), "assert_is", A(G("sqlglot.exp"), "Column"))) })
 			self.Do(5761, func() { self.AssertEqual(M(select_, "sql", dialect), no_paren_sql) })
-			self.Do(5763, func() { select_ = Call(G("sqlglot.parse_one"), func_sql, Kw("dialect", dialect)) })
-			self.Do(5764, func() { M(Item(A(select_, "selects"), 0), "assert_is", A(G("sqlglot.exp"), "SessionUser")) })
+			self.DoAssign(5763, func() { select_ = Call(G("sqlglot.parse_one"), func_sql, Kw("dialect", dialect)) }, &select_)
+			self.Do(5764, func() { Stmt(M(Item(A(select_, "selects"), 0), "assert_is", A(G("sqlglot.exp"), "SessionUser"))) })
 			self.Do(5765, func() { self.AssertEqual(M(select_, "sql", dialect), func_sql) })
 		}, F("Testing that SESSION_USER is parsed as a Column in ", FV{V: dialect}))
 	}
-	self.Do(5768, func() { no_paren_dialects = NewList("postgres", "duckdb", "databricks", "tsql", "spark") })
+	self.DoAssign(5768, func() { no_paren_dialects = NewList("postgres", "duckdb", "databricks", "tsql", "spark") }, &no_paren_dialects)
 	for _, item_ := range Iter(no_paren_dialects) {
 		dialect = item_
 		self.SubTest(func() {
-			self.Do(5780, func() { select_ = Call(G("sqlglot.parse_one"), no_paren_sql, Kw("dialect", dialect)) })
-			self.Do(5781, func() { M(Item(A(select_, "selects"), 0), "assert_is", A(G("sqlglot.exp"), "SessionUser")) })
+			self.DoAssign(5780, func() { select_ = Call(G("sqlglot.parse_one"), no_paren_sql, Kw("dialect", dialect)) }, &select_)
+			self.Do(5781, func() { Stmt(M(Item(A(select_, "selects"), 0), "assert_is", A(G("sqlglot.exp"), "SessionUser"))) })
 			self.Do(5782, func() { self.AssertEqual(M(select_, "sql", dialect), no_paren_sql) })
 			if Truth(In(dialect, NewTuple("databricks", "spark", "duckdb"))) {
 				self.Do(5786, func() {
@@ -1960,11 +1960,11 @@ func test_dialect_TestDialect_test_session_user(self *Case, a Args) Value {
 func test_dialect_TestDialect_test_operator(self *Case, a Args) Value {
 	var expr Value
 	_ = []Value{expr}
-	self.Do(5791, func() { expr = self.ValidateIdentity("1 OPERATOR(+) 2 OPERATOR(*) 3") })
-	self.Do(5793, func() { M(A(expr, "left"), "assert_is", A(G("sqlglot.exp"), "Operator")) })
-	self.Do(5794, func() { M(A(A(expr, "left"), "left"), "assert_is", A(G("sqlglot.exp"), "Literal")) })
-	self.Do(5795, func() { M(A(A(expr, "left"), "right"), "assert_is", A(G("sqlglot.exp"), "Literal")) })
-	self.Do(5796, func() { M(A(expr, "right"), "assert_is", A(G("sqlglot.exp"), "Literal")) })
+	self.DoAssign(5791, func() { expr = self.ValidateIdentity("1 OPERATOR(+) 2 OPERATOR(*) 3") }, &expr)
+	self.Do(5793, func() { Stmt(M(A(expr, "left"), "assert_is", A(G("sqlglot.exp"), "Operator"))) })
+	self.Do(5794, func() { Stmt(M(A(A(expr, "left"), "left"), "assert_is", A(G("sqlglot.exp"), "Literal"))) })
+	self.Do(5795, func() { Stmt(M(A(A(expr, "left"), "right"), "assert_is", A(G("sqlglot.exp"), "Literal"))) })
+	self.Do(5796, func() { Stmt(M(A(expr, "right"), "assert_is", A(G("sqlglot.exp"), "Literal"))) })
 	self.Do(5797, func() { self.AssertEqual(M(expr, "sql", Kw("dialect", "postgres")), "1 OPERATOR(+) 2 OPERATOR(*) 3") })
 	self.L(5799).ValidateIdentity("SELECT operator FROM t")
 	self.L(5800).ValidateIdentity("SELECT 1 OPERATOR(+) 2")
@@ -2000,8 +2000,10 @@ func test_dialect_TestDialect_test_custom_dialect(self *Case, a Args) Value {
 func test_dialect_TestDialect_test_agg(self *Case, a Args) Value {
 	var expression Value
 	_ = []Value{expression}
-	self.Do(5898, func() { expression = self.ValidateIdentity("SELECT AGG(m), AGG(m) AS x, AGG(t.m) FROM t") })
-	self.Do(5899, func() { M(self, "assertIsInstance", Item(A(expression, "selects"), 0), A(G("sqlglot.exp"), "Agg")) })
+	self.DoAssign(5898, func() { expression = self.ValidateIdentity("SELECT AGG(m), AGG(m) AS x, AGG(t.m) FROM t") }, &expression)
+	self.Do(5899, func() {
+		Stmt(M(self, "assertIsInstance", Item(A(expression, "selects"), 0), A(G("sqlglot.exp"), "Agg")))
+	})
 	self.Do(5900, func() {
 		self.AssertEqual(func() Value {
 			var s Value

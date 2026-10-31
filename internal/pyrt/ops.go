@@ -283,12 +283,18 @@ func Lt(a, b Value) Value {
 	if r, ok := exprOp(a, b, (*exp.Expr).Lt); ok {
 		return r
 	}
+	if r, ok := exprOp(b, a, (*exp.Expr).Gt); ok {
+		return r
+	}
 	return cmp(a, b, "<") < 0
 }
 
 // Le is a <= b.
 func Le(a, b Value) Value {
 	if r, ok := exprOp(a, b, (*exp.Expr).Lte); ok {
+		return r
+	}
+	if r, ok := exprOp(b, a, (*exp.Expr).Gte); ok {
 		return r
 	}
 	return cmp(a, b, "<=") <= 0
@@ -299,12 +305,18 @@ func Gt(a, b Value) Value {
 	if r, ok := exprOp(a, b, (*exp.Expr).Gt); ok {
 		return r
 	}
+	if r, ok := exprOp(b, a, (*exp.Expr).Lt); ok {
+		return r
+	}
 	return cmp(a, b, ">") > 0
 }
 
 // Ge is a >= b.
 func Ge(a, b Value) Value {
 	if r, ok := exprOp(a, b, (*exp.Expr).Gte); ok {
+		return r
+	}
+	if r, ok := exprOp(b, a, (*exp.Expr).Lte); ok {
 		return r
 	}
 	return cmp(a, b, ">=") >= 0
@@ -504,6 +516,9 @@ func FloorDiv(a, b Value) Value {
 	if x, ok := norm(a).(*exp.Expr); ok {
 		return x.FloorDiv(toGo(b))
 	}
+	if y, ok := norm(b).(*exp.Expr); ok {
+		return y.RFloorDiv(toGo(a))
+	}
 	Raise(TypeError, "unsupported operand type(s) for //: '%s' and '%s'", TypeName(a), TypeName(b))
 	return nil
 }
@@ -515,6 +530,9 @@ func Pow(a, b Value) Value {
 	}
 	if x, ok := norm(a).(*exp.Expr); ok {
 		return x.Power(toGo(b))
+	}
+	if y, ok := norm(b).(*exp.Expr); ok {
+		return y.RPower(toGo(a))
 	}
 	Raise(TypeError, "unsupported operand type(s) for **")
 	return nil
@@ -531,6 +549,14 @@ func BitOp(a, b Value, op string) Value {
 			return x.BitAnd(toGo(b))
 		case "|":
 			return x.BitOr(toGo(b))
+		}
+	}
+	if y, ok := norm(b).(*exp.Expr); ok {
+		switch op {
+		case "&":
+			return y.RBitAnd(toGo(a))
+		case "|":
+			return y.RBitOr(toGo(a))
 		}
 	}
 	if x, ok := a.(*Set); ok {
@@ -574,6 +600,9 @@ func Mod(a, b Value) Value {
 	}
 	if x, ok := norm(a).(*exp.Expr); ok {
 		return x.Modulo(toGo(b))
+	}
+	if y, ok := norm(b).(*exp.Expr); ok {
+		return y.RModulo(toGo(a))
 	}
 	Raise(TypeError, "unsupported operand type(s) for %%: '%s' and '%s'", TypeName(a), TypeName(b))
 	return nil
@@ -696,6 +725,8 @@ func Float(v Value) Value {
 // Len is len(v).
 func Len(v Value) int {
 	switch x := norm(v).(type) {
+	case *SkippedV:
+		skipNow(x)
 	case string:
 		return utf8.RuneCountInString(x)
 	case *List:
@@ -823,6 +854,14 @@ func Item(v, key Value) Value {
 		}
 		Raise(KeyError, "%s", Repr(key))
 	case *exp.Expr:
+		// expr[a, b] subscripts with several values (ensure_list of the tuple)
+		if t, ok := norm(key).(Tuple); ok {
+			keys := make([]any, len(t))
+			for i, k := range t {
+				keys[i] = toGo(k)
+			}
+			return x.Bracket(keys...)
+		}
 		return x.Bracket(toGo(key))
 	case interface{ PyItem(Value) Value }:
 		return x.PyItem(key)
@@ -980,7 +1019,7 @@ func Str(v Value) string {
 	case exp.DType:
 		return "DType." + string(x)
 	case exp.Kind:
-		return "<class '" + x.Name() + "'>"
+		return x.ClassRepr()
 	case *List, Tuple, *Dict, *Set:
 		return Repr(v)
 	case fmt.Stringer:

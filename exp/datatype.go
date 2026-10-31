@@ -114,7 +114,7 @@ func DataTypeBuild(dtype any, dialect any, udt bool, kv ...any) (*Expr, error) {
 			return d.Copy(), nil
 		}
 	}
-	return nil, fmt.Errorf("Invalid data type: %T. Expected str or DType", dtype)
+	return nil, errs.Valuef("Invalid data type: %T. Expected str or DType", dtype)
 }
 
 // DataTypeBuildNoCopy is DataTypeBuild with copy=False for DataType inputs.
@@ -181,7 +181,7 @@ func buildForIsType(dtype any) *Expr {
 		isTypeCache.Store(d, e)
 		return e
 	}
-	panic(fmt.Sprintf("Invalid data type: %T. Expected str or DType", dtype))
+	panic(errs.Valuef("Invalid data type: %T. Expected str or DType", dtype))
 }
 
 // IsType mirrors Expression.is_type / Cast.is_type / DataType.is_type. Each dtype may be a

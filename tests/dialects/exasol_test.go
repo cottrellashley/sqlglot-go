@@ -53,7 +53,9 @@ func test_exasol_TestExasol_test_exasol(self *Case, a Args) Value {
 	self.L(18).ValidateIdentity("SELECT USER", "SELECT CURRENT_USER")
 	self.L(19).ValidateIdentity("SELECT USER()", "SELECT CURRENT_USER")
 	self.L(20).ValidateIdentity("SELECT CURRENT_USER", "SELECT CURRENT_USER")
-	self.Do(21, func() { M(self.ValidateIdentity("CURRENT_SCHEMA"), "assert_is", A(G("sqlglot.exp"), "CurrentSchema")) })
+	self.Do(21, func() {
+		Stmt(M(self.ValidateIdentity("CURRENT_SCHEMA"), "assert_is", A(G("sqlglot.exp"), "CurrentSchema")))
+	})
 	self.L(22).ValidateIdentity("SELECT NOW()", "SELECT CURRENT_TIMESTAMP()")
 	self.L(23).ValidateIdentity("SELECT FROM_POSIX_TIME(1234567890)")
 	self.L(24).ValidateAll("SELECT FROM_POSIX_TIME(col)", Kw("read", NewDict("mysql", "SELECT FROM_UNIXTIME(col)")), Kw("write", NewDict("exasol", "SELECT FROM_POSIX_TIME(col)", "mysql", "SELECT FROM_UNIXTIME(col)")))
@@ -64,7 +66,7 @@ func test_exasol_TestExasol_test_exasol(self *Case, a Args) Value {
 func test_exasol_TestExasol_test_exasol_keywords(self *Case, a Args) Value {
 	var keywords, keyword Value
 	_ = []Value{keywords, keyword}
-	self.Do(40, func() { keywords = NewList("CS", "ADD", "BOOLEAN", "CALL", "CONTROL") })
+	self.DoAssign(40, func() { keywords = NewList("CS", "ADD", "BOOLEAN", "CALL", "CONTROL") }, &keywords)
 	for _, item_ := range Iter(keywords) {
 		keyword = item_
 		self.SubTest(func() {
@@ -191,9 +193,9 @@ func test_exasol_TestExasol_test_stringFunctions(self *Case, a Args) Value {
 func test_exasol_TestExasol_test_datetime_functions(self *Case, a Args) Value {
 	var formats, fmt, alias, units, unit Value
 	_ = []Value{formats, fmt, alias, units, unit}
-	self.Do(451, func() {
+	self.DoAssign(451, func() {
 		formats = NewDict("HH12", "hour_12", "HH24", "hour_24", "ID", "iso_weekday", "IW", "iso_week_number", "uW", "week_number_uW", "VW", "week_number_VW", "IYYY", "iso_year", "MI", "minutes", "SS", "seconds", "DAY", "day_full", "DY", "day_abbr")
-	})
+	}, &formats)
 	self.L(464).ValidateIdentity("SELECT TO_DATE('31-12-1999', 'dd-mm-yyyy') AS TO_DATE", "SELECT TO_DATE('31-12-1999', 'DD-MM-YYYY') AS TO_DATE")
 	self.L(468).ValidateIdentity("SELECT TO_DATE('31-12-1999', 'dd-mm-YY') AS TO_DATE", "SELECT TO_DATE('31-12-1999', 'DD-MM-YY') AS TO_DATE")
 	self.L(472).ValidateIdentity("SELECT TO_DATE('31-DECEMBER-1999', 'DD-MONTH-YYYY') AS TO_DATE")
@@ -215,7 +217,7 @@ func test_exasol_TestExasol_test_datetime_functions(self *Case, a Args) Value {
 	self.L(536).ValidateIdentity("TIME_TO_STR(b, '%Y-%m-%d %H:%M:%S')", "TO_CHAR(b, 'YYYY-MM-DD HH:MI:SS')")
 	self.L(540).ValidateIdentity("SELECT TIME_TO_STR(CAST(STR_TO_TIME(date, '%Y%m%d') AS DATE), '%a') AS day_of_week", "SELECT TO_CHAR(CAST(TO_DATE(date, 'YYYYMMDD') AS DATE), 'DY') AS day_of_week")
 	self.L(544).ValidateIdentity("SELECT CAST(CAST(CURRENT_TIMESTAMP() AS TIMESTAMP) AT TIME ZONE 'CET' AS DATE) - 1", "SELECT CAST(CONVERT_TZ(CAST(CURRENT_TIMESTAMP() AS TIMESTAMP), 'UTC', 'CET') AS DATE) - 1")
-	self.Do(548, func() { units = NewList("MM", "QUARTER", "WEEK", "MINUTE", "YEAR") })
+	self.DoAssign(548, func() { units = NewList("MM", "QUARTER", "WEEK", "MINUTE", "YEAR") }, &units)
 	self.L(549).ValidateIdentity("SELECT DATE_TRUNC('D'') ; SELECT 1; --', TIMESTAMP '2020-01-01')")
 	for _, item_ := range Iter(units) {
 		unit = item_
@@ -257,19 +259,19 @@ func test_exasol_TestExasol_test_number_functions(self *Case, a Args) Value {
 	_ = []Value{unit}
 	self.L(639).ValidateIdentity("SELECT TRUNC(123.456, 2) AS TRUNC")
 	self.L(640).ValidateIdentity("SELECT DIV(1234, 2) AS DIV")
-	self.Do(643, func() { M(self.ValidateIdentity("TRUNC(123.456, 2)"), "assert_is", A(G("sqlglot.exp"), "Trunc")) })
-	self.Do(644, func() { M(self.ValidateIdentity("TRUNC(3.14159)"), "assert_is", A(G("sqlglot.exp"), "Trunc")) })
+	self.Do(643, func() { Stmt(M(self.ValidateIdentity("TRUNC(123.456, 2)"), "assert_is", A(G("sqlglot.exp"), "Trunc"))) })
+	self.Do(644, func() { Stmt(M(self.ValidateIdentity("TRUNC(3.14159)"), "assert_is", A(G("sqlglot.exp"), "Trunc"))) })
 	self.Do(648, func() {
-		M(self.ParseOne("TRUNC(CAST(x AS DATE), 'MONTH')"), "assert_is", A(G("sqlglot.exp"), "DateTrunc"))
+		Stmt(M(self.ParseOne("TRUNC(CAST(x AS DATE), 'MONTH')"), "assert_is", A(G("sqlglot.exp"), "DateTrunc")))
 	})
 	self.Do(649, func() {
-		M(self.ParseOne("TRUNC(CAST(x AS TIMESTAMP), 'MONTH')"), "assert_is", A(G("sqlglot.exp"), "DateTrunc"))
+		Stmt(M(self.ParseOne("TRUNC(CAST(x AS TIMESTAMP), 'MONTH')"), "assert_is", A(G("sqlglot.exp"), "DateTrunc")))
 	})
 	self.Do(650, func() {
-		M(self.ParseOne("TRUNC(CAST(x AS DATETIME), 'MONTH')"), "assert_is", A(G("sqlglot.exp"), "DateTrunc"))
+		Stmt(M(self.ParseOne("TRUNC(CAST(x AS DATETIME), 'MONTH')"), "assert_is", A(G("sqlglot.exp"), "DateTrunc")))
 	})
 	self.Do(653, func() {
-		M(self.ValidateIdentity("TRUNC(CAST(x AS DATE))"), "assert_is", A(G("sqlglot.exp"), "Anonymous"))
+		Stmt(M(self.ValidateIdentity("TRUNC(CAST(x AS DATE))"), "assert_is", A(G("sqlglot.exp"), "Anonymous")))
 	})
 	self.L(656).ValidateAll("TRUNC(price, 2)", Kw("write", NewDict("exasol", "TRUNC(price, 2)", "oracle", "TRUNC(price, 2)", "postgres", "TRUNC(price, 2)", "mysql", "TRUNCATE(price, 2)", "tsql", "ROUND(price, 2, 1)")))
 	for _, item_ := range Iter(NewTuple("YYYY", "MM", "DD", "HH", "MI", "SS", "WW")) {
@@ -313,9 +315,9 @@ func test_exasol_TestExasol_test_local_prefix_for_alias(self *Case, a Args) Valu
 	self.L(832).ValidateIdentity(`SELECT a_year AS a_year FROM "LOCAL" GROUP BY "LOCAL".a_year`)
 	self.L(835).ValidateIdentity("SELECT YEAR(a_date) AS A_YEAR FROM my_table WHERE a_year > 2020", "SELECT YEAR(a_date) AS A_YEAR FROM my_table WHERE LOCAL.A_YEAR > 2020")
 	self.L(839).ValidateIdentity("SELECT SUM(amount) AS Total FROM my_table HAVING TOTAL > 10000", "SELECT SUM(amount) AS Total FROM my_table HAVING LOCAL.Total > 10000")
-	self.Do(844, func() {
+	self.DoAssign(844, func() {
 		test_cases = NewList(NewTuple("GROUP BY alias", "SELECT YEAR(a_date) AS a_year FROM my_table GROUP BY LOCAL.a_year", "SELECT YEAR(a_date) AS a_year FROM my_table GROUP BY a_year"), NewTuple("HAVING alias", "SELECT SUM(amount) AS total FROM my_table HAVING LOCAL.total > 10000", "SELECT SUM(amount) AS total FROM my_table HAVING total > 10000"), NewTuple("WHERE alias", "SELECT YEAR(a_date) AS a_year FROM my_table WHERE LOCAL.a_year > 2020", "SELECT YEAR(a_date) AS a_year FROM my_table WHERE a_year > 2020"), NewTuple("Multiple aliases", "SELECT YEAR(a_date) AS a_year, MONTH(a_date) AS a_month FROM my_table WHERE LOCAL.a_year > 2020 AND LOCAL.a_month < 6", "SELECT YEAR(a_date) AS a_year, MONTH(a_date) AS a_month FROM my_table WHERE a_year > 2020 AND a_month < 6"), NewTuple("Select list aliases", "SELECT YR AS THE_YEAR, ID AS YR, LOCAL.THE_YEAR + 1 AS NEXT_YEAR FROM my_table", "SELECT YR AS THE_YEAR, ID AS YR, THE_YEAR + 1 AS NEXT_YEAR FROM my_table"), NewTuple("Select list aliases without Local keyword", "SELECT YEAR(CURRENT_DATE) AS current_year, LOCAL.current_year + 1 AS next_year", "SELECT YEAR(CURRENT_DATE) AS current_year, current_year + 1 AS next_year"))
-	})
+	}, &test_cases)
 	for _, item_ := range Iter(test_cases) {
 		Unpack(item_, &title, &exasol_sql, &dbx_sql)
 		self.SubTest(func() {
@@ -353,7 +355,7 @@ func test_exasol_TestExasol_test_group_by_all(self *Case, a Args) Value {
 	self.Do(975, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			Call(G("sqlglot.transpile"), "SELECT *, COUNT(*) FROM t GROUP BY ALL", Kw("write", "exasol"), Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE")))
+			Stmt(Call(G("sqlglot.transpile"), "SELECT *, COUNT(*) FROM t GROUP BY ALL", Kw("write", "exasol"), Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE"))))
 		}, G("sqlglot.UnsupportedError"))
 	})
 	return nil
@@ -366,7 +368,7 @@ func test_exasol_TestExasol_test_use_to_open_schema(self *Case, a Args) Value {
 	self.Do(995, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			Call(G("sqlglot.transpile"), "USE ROLE admin", Kw("read", "snowflake"), Kw("write", "exasol"), Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE")))
+			Stmt(Call(G("sqlglot.transpile"), "USE ROLE admin", Kw("read", "snowflake"), Kw("write", "exasol"), Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE"))))
 		}, G("sqlglot.UnsupportedError"))
 	})
 	return nil

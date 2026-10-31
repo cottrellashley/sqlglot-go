@@ -64,13 +64,13 @@ func test_clickhouse_TestClickhouse_test_clickhouse(self *Case, a Args) Value {
 	var expr, string_type_enum, non_nullable_type, try_cast, target_type, nullable_type, ch_name, op, window, modify, modify_order, global_, side, strictness, sql Value
 	_ = []Value{expr, string_type_enum, non_nullable_type, try_cast, target_type, nullable_type, ch_name, op, window, modify, modify_order, global_, side, strictness, sql}
 	self.Do(18, func() {
-		M(Item(A(self.ValidateIdentity("SELECT col.^nested, t.col2.^nested, t.col3.^nested.twice FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "NestedJSONSelect"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT col.^nested, t.col2.^nested, t.col3.^nested.twice FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "NestedJSONSelect")))
 	})
 	self.L(22).ValidateIdentity("cast(notEmpty(report_task_id)?report_task_id:'-1' AS text)", "CAST(CASE WHEN notEmpty(report_task_id) THEN report_task_id ELSE '-1' END AS String)")
 	self.L(27).ValidateIdentity(`SELECT $$a\$b$$`, `SELECT 'a\\$b'`)
-	self.Do(32, func() {
+	self.DoAssign(32, func() {
 		expr = Call(G("sqlglot.optimizer.qualify_columns.quote_identifiers"), self.ParseOne("{start_date:String}"), Kw("dialect", "clickhouse"))
-	})
+	}, &expr)
 	self.Do(33, func() { self.AssertEqual(M(expr, "sql", "clickhouse"), "{start_date: String}") })
 	for _, item_ := range Iter(A(A(G("sqlglot.dialects.ClickHouse"), "Generator"), "STRING_TYPE_MAPPING")) {
 		string_type_enum = item_
@@ -80,21 +80,21 @@ func test_clickhouse_TestClickhouse_test_clickhouse(self *Case, a Args) Value {
 	}
 	for _, item_ := range Iter(NewTuple("ARRAY<INT>", "MAP<INT, INT>", "STRUCT(a: INT)")) {
 		non_nullable_type = item_
-		self.Do(40, func() { try_cast = Call(G("sqlglot.parse_one"), F("TRY_CAST(x AS ", FV{V: non_nullable_type}, ")")) })
-		self.Do(41, func() { target_type = M(A(try_cast, "to"), "sql", "clickhouse") })
+		self.DoAssign(40, func() { try_cast = Call(G("sqlglot.parse_one"), F("TRY_CAST(x AS ", FV{V: non_nullable_type}, ")")) }, &try_cast)
+		self.DoAssign(41, func() { target_type = M(A(try_cast, "to"), "sql", "clickhouse") }, &target_type)
 		self.Do(42, func() { self.AssertEqual(M(try_cast, "sql", "clickhouse"), F("CAST(x AS ", FV{V: target_type}, ")")) })
 	}
 	for _, item_ := range Iter(NewTuple("INT", "UINT", "BIGINT", "FLOAT", "DOUBLE", "TEXT", "DATE", "UUID")) {
 		nullable_type = item_
-		self.Do(45, func() { try_cast = Call(G("sqlglot.parse_one"), F("TRY_CAST(x AS ", FV{V: nullable_type}, ")")) })
-		self.Do(46, func() {
+		self.DoAssign(45, func() { try_cast = Call(G("sqlglot.parse_one"), F("TRY_CAST(x AS ", FV{V: nullable_type}, ")")) }, &try_cast)
+		self.DoAssign(46, func() {
 			target_type = M(M(A(G("sqlglot.exp"), "DataType"), "build", nullable_type, Kw("dialect", "clickhouse")), "sql", "clickhouse")
-		})
+		}, &target_type)
 		self.Do(47, func() {
 			self.AssertEqual(M(try_cast, "sql", "clickhouse"), F("CAST(x AS Nullable(", FV{V: target_type}, "))"))
 		})
 	}
-	self.Do(49, func() { expr = Call(G("sqlglot.parse_one"), "count(x)") })
+	self.DoAssign(49, func() { expr = Call(G("sqlglot.parse_one"), "count(x)") }, &expr)
 	self.Do(50, func() { self.AssertEqual(M(expr, "sql", Kw("dialect", "clickhouse")), "COUNT(x)") })
 	self.L(52).ValidateIdentity("SELECT 1 SETTINGS log_comment = 'performance'")
 	self.L(53).ValidateIdentity(`SELECT DISTINCT ON ("id") * FROM t`)
@@ -110,7 +110,7 @@ func test_clickhouse_TestClickhouse_test_clickhouse(self *Case, a Args) Value {
 	self.L(63).ValidateIdentity("CAST(1 AS Bool)")
 	self.L(64).ValidateIdentity("SELECT toString(CHAR(104.1, 101, 108.9, 108.9, 111, 32))")
 	self.Do(65, func() {
-		M(A(M(self.ValidateIdentity("@macro"), "assert_is", A(G("sqlglot.exp"), "Parameter")), "this"), "assert_is", A(G("sqlglot.exp"), "Var"))
+		Stmt(M(A(M(self.ValidateIdentity("@macro"), "assert_is", A(G("sqlglot.exp"), "Parameter")), "this"), "assert_is", A(G("sqlglot.exp"), "Var")))
 	})
 	self.L(66).ValidateIdentity("SELECT toFloat(like)")
 	self.L(67).ValidateIdentity("SELECT like")
@@ -181,11 +181,11 @@ func test_clickhouse_TestClickhouse_test_clickhouse(self *Case, a Args) Value {
 		})
 	}
 	self.Do(159, func() {
-		M(Item(A(self.ValidateIdentity("SELECT groupBitAndIf(x, y) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CombinedAggFunc"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT groupBitAndIf(x, y) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CombinedAggFunc")))
 	})
-	self.Do(162, func() { window = self.ValidateIdentity("SELECT groupBitAnd(x) OVER (PARTITION BY y) FROM t") })
+	self.DoAssign(162, func() { window = self.ValidateIdentity("SELECT groupBitAnd(x) OVER (PARTITION BY y) FROM t") }, &window)
 	self.Do(163, func() {
-		M(A(M(Item(A(window, "selects"), 0), "assert_is", A(G("sqlglot.exp"), "Window")), "this"), "assert_is", A(G("sqlglot.exp"), "BitwiseAndAgg"))
+		Stmt(M(A(M(Item(A(window, "selects"), 0), "assert_is", A(G("sqlglot.exp"), "Window")), "this"), "assert_is", A(G("sqlglot.exp"), "BitwiseAndAgg")))
 	})
 	self.L(164).ValidateAll("toDayOfMonth(x)", Kw("read", NewDict("", "DAY_OF_MONTH(x)", "snowflake", "DAYOFMONTH(x)")))
 	self.L(171).ValidateAll("toDayOfYear(x)", Kw("read", NewDict("", "DAY_OF_YEAR(x)", "snowflake", "DAYOFYEAR(x)")))
@@ -213,8 +213,8 @@ func test_clickhouse_TestClickhouse_test_clickhouse(self *Case, a Args) Value {
 	self.L(222).ValidateIdentity("TRUNCATE DATABASE db")
 	self.L(223).ValidateIdentity("TRUNCATE DATABASE db ON CLUSTER test_cluster")
 	self.L(224).ValidateIdentity("TRUNCATE DATABASE db ON CLUSTER '{cluster}'")
-	self.Do(227, func() { M(self.ValidateIdentity("trunc(3.14159, 2)"), "assert_is", A(G("sqlglot.exp"), "Trunc")) })
-	self.Do(228, func() { M(self.ValidateIdentity("trunc(3.14159)"), "assert_is", A(G("sqlglot.exp"), "Trunc")) })
+	self.Do(227, func() { Stmt(M(self.ValidateIdentity("trunc(3.14159, 2)"), "assert_is", A(G("sqlglot.exp"), "Trunc"))) })
+	self.Do(228, func() { Stmt(M(self.ValidateIdentity("trunc(3.14159)"), "assert_is", A(G("sqlglot.exp"), "Trunc"))) })
 	self.L(229).ValidateAll("trunc(3.14159, 2)", Kw("read", NewDict("postgres", "TRUNC(3.14159, 2)")))
 	self.L(234).ValidateIdentity("EXCHANGE TABLES x.a AND y.b", Kw("check_command_warning", true))
 	self.L(235).ValidateIdentity("CREATE TABLE test (id UInt8) ENGINE=Null()")
@@ -339,7 +339,7 @@ func test_clickhouse_TestClickhouse_test_clickhouse(self *Case, a Args) Value {
 	self.L(843).ValidateIdentity("SELECT 1 FORMAT TabSeparated")
 	self.L(844).ValidateIdentity("SELECT * FROM t FORMAT TabSeparated")
 	self.L(845).ValidateIdentity("SELECT FORMAT")
-	self.Do(846, func() { M(self.ValidateIdentity("1 AS FORMAT"), "assert_is", A(G("sqlglot.exp"), "Alias")) })
+	self.Do(846, func() { Stmt(M(self.ValidateIdentity("1 AS FORMAT"), "assert_is", A(G("sqlglot.exp"), "Alias"))) })
 	self.L(848).ValidateIdentity("SELECT formatDateTime(NOW(), '%Y-%m-%d', '%T')")
 	self.L(849).ValidateAll("SELECT formatDateTime(NOW(), '%Y-%m-%d')", Kw("read", NewDict("clickhouse", "SELECT formatDateTime(NOW(), '%Y-%m-%d')", "mysql", "SELECT DATE_FORMAT(NOW(), '%Y-%m-%d')")), Kw("write", NewDict("clickhouse", "SELECT formatDateTime(NOW(), '%Y-%m-%d')", "mysql", "SELECT DATE_FORMAT(NOW(), '%Y-%m-%d')")))
 	self.L(861).ValidateIdentity("ALTER TABLE visits DROP PARTITION 201901")
@@ -355,25 +355,25 @@ func test_clickhouse_TestClickhouse_test_clickhouse(self *Case, a Args) Value {
 	self.L(876).ValidateIdentity("DELETE FROM tbl ON CLUSTER test_cluster WHERE date = '2019-01-01'")
 	self.L(877).ValidateIdentity("DELETE FROM tbl ON CLUSTER '{cluster}' WHERE date = '2019-01-01'")
 	self.L(882).ValidateAll("ALTER TABLE t ALTER COLUMN c TYPE Nullable(Int64)", Kw("read", NewDict("clickhouse", "ALTER TABLE t ALTER COLUMN c TYPE Nullable(Int64)", "postgres", "ALTER TABLE t ALTER COLUMN c TYPE BIGINT")))
-	self.Do(889, func() {
+	self.DoAssign(889, func() {
 		modify = M(self.ValidateIdentity("ALTER TABLE t MODIFY COLUMN c Int64", "ALTER TABLE t ALTER COLUMN c TYPE Int64"), "assert_is", A(G("sqlglot.exp"), "Alter"))
-	})
+	}, &modify)
 	self.Do(893, func() {
-		M(self, "assertIsInstance", Item(Item(A(modify, "args"), "actions"), 0), A(G("sqlglot.exp"), "AlterColumn"))
+		Stmt(M(self, "assertIsInstance", Item(Item(A(modify, "args"), "actions"), 0), A(G("sqlglot.exp"), "AlterColumn")))
 	})
 	self.L(894).ValidateIdentity("ALTER TABLE t MODIFY COLUMN IF EXISTS c Int64", "ALTER TABLE t ALTER COLUMN IF EXISTS c TYPE Int64")
 	self.L(898).ValidateIdentity("ALTER TABLE t ALTER COLUMN IF EXISTS c TYPE Int64")
 	self.L(899).ValidateIdentity("ALTER TABLE t MODIFY COLUMN c REMOVE DEFAULT", Kw("check_command_warning", true))
-	self.Do(905, func() {
+	self.DoAssign(905, func() {
 		modify_order = Call(G("sqlglot.parse_one"), "ALTER TABLE t MODIFY ORDER BY (a, b)", Kw("read", "clickhouse"))
-	})
+	}, &modify_order)
 	self.Do(906, func() {
-		M(self, "assertIsInstance", Item(Item(A(modify_order, "args"), "actions"), 0), A(G("sqlglot.exp"), "AlterModifySqlSecurity"))
+		Stmt(M(self, "assertIsInstance", Item(Item(A(modify_order, "args"), "actions"), 0), A(G("sqlglot.exp"), "AlterModifySqlSecurity")))
 	})
 	self.L(907).ValidateIdentity("ALTER TABLE t MODIFY TTL d + INTERVAL 1 DAY", "ALTER TABLE t MODIFY TTL d + INTERVAL '1' DAY")
 	self.L(911).ValidateIdentity("ALTER TABLE t MODIFY COMMENT 'hi'")
 	self.Do(913, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "Tuple(select Int64)", Kw("into", A(G("sqlglot.exp"), "DataType")), Kw("read", "clickhouse")), A(G("sqlglot.exp"), "DataType"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "Tuple(select Int64)", Kw("into", A(G("sqlglot.exp"), "DataType")), Kw("read", "clickhouse")), A(G("sqlglot.exp"), "DataType")))
 	})
 	self.L(917).ValidateIdentity("INSERT INTO t (col1, col2) VALUES ('abcd', 1234)", "INSERT INTO t (col1, col2) VALUES (('abcd'), (1234))")
 	self.L(921).ValidateAll("INSERT INTO t (col1, col2) VALUES ('abcd', 1234)", Kw("write", NewDict("clickhouse", "INSERT INTO t (col1, col2) VALUES (('abcd'), (1234))", "postgres", "INSERT INTO t (col1, col2) VALUES (('abcd'), (1234))")))
@@ -381,7 +381,9 @@ func test_clickhouse_TestClickhouse_test_clickhouse(self *Case, a Args) Value {
 	self.L(929).ValidateIdentity("SELECT TRIM(LEADING '(' FROM '(   Hello, world!   )')")
 	self.L(930).ValidateAll("SELECT trimLeft(s, 'xy'), trimRight(s, 'xy'), trimBoth(s, 'xy')", Kw("write", NewDict("clickhouse", "SELECT TRIM(LEADING 'xy' FROM s), TRIM(TRAILING 'xy' FROM s), TRIM(BOTH 'xy' FROM s)", "duckdb", "SELECT LTRIM(s, 'xy'), RTRIM(s, 'xy'), TRIM(s, 'xy')", "postgres", "SELECT TRIM(LEADING 'xy' FROM s), TRIM(TRAILING 'xy' FROM s), TRIM('xy' FROM s)")))
 	self.L(938).ValidateAll("SELECT LTRIM(s), RTRIM(s), TRIM(s)", Kw("read", NewDict("clickhouse", "SELECT trimLeft(s), trimRight(s), trimBoth(s)")), Kw("write", NewDict("duckdb", "SELECT LTRIM(s), RTRIM(s), TRIM(s)")))
-	self.Do(943, func() { M(self.ValidateIdentity("current_timestamp"), "assert_is", A(G("sqlglot.exp"), "Column")) })
+	self.Do(943, func() {
+		Stmt(M(self.ValidateIdentity("current_timestamp"), "assert_is", A(G("sqlglot.exp"), "Column")))
+	})
 	self.L(945).ValidateIdentity("SELECT * APPLY(sum) FROM columns_transformers")
 	self.L(946).ValidateIdentity("SELECT COLUMNS('[jk]') APPLY(toString) FROM columns_transformers")
 	self.L(947).ValidateIdentity("SELECT COLUMNS('[jk]') APPLY(toString) APPLY(length) APPLY(max) FROM columns_transformers")
@@ -413,16 +415,16 @@ func test_clickhouse_TestClickhouse_test_clickhouse(self *Case, a Args) Value {
 	self.L(996).ValidateIdentity("SELECT and(1, 2, 3)", "SELECT (1 AND 2 AND 3)")
 	self.L(997).ValidateIdentity("SELECT or(and(3, 0), 5)", "SELECT ((3 AND 0) OR 5)")
 	self.Do(999, func() {
-		M(self.ValidateIdentity("arrayCompact([1, 1, nan, nan, 2, 3, 3, 3])"), "assert_is", A(G("sqlglot.exp"), "ArrayCompact"))
+		Stmt(M(self.ValidateIdentity("arrayCompact([1, 1, nan, nan, 2, 3, 3, 3])"), "assert_is", A(G("sqlglot.exp"), "ArrayCompact")))
 	})
 	self.Do(1002, func() {
-		M(self.ValidateIdentity("arrayConcat([1, 2], [3, 4])"), "assert_is", A(G("sqlglot.exp"), "ArrayConcat"))
+		Stmt(M(self.ValidateIdentity("arrayConcat([1, 2], [3, 4])"), "assert_is", A(G("sqlglot.exp"), "ArrayConcat")))
 	})
 	self.Do(1003, func() {
-		M(self.ValidateIdentity("arrayDistinct([1, 2, 2, 3, 1])"), "assert_is", A(G("sqlglot.exp"), "ArrayDistinct"))
+		Stmt(M(self.ValidateIdentity("arrayDistinct([1, 2, 2, 3, 1])"), "assert_is", A(G("sqlglot.exp"), "ArrayDistinct")))
 	})
 	self.Do(1004, func() {
-		M(self.ValidateIdentity("arrayExcept([1, 2, 3, 2, 4], [3, 5])"), "assert_is", A(G("sqlglot.exp"), "ArrayExcept"))
+		Stmt(M(self.ValidateIdentity("arrayExcept([1, 2, 3, 2, 4], [3, 5])"), "assert_is", A(G("sqlglot.exp"), "ArrayExcept")))
 	})
 	self.L(1005).ValidateIdentity("SELECT UTCTimestamp()", "SELECT CURRENT_TIMESTAMP('UTC')")
 	for _, item_ := range Iter(NewList("", "GLOBAL ")) {
@@ -431,9 +433,9 @@ func test_clickhouse_TestClickhouse_test_clickhouse(self *Case, a Args) Value {
 			side = item_
 			for _, item_ := range Iter(NewList("ANY ", "ALL ")) {
 				strictness = item_
-				self.Do(1010, func() {
+				self.DoAssign(1010, func() {
 					sql = F("SELECT * FROM foo1 ", FV{V: global_}, FV{V: side}, FV{V: strictness}, "JOIN foo2 ON foo1.id = foo2.id")
-				})
+				}, &sql)
 				self.SubTest(func() {
 					self.Do(1012, func() { self.ValidateIdentity(sql) })
 				}, Kw("sql", sql))
@@ -486,29 +488,29 @@ func test_clickhouse_TestClickhouse_test_json_extract_qualified_roundtrip(self *
 		return &List{V: out}
 	}())))) {
 		Unpack(item_, &dialect, &dtype, &projections)
-		self.Do(1060, func() { schema = NewDict("data", NewDict("v", dtype)) })
+		self.DoAssign(1060, func() { schema = NewDict("data", NewDict("v", dtype)) }, &schema)
 		for _, item_ := range Iter(projections) {
 			projection = item_
 			self.SubTest(func() {
-				self.Do(1063, func() {
+				self.DoAssign(1063, func() {
 					expression = Call(G("sqlglot.optimizer.qualify.qualify"), Call(G("sqlglot.parse_one"), F("SELECT ", FV{V: projection}, " AS result FROM data"), Kw("read", dialect)), Kw("dialect", dialect), Kw("schema", schema))
-				})
-				self.Do(1068, func() { expected = M(expression, "sql", "clickhouse") })
+				}, &expression)
+				self.DoAssign(1068, func() { expected = M(expression, "sql", "clickhouse") }, &expected)
 				self.Do(1069, func() {
-					Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expression, Kw("dialect", dialect), Kw("schema", schema))
+					Stmt(Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expression, Kw("dialect", dialect), Kw("schema", schema)))
 				})
 				self.Do(1070, func() { self.AssertEqual(M(expression, "sql", "clickhouse"), expected) })
 				self.Do(1071, func() {
 					self.AssertEqual(M(Call(G("sqlglot.parse_one"), M(expression, "sql", dialect), Kw("read", dialect)), "sql", "clickhouse"), expected)
 				})
-				self.Do(1076, func() { target_schema = NewDict("data", NewDict("v", "String"), "DATA", NewDict("V", "String")) })
+				self.DoAssign(1076, func() { target_schema = NewDict("data", NewDict("v", "String"), "DATA", NewDict("V", "String")) }, &target_schema)
 				for _, item_ := range Iter(Call(G("range"), 2)) {
 					underscore1 = item_
-					self.Do(1078, func() {
+					self.DoAssign(1078, func() {
 						expression = Call(G("sqlglot.optimizer.qualify.qualify"), Call(G("sqlglot.parse_one"), expected, Kw("read", "clickhouse")), Kw("dialect", "clickhouse"), Kw("schema", target_schema))
-					})
+					}, &expression)
 					self.Do(1083, func() {
-						Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expression, Kw("dialect", "clickhouse"), Kw("schema", target_schema))
+						Stmt(Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expression, Kw("dialect", "clickhouse"), Kw("schema", target_schema)))
 					})
 					self.Do(1084, func() { self.AssertEqual(M(expression, "sql", "clickhouse"), expected) })
 				}
@@ -523,13 +525,15 @@ func test_clickhouse_TestClickhouse_test_natural_join(self *Case, a Args) Value 
 	_ = []Value{kind, sql, expression}
 	for _, item_ := range Iter(NewTuple("", "INNER ", "LEFT ", "RIGHT ", "FULL ", "LEFT OUTER ", "RIGHT OUTER ", "FULL OUTER ")) {
 		kind = item_
-		self.Do(1097, func() {
+		self.DoAssign(1097, func() {
 			sql = F("SELECT * FROM (SELECT 1 AS id) AS a NATURAL ", FV{V: kind}, "JOIN (SELECT 1 AS id) AS b")
-		})
+		}, &sql)
 		self.SubTest(func() {
-			self.Do(1099, func() { expression = self.ValidateIdentity(sql) })
+			self.DoAssign(1099, func() { expression = self.ValidateIdentity(sql) }, &expression)
 			self.Do(1100, func() { self.AssertEqual(A(Item(Item(A(expression, "args"), "joins"), 0), "method"), "NATURAL") })
-			self.Do(1101, func() { M(self, "assertNotIn", "global_", A(Item(Item(A(expression, "args"), "joins"), 0), "args")) })
+			self.Do(1101, func() {
+				Stmt(M(self, "assertNotIn", "global_", A(Item(Item(A(expression, "args"), "joins"), 0), "args")))
+			})
 			self.Do(1102, func() {
 				self.ValidateAll(sql, Kw("read", NewDict("postgres", sql)), Kw("write", NewDict("postgres", sql)))
 			})
@@ -545,9 +549,9 @@ func test_clickhouse_TestClickhouse_test_global_join(self *Case, a Args) Value {
 		kind = item_
 		for _, item_ := range Iter(NewTuple("a.id = b.id", "a.id = b.id AND b.id > 0", "a.id = b.id AND b.id GLOBAL IN (SELECT 1)", "a.id = b.id AND b.id GLOBAL NOT IN (SELECT 2)")) {
 			condition = item_
-			self.Do(1112, func() {
+			self.DoAssign(1112, func() {
 				sql = F("SELECT * FROM t AS a JOIN s AS b ON ", FV{V: condition}, " GLOBAL ", FV{V: kind}, "JOIN u AS c ON a.id = c.id")
-			})
+			}, &sql)
 			self.SubTest(func() {
 				self.Do(1117, func() { self.ValidateIdentity(sql) })
 			}, Kw("sql", sql))
@@ -565,11 +569,11 @@ func test_clickhouse_TestClickhouse_test_safe_div(self *Case, a Args) Value {
 func test_clickhouse_TestClickhouse_test_clickhouse_values(self *Case, a Args) Value {
 	var ast, values Value
 	_ = []Value{ast, values}
-	self.Do(1140, func() { ast = self.ParseOne("SELECT * FROM VALUES (1, 2, 3)") })
+	self.DoAssign(1140, func() { ast = self.ParseOne("SELECT * FROM VALUES (1, 2, 3)") }, &ast)
 	self.Do(1141, func() { self.AssertEqual(Len(Call(G("list"), M(ast, "find_all", A(G("sqlglot.exp"), "Tuple")))), 4) })
-	self.Do(1143, func() {
+	self.DoAssign(1143, func() {
 		values = M(M(G("sqlglot.exp"), "select", "*"), "from_", M(G("sqlglot.exp"), "values", NewList(M(G("sqlglot.exp"), "tuple_", 1, 2, 3)), Kw("alias", "subq"), Kw("columns", NewList("a", "b", "c"))))
-	})
+	}, &values)
 	self.Do(1146, func() {
 		self.AssertEqual(M(values, "sql", "clickhouse"), "SELECT * FROM (SELECT 1 AS a, 2 AS b, 3 AS c) AS subq")
 	})
@@ -592,14 +596,14 @@ func test_clickhouse_TestClickhouse_test_cte(self *Case, a Args) Value {
 	self.L(1186).ValidateIdentity("WITH SUM(bytes) AS foo SELECT foo FROM system.parts")
 	self.L(1187).ValidateIdentity("WITH (SELECT foo) AS bar SELECT bar + 5")
 	self.L(1188).ValidateIdentity("WITH test1 AS (SELECT i + 1, j + 1 FROM test1) SELECT * FROM test1")
-	self.Do(1190, func() {
+	self.DoAssign(1190, func() {
 		query = Call(G("sqlglot.parse_one"), "WITH (SELECT 1) AS y SELECT * FROM y", Kw("read", "clickhouse"))
-	})
+	}, &query)
 	self.Do(1191, func() {
-		M(self, "assertIsInstance", A(Item(A(Item(A(query, "args"), "with_"), "expressions"), 0), "this"), A(G("sqlglot.exp"), "Subquery"))
+		Stmt(M(self, "assertIsInstance", A(Item(A(Item(A(query, "args"), "with_"), "expressions"), 0), "this"), A(G("sqlglot.exp"), "Subquery")))
 	})
 	self.Do(1192, func() { self.AssertEqual(A(Item(A(Item(A(query, "args"), "with_"), "expressions"), 0), "alias"), "y") })
-	self.Do(1194, func() { query = "WITH 1 AS var SELECT var" })
+	self.DoAssign(1194, func() { query = "WITH 1 AS var SELECT var" }, &query)
 	for _, item_ := range Iter(NewList(A(G("sqlglot.errors.ErrorLevel"), "IGNORE"), A(G("sqlglot.errors.ErrorLevel"), "RAISE"), A(G("sqlglot.errors.ErrorLevel"), "IMMEDIATE"))) {
 		error_level = item_
 		self.Do(1196, func() {
@@ -618,21 +622,25 @@ func test_clickhouse_TestClickhouse_test_ternary(self *Case, a Args) Value {
 	self.L(1211).ValidateAll("x AND FOO() > 3 + 2 ? 1 : 2", Kw("write", NewDict("clickhouse", "CASE WHEN x AND FOO() > 3 + 2 THEN 1 ELSE 2 END")))
 	self.L(1215).ValidateAll("x ? (y ? 1 : 2) : 3", Kw("write", NewDict("clickhouse", "CASE WHEN x THEN (CASE WHEN y THEN 1 ELSE 2 END) ELSE 3 END")))
 	self.L(1219).ValidateAll("x AND (foo() ? FALSE : TRUE) ? (y ? 1 : 2) : 3", Kw("write", NewDict("clickhouse", "CASE WHEN x AND (CASE WHEN foo() THEN FALSE ELSE TRUE END) THEN (CASE WHEN y THEN 1 ELSE 2 END) ELSE 3 END")))
-	self.Do(1226, func() { ternary = Call(G("sqlglot.parse_one"), "x ? (y ? 1 : 2) : 3", Kw("read", "clickhouse")) })
-	self.Do(1228, func() { M(self, "assertIsInstance", ternary, A(G("sqlglot.exp"), "If")) })
-	self.Do(1229, func() { M(self, "assertIsInstance", A(ternary, "this"), A(G("sqlglot.exp"), "Column")) })
-	self.Do(1230, func() { M(self, "assertIsInstance", Item(A(ternary, "args"), "true"), A(G("sqlglot.exp"), "Paren")) })
-	self.Do(1231, func() { M(self, "assertIsInstance", Item(A(ternary, "args"), "false"), A(G("sqlglot.exp"), "Literal")) })
-	self.Do(1233, func() { nested_ternary = A(Item(A(ternary, "args"), "true"), "this") })
-	self.Do(1235, func() { M(self, "assertIsInstance", A(nested_ternary, "this"), A(G("sqlglot.exp"), "Column")) })
+	self.DoAssign(1226, func() { ternary = Call(G("sqlglot.parse_one"), "x ? (y ? 1 : 2) : 3", Kw("read", "clickhouse")) }, &ternary)
+	self.Do(1228, func() { Stmt(M(self, "assertIsInstance", ternary, A(G("sqlglot.exp"), "If"))) })
+	self.Do(1229, func() { Stmt(M(self, "assertIsInstance", A(ternary, "this"), A(G("sqlglot.exp"), "Column"))) })
+	self.Do(1230, func() {
+		Stmt(M(self, "assertIsInstance", Item(A(ternary, "args"), "true"), A(G("sqlglot.exp"), "Paren")))
+	})
+	self.Do(1231, func() {
+		Stmt(M(self, "assertIsInstance", Item(A(ternary, "args"), "false"), A(G("sqlglot.exp"), "Literal")))
+	})
+	self.DoAssign(1233, func() { nested_ternary = A(Item(A(ternary, "args"), "true"), "this") }, &nested_ternary)
+	self.Do(1235, func() { Stmt(M(self, "assertIsInstance", A(nested_ternary, "this"), A(G("sqlglot.exp"), "Column"))) })
 	self.Do(1236, func() {
-		M(self, "assertIsInstance", Item(A(nested_ternary, "args"), "true"), A(G("sqlglot.exp"), "Literal"))
+		Stmt(M(self, "assertIsInstance", Item(A(nested_ternary, "args"), "true"), A(G("sqlglot.exp"), "Literal")))
 	})
 	self.Do(1237, func() {
-		M(self, "assertIsInstance", Item(A(nested_ternary, "args"), "false"), A(G("sqlglot.exp"), "Literal"))
+		Stmt(M(self, "assertIsInstance", Item(A(nested_ternary, "args"), "false"), A(G("sqlglot.exp"), "Literal")))
 	})
 	self.Do(1239, func() {
-		M(A(M(Call(G("sqlglot.parse_one"), "a and b ? 1 : 2", Kw("read", "clickhouse")), "assert_is", A(G("sqlglot.exp"), "If")), "this"), "assert_is", A(G("sqlglot.exp"), "And"))
+		Stmt(M(A(M(Call(G("sqlglot.parse_one"), "a and b ? 1 : 2", Kw("read", "clickhouse")), "assert_is", A(G("sqlglot.exp"), "If")), "this"), "assert_is", A(G("sqlglot.exp"), "And")))
 	})
 	return nil
 }
@@ -646,9 +654,9 @@ func test_clickhouse_TestClickhouse_test_parameterization(self *Case, a Args) Va
 func test_clickhouse_TestClickhouse_test_signed_and_unsigned_types(self *Case, a Args) Value {
 	var data_types, data_type Value
 	_ = []Value{data_types, data_type}
-	self.Do(1255, func() {
+	self.DoAssign(1255, func() {
 		data_types = NewList("UInt8", "UInt16", "UInt32", "UInt64", "UInt128", "UInt256", "Int8", "Int16", "Int32", "Int64", "Int128", "Int256")
-	})
+	}, &data_types)
 	for _, item_ := range Iter(data_types) {
 		data_type = item_
 		self.Do(1270, func() {
@@ -661,9 +669,9 @@ func test_clickhouse_TestClickhouse_test_signed_and_unsigned_types(self *Case, a
 func test_clickhouse_TestClickhouse_test_geom_types(self *Case, a Args) Value {
 	var data_types, data_type Value
 	_ = []Value{data_types, data_type}
-	self.Do(1276, func() {
+	self.DoAssign(1276, func() {
 		data_types = NewList("Point", "Ring", "LineString", "MultiLineString", "Polygon", "MultiPolygon")
-	})
+	}, &data_types)
 	for _, item_ := range Iter(data_types) {
 		data_type = item_
 		self.SubTest(func() {
@@ -676,7 +684,7 @@ func test_clickhouse_TestClickhouse_test_geom_types(self *Case, a Args) Value {
 func test_clickhouse_TestClickhouse_test_nothing_type(self *Case, a Args) Value {
 	var data_types, data_type Value
 	_ = []Value{data_types, data_type}
-	self.Do(1282, func() { data_types = NewList("Nothing", "Nullable(Nothing)") })
+	self.DoAssign(1282, func() { data_types = NewList("Nothing", "Nullable(Nothing)") }, &data_types)
 	for _, item_ := range Iter(data_types) {
 		data_type = item_
 		self.SubTest(func() {
@@ -689,16 +697,16 @@ func test_clickhouse_TestClickhouse_test_nothing_type(self *Case, a Args) Value 
 func test_clickhouse_TestClickhouse_test_json_type(self *Case, a Args) Value {
 	var data_types, i, data_type, data_types_non_idempotent, dt_in, dt_out Value
 	_ = []Value{data_types, i, data_type, data_types_non_idempotent, dt_in, dt_out}
-	self.Do(1288, func() {
+	self.DoAssign(1288, func() {
 		data_types = NewList("JSON", "JSON(col1 String, SKIP col2)", "JSON(col1 String, SKIP REGEXP 'col[0-9]+')", "JSON(col1 String, max_dynamic_paths = 2)", "JSON(col1.nested String, SKIP col2.nested)")
-	})
+	}, &data_types)
 	for _, item_ := range Iter(Call(G("enumerate"), data_types)) {
 		Unpack(item_, &i, &data_type)
 		self.SubTest(func() {
 			self.Do(1297, func() { self.ValidateIdentity(F("SELECT CAST(val AS ", FV{V: data_type}, ")")) })
 		}, F("Casting to ClickHouse JSON[", FV{V: i}, "]"))
 	}
-	self.Do(1299, func() { data_types_non_idempotent = NewList(NewTuple("JSON()", "JSON")) })
+	self.DoAssign(1299, func() { data_types_non_idempotent = NewList(NewTuple("JSON()", "JSON")) }, &data_types_non_idempotent)
 	self.Do(1302, func() {
 		NP("%s", `nested unpacking: for i, (dt_in, dt_out) in enumerate(data_types_non_idempotent): with self.subTest(f"Casting to ClickHouse JSON[{i}]"): self.validate_identity( f"SELECT CAST(val as {dt_in})", write_sql=f"SELECT CAST(v`)
 	})
@@ -715,10 +723,10 @@ func test_clickhouse_TestClickhouse_test_aggregate_function_column_with_any_keyw
 func test_clickhouse_TestClickhouse_test_create_table_as_alias(self *Case, a Args) Value {
 	var ctas_alias, expected Value
 	_ = []Value{ctas_alias, expected}
-	self.Do(1350, func() { ctas_alias = "CREATE TABLE my_db.my_table AS another_db.another_table" })
-	self.Do(1352, func() {
+	self.DoAssign(1350, func() { ctas_alias = "CREATE TABLE my_db.my_table AS another_db.another_table" }, &ctas_alias)
+	self.DoAssign(1352, func() {
 		expected = M(G("sqlglot.exp"), "Create", Kw("this", M(G("sqlglot.exp"), "to_table", "my_db.my_table")), Kw("kind", "TABLE"), Kw("expression", M(G("sqlglot.exp"), "to_table", "another_db.another_table")))
-	})
+	}, &expected)
 	self.Do(1357, func() { self.AssertEqual(self.ParseOne(ctas_alias), expected) })
 	self.Do(1358, func() { self.ValidateIdentity(ctas_alias) })
 	return nil
@@ -728,24 +736,24 @@ func test_clickhouse_TestClickhouse_test_ddl(self *Case, a Args) Value {
 	var db_table_expr, create_with_cluster, ctas_with_comment Value
 	_ = []Value{db_table_expr, create_with_cluster, ctas_with_comment}
 	self.L(1361).ValidateIdentity("CREATE TABLE t (`projection` Int8)", `CREATE TABLE t ("projection" Int8)`)
-	self.Do(1366, func() {
+	self.DoAssign(1366, func() {
 		db_table_expr = M(G("sqlglot.exp"), "Table", Kw("this", nil), Kw("db", M(G("sqlglot.exp"), "to_identifier", "foo")), Kw("catalog", nil))
-	})
-	self.Do(1367, func() {
+	}, &db_table_expr)
+	self.DoAssign(1367, func() {
 		create_with_cluster = M(G("sqlglot.exp"), "Create", Kw("this", db_table_expr), Kw("kind", "DATABASE"), Kw("properties", M(G("sqlglot.exp"), "Properties", Kw("expressions", NewList(M(G("sqlglot.exp"), "OnCluster", Kw("this", M(G("sqlglot.exp"), "to_identifier", "c"))))))))
-	})
+	}, &create_with_cluster)
 	self.Do(1372, func() {
 		self.AssertEqual(M(create_with_cluster, "sql", "clickhouse"), "CREATE DATABASE foo ON CLUSTER c")
 	})
-	self.Do(1375, func() {
+	self.DoAssign(1375, func() {
 		create_with_cluster = M(G("sqlglot.exp"), "Create", Kw("this", db_table_expr), Kw("kind", "SCHEMA"), Kw("properties", M(G("sqlglot.exp"), "Properties", Kw("expressions", NewList(M(G("sqlglot.exp"), "OnCluster", Kw("this", M(G("sqlglot.exp"), "to_identifier", "c"))))))))
-	})
+	}, &create_with_cluster)
 	self.Do(1380, func() {
 		self.AssertEqual(M(create_with_cluster, "sql", "clickhouse"), "CREATE DATABASE foo ON CLUSTER c")
 	})
-	self.Do(1382, func() {
+	self.DoAssign(1382, func() {
 		ctas_with_comment = M(G("sqlglot.exp"), "Create", Kw("this", M(G("sqlglot.exp"), "table_", "foo")), Kw("kind", "TABLE"), Kw("expression", M(M(G("sqlglot.exp"), "select", "*"), "from_", "db.other_table")), Kw("properties", M(G("sqlglot.exp"), "Properties", Kw("expressions", NewList(M(G("sqlglot.exp"), "EngineProperty", Kw("this", M(G("sqlglot.exp"), "var", "Memory"))), M(G("sqlglot.exp"), "SchemaCommentProperty", Kw("this", M(A(G("sqlglot.exp"), "Literal"), "string", "foo"))))))))
-	})
+	}, &ctas_with_comment)
 	self.Do(1393, func() {
 		self.AssertEqual(M(ctas_with_comment, "sql", "clickhouse"), "CREATE TABLE foo ENGINE=Memory AS (SELECT * FROM db.other_table) COMMENT 'foo'")
 	})
@@ -793,7 +801,7 @@ func test_clickhouse_TestClickhouse_test_ddl(self *Case, a Args) Value {
 	self.L(1780).ValidateIdentity(`CREATE DICTIONARY dict1 (key UInt64) PRIMARY KEY (key) SOURCE(EXECUTABLE(COMMAND 'echo "1"' FORMAT TabSeparated)) LIFETIME(MIN 0 MAX 1) LAYOUT(FLAT())`)
 	self.L(1784).ValidateAll("\n            CREATE TABLE t (\n                a AggregateFunction(quantiles(0.5, 0.9), UInt64),\n                b AggregateFunction(quantiles, UInt64),\n                c SimpleAggregateFunction(sum, Float64),\n                d AggregateFunction(count)\n            )", Kw("write", NewDict("clickhouse", "CREATE TABLE t (\n  a AggregateFunction(quantiles(0.5, 0.9), UInt64),\n  b AggregateFunction(quantiles, UInt64),\n  c SimpleAggregateFunction(sum, Float64),\n  d AggregateFunction(count)\n)")), Kw("pretty", true))
 	self.Do(1803, func() {
-		M(self, "assertIsNotNone", M(self.ValidateIdentity("CREATE TABLE t1 (a String MATERIALIZED func())"), "find", A(G("sqlglot.exp"), "ColumnConstraint")))
+		Stmt(M(self, "assertIsNotNone", M(self.ValidateIdentity("CREATE TABLE t1 (a String MATERIALIZED func())"), "find", A(G("sqlglot.exp"), "ColumnConstraint"))))
 	})
 	self.L(1809).ValidateAll("\n            CREATE TABLE session_log\n            (\n                UserID UInt64,\n                SessionID UUID\n            )\n            ENGINE = MergeTree\n            PARTITION BY sipHash64(UserID) % 16\n            ORDER BY tuple();\n            ", Kw("pretty", true))
 	self.L(1823).ValidateAll("\n            CREATE TABLE visits\n            (\n                VisitDate Date,\n                Hour UInt8,\n                ClientID UUID\n            )\n            ENGINE = MergeTree()\n            PARTITION BY (toYYYYMM(VisitDate), Hour)\n            ORDER BY Hour;\n            ", Kw("pretty", true))
@@ -814,29 +822,31 @@ func test_clickhouse_TestClickhouse_test_agg_functions(self *Case, a Args) Value
 		})
 	})
 	self.Do(1845, func() {
-		M(A(Item(A(self.ValidateIdentity("SELECT quantileExactInclusive(0.25)(number) AS x FROM numbers(5)"), "selects"), 0), "this"), "assert_is", A(G("sqlglot.exp"), "ParameterizedAgg"))
+		Stmt(M(A(Item(A(self.ValidateIdentity("SELECT quantileExactInclusive(0.25)(number) AS x FROM numbers(5)"), "selects"), 0), "this"), "assert_is", A(G("sqlglot.exp"), "ParameterizedAgg")))
 	})
 	self.Do(1849, func() {
-		M(self, "assertIsInstance", Call(extract_agg_func, "select quantileGK(100, 0.95) OVER (PARTITION BY id) FROM table"), A(G("sqlglot.exp"), "AnonymousAggFunc"))
+		Stmt(M(self, "assertIsInstance", Call(extract_agg_func, "select quantileGK(100, 0.95) OVER (PARTITION BY id) FROM table"), A(G("sqlglot.exp"), "AnonymousAggFunc")))
 	})
 	self.Do(1853, func() {
-		M(self, "assertIsInstance", Call(extract_agg_func, "select quantileGK(100, 0.95)(reading) OVER (PARTITION BY id) FROM table"), A(G("sqlglot.exp"), "ParameterizedAgg"))
+		Stmt(M(self, "assertIsInstance", Call(extract_agg_func, "select quantileGK(100, 0.95)(reading) OVER (PARTITION BY id) FROM table"), A(G("sqlglot.exp"), "ParameterizedAgg")))
 	})
 	self.Do(1859, func() {
-		M(self, "assertIsInstance", Call(extract_agg_func, "select quantileGKIf(100, 0.95) OVER (PARTITION BY id) FROM table"), A(G("sqlglot.exp"), "CombinedAggFunc"))
+		Stmt(M(self, "assertIsInstance", Call(extract_agg_func, "select quantileGKIf(100, 0.95) OVER (PARTITION BY id) FROM table"), A(G("sqlglot.exp"), "CombinedAggFunc")))
 	})
 	self.Do(1863, func() {
-		M(self, "assertIsInstance", Call(extract_agg_func, "select quantileGKIf(100, 0.95)(reading) OVER (PARTITION BY id) FROM table"), A(G("sqlglot.exp"), "CombinedParameterizedAgg"))
+		Stmt(M(self, "assertIsInstance", Call(extract_agg_func, "select quantileGKIf(100, 0.95)(reading) OVER (PARTITION BY id) FROM table"), A(G("sqlglot.exp"), "CombinedParameterizedAgg")))
 	})
-	self.Do(1870, func() { M(Call(G("sqlglot.parse_one"), "foobar(x)"), "assert_is", A(G("sqlglot.exp"), "Anonymous")) })
+	self.Do(1870, func() {
+		Stmt(M(Call(G("sqlglot.parse_one"), "foobar(x)"), "assert_is", A(G("sqlglot.exp"), "Anonymous")))
+	})
 	self.Do(1872, func() {
-		M(Item(A(self.ValidateIdentity("SELECT approx_top_sum(column, weight) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "AnonymousAggFunc"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT approx_top_sum(column, weight) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "AnonymousAggFunc")))
 	})
 	self.Do(1875, func() {
-		M(Item(A(self.ValidateIdentity("SELECT approx_top_sum(N)(column, weight) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "ParameterizedAgg"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT approx_top_sum(N)(column, weight) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "ParameterizedAgg")))
 	})
 	self.Do(1878, func() {
-		M(Item(A(self.ValidateIdentity("SELECT approx_top_sum(N, reserved)(column, weight) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "ParameterizedAgg"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT approx_top_sum(N, reserved)(column, weight) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "ParameterizedAgg")))
 	})
 	return nil
 }
@@ -845,47 +855,47 @@ func test_clickhouse_TestClickhouse_test_agg_functions_multiple_suffixes(self *C
 	var sum_merge_if_merge Value
 	_ = []Value{sum_merge_if_merge}
 	self.Do(1884, func() {
-		M(Item(A(self.ValidateIdentity("SELECT uniqExactIf(x, y) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CombinedAggFunc"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT uniqExactIf(x, y) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CombinedAggFunc")))
 	})
 	self.Do(1889, func() {
-		M(Item(A(self.ValidateIdentity("SELECT countIfMerge(state) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CombinedAggFunc"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT countIfMerge(state) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CombinedAggFunc")))
 	})
 	self.Do(1892, func() {
-		M(Item(A(self.ValidateIdentity("SELECT uniqExactIfMerge(state) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CombinedAggFunc"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT uniqExactIfMerge(state) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CombinedAggFunc")))
 	})
 	self.Do(1897, func() {
-		M(Item(A(self.ValidateIdentity("SELECT avgArgMinIfState(x, y) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CombinedAggFunc"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT avgArgMinIfState(x, y) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CombinedAggFunc")))
 	})
 	self.Do(1902, func() {
-		M(Item(A(self.ValidateIdentity("SELECT quantileIfState(0.5)(col, cond) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CombinedParameterizedAgg"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT quantileIfState(0.5)(col, cond) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CombinedParameterizedAgg")))
 	})
 	self.Do(1908, func() {
-		M(Item(A(self.ValidateIdentity("SELECT sumMap(k, v) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "AnonymousAggFunc"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT sumMap(k, v) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "AnonymousAggFunc")))
 	})
 	self.Do(1911, func() {
-		M(Item(A(self.ValidateIdentity("SELECT minMap(k, v) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "AnonymousAggFunc"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT minMap(k, v) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "AnonymousAggFunc")))
 	})
 	self.Do(1914, func() {
-		M(Item(A(self.ValidateIdentity("SELECT maxMap(k, v) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "AnonymousAggFunc"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT maxMap(k, v) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "AnonymousAggFunc")))
 	})
 	self.Do(1919, func() {
-		M(Item(A(self.ValidateIdentity("SELECT sumMapIf(k, v, cond) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CombinedAggFunc"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT sumMapIf(k, v, cond) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CombinedAggFunc")))
 	})
 	self.Do(1922, func() {
-		M(Item(A(self.ValidateIdentity("SELECT minMapIf(k, v, cond) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CombinedAggFunc"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT minMapIf(k, v, cond) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CombinedAggFunc")))
 	})
 	self.Do(1925, func() {
-		M(Item(A(self.ValidateIdentity("SELECT maxMapIf(k, v, cond) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CombinedAggFunc"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT maxMapIf(k, v, cond) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CombinedAggFunc")))
 	})
 	self.Do(1928, func() {
-		M(Item(A(self.ValidateIdentity("SELECT sumMapState(k, v) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CombinedAggFunc"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT sumMapState(k, v) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CombinedAggFunc")))
 	})
 	self.Do(1933, func() {
-		M(Item(A(self.ValidateIdentity("SELECT sumMapIfState(k, v, cond) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CombinedAggFunc"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT sumMapIfState(k, v, cond) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CombinedAggFunc")))
 	})
-	self.Do(1938, func() {
+	self.DoAssign(1938, func() {
 		sum_merge_if_merge = M(Item(A(self.ValidateIdentity("SELECT sumMergeIfMerge(s) FROM (SELECT sumMergeIfState(agg, 1 = 1) AS s FROM (SELECT sumState(toFloat64(number)) AS agg FROM numbers(10)))"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CombinedAggFunc"))
-	})
+	}, &sum_merge_if_merge)
 	self.Do(1946, func() { Assert(Eq(A(sum_merge_if_merge, "name"), "sumMergeIfMerge")) })
 	return nil
 }
@@ -926,10 +936,10 @@ func test_clickhouse_TestClickhouse_test_drop_on_cluster(self *Case, a Args) Val
 func test_clickhouse_TestClickhouse_test_datetime_funcs(self *Case, a Args) Value {
 	var datetime_funcs, func_, func_name, func_alias Value
 	_ = []Value{datetime_funcs, func_, func_name, func_alias}
-	self.Do(1969, func() { datetime_funcs = NewTuple(NewTuple("DATE_SUB", "DATESUB"), NewTuple("DATE_ADD", "DATEADD")) })
+	self.DoAssign(1969, func() { datetime_funcs = NewTuple(NewTuple("DATE_SUB", "DATESUB"), NewTuple("DATE_ADD", "DATEADD")) }, &datetime_funcs)
 	for _, item_ := range Iter(NewTuple(Star(datetime_funcs), NewTuple("TIMESTAMP_ADD", "TIMESTAMPADD"))) {
 		func_ = item_
-		self.Do(1973, func() { func_name = Item(func_, 0) })
+		self.DoAssign(1973, func() { func_name = Item(func_, 0) }, &func_name)
 		for _, item_ := range Iter(func_) {
 			func_alias = item_
 			self.Do(1975, func() {
@@ -939,7 +949,7 @@ func test_clickhouse_TestClickhouse_test_datetime_funcs(self *Case, a Args) Valu
 	}
 	for _, item_ := range Iter(NewTuple(Star(datetime_funcs), NewTuple("DATE_DIFF", "DATEDIFF"), NewTuple("TIMESTAMP_SUB", "TIMESTAMPSUB"))) {
 		func_ = item_
-		self.Do(1982, func() { func_name = Item(func_, 0) })
+		self.DoAssign(1982, func() { func_name = Item(func_, 0) }, &func_name)
 		for _, item_ := range Iter(func_) {
 			func_alias = item_
 			self.SubTest(func() {
@@ -951,7 +961,7 @@ func test_clickhouse_TestClickhouse_test_datetime_funcs(self *Case, a Args) Valu
 	}
 	for _, item_ := range Iter(NewTuple(NewTuple("DATE_DIFF", "DATEDIFF"))) {
 		func_ = item_
-		self.Do(1991, func() { func_name = Item(func_, 0) })
+		self.DoAssign(1991, func() { func_name = Item(func_, 0) }, &func_name)
 		for _, item_ := range Iter(func_) {
 			func_alias = item_
 			self.SubTest(func() {
@@ -986,9 +996,9 @@ func test_clickhouse_TestClickhouse_test_convert(self *Case, a Args) Value {
 func test_clickhouse_TestClickhouse_test_timestr_to_time(self *Case, a Args) Value {
 	var time_strings, time_string, time_strings_no_utc, utc, no_utc Value
 	_ = []Value{time_strings, time_string, time_strings_no_utc, utc, no_utc}
-	self.Do(2028, func() {
+	self.DoAssign(2028, func() {
 		time_strings = NewList("2020-01-01 00:00:01", "2020-01-01 00:00:01+01:00", " 2020-01-01 00:00:01-01:00 ", "2020-01-01T00:00:01+01:00")
-	})
+	}, &time_strings)
 	for _, item_ := range Iter(time_strings) {
 		time_string = item_
 		self.SubTest(func() {
@@ -997,7 +1007,7 @@ func test_clickhouse_TestClickhouse_test_timestr_to_time(self *Case, a Args) Val
 			})
 		}, F("'", FV{V: time_string}, "'"))
 	}
-	self.Do(2043, func() {
+	self.DoAssign(2043, func() {
 		time_strings_no_utc = func() Value {
 			var i Value
 			_ = []Value{i}
@@ -1008,7 +1018,7 @@ func test_clickhouse_TestClickhouse_test_timestr_to_time(self *Case, a Args) Val
 			}
 			return &List{V: out}
 		}()
-	})
+	}, &time_strings_no_utc)
 	for _, item_ := range Iter(Call(G("zip"), time_strings, time_strings_no_utc)) {
 		Unpack(item_, &utc, &no_utc)
 		self.SubTest(func() {
@@ -1017,9 +1027,9 @@ func test_clickhouse_TestClickhouse_test_timestr_to_time(self *Case, a Args) Val
 			})
 		}, F("'", FV{V: time_string}, "' with UTC timezone"))
 	}
-	self.Do(2054, func() {
+	self.DoAssign(2054, func() {
 		time_strings = NewList("2020-01-01 00:00:01.001", "2020-01-01 00:00:01.000001", "2020-01-01 00:00:01.001+00:00", "2020-01-01 00:00:01.000001-00:00", "2020-01-01 00:00:01.0001", "2020-01-01 00:00:01.1+00:00")
-	})
+	}, &time_strings)
 	for _, item_ := range Iter(time_strings) {
 		time_string = item_
 		self.SubTest(func() {
@@ -1028,9 +1038,9 @@ func test_clickhouse_TestClickhouse_test_timestr_to_time(self *Case, a Args) Val
 			})
 		}, F("'", FV{V: time_string}, "'"))
 	}
-	self.Do(2072, func() {
+	self.DoAssign(2072, func() {
 		time_strings_no_utc = NewList("2020-01-01 00:00:01.001000", "2020-01-01 00:00:01.000001", "2020-01-01 00:00:01.001000", "2020-01-01 00:00:01.000001", "2020-01-01 00:00:01.000100", "2020-01-01 00:00:01.100000")
-	})
+	}, &time_strings_no_utc)
 	for _, item_ := range Iter(Call(G("zip"), time_strings, time_strings_no_utc)) {
 		Unpack(item_, &utc, &no_utc)
 		self.SubTest(func() {
@@ -1057,22 +1067,26 @@ func test_clickhouse_TestClickhouse_test_revoke(self *Case, a Args) Value {
 func test_clickhouse_TestClickhouse_test_array_join(self *Case, a Args) Value {
 	var expr, joins, join Value
 	_ = []Value{expr, joins, join}
-	self.Do(2099, func() {
+	self.DoAssign(2099, func() {
 		expr = self.ValidateIdentity("SELECT * FROM arrays_test ARRAY JOIN arr1, arrays_test.arr2 AS foo, ['a', 'b', 'c'] AS elem")
-	})
-	self.Do(2102, func() { joins = Item(A(expr, "args"), "joins") })
+	}, &expr)
+	self.DoAssign(2102, func() { joins = Item(A(expr, "args"), "joins") }, &joins)
 	self.Do(2103, func() { self.AssertEqual(Len(joins), 1) })
-	self.Do(2105, func() { join = Item(joins, 0) })
+	self.DoAssign(2105, func() { join = Item(joins, 0) }, &join)
 	self.Do(2106, func() { self.AssertEqual(A(join, "kind"), "ARRAY") })
-	self.Do(2107, func() { M(self, "assertIsInstance", A(join, "this"), A(G("sqlglot.exp"), "Column")) })
+	self.Do(2107, func() { Stmt(M(self, "assertIsInstance", A(join, "this"), A(G("sqlglot.exp"), "Column"))) })
 	self.Do(2109, func() { self.AssertEqual(Len(A(join, "expressions")), 2) })
-	self.Do(2110, func() { M(self, "assertIsInstance", Item(A(join, "expressions"), 0), A(G("sqlglot.exp"), "Alias")) })
-	self.Do(2111, func() {
-		M(self, "assertIsInstance", A(Item(A(join, "expressions"), 0), "this"), A(G("sqlglot.exp"), "Column"))
+	self.Do(2110, func() {
+		Stmt(M(self, "assertIsInstance", Item(A(join, "expressions"), 0), A(G("sqlglot.exp"), "Alias")))
 	})
-	self.Do(2113, func() { M(self, "assertIsInstance", Item(A(join, "expressions"), 1), A(G("sqlglot.exp"), "Alias")) })
+	self.Do(2111, func() {
+		Stmt(M(self, "assertIsInstance", A(Item(A(join, "expressions"), 0), "this"), A(G("sqlglot.exp"), "Column")))
+	})
+	self.Do(2113, func() {
+		Stmt(M(self, "assertIsInstance", Item(A(join, "expressions"), 1), A(G("sqlglot.exp"), "Alias")))
+	})
 	self.Do(2114, func() {
-		M(self, "assertIsInstance", A(Item(A(join, "expressions"), 1), "this"), A(G("sqlglot.exp"), "Array"))
+		Stmt(M(self, "assertIsInstance", A(Item(A(join, "expressions"), 1), "this"), A(G("sqlglot.exp"), "Array")))
 	})
 	self.L(2116).ValidateIdentity("SELECT s, arr FROM arrays_test ARRAY JOIN arr")
 	self.L(2117).ValidateIdentity("SELECT s, arr, a FROM arrays_test LEFT ARRAY JOIN arr AS a")
@@ -1084,10 +1098,10 @@ func test_clickhouse_TestClickhouse_test_array_join(self *Case, a Args) Value {
 func test_clickhouse_TestClickhouse_test_traverse_scope(self *Case, a Args) Value {
 	var sql, scopes Value
 	_ = []Value{sql, scopes}
-	self.Do(2126, func() { sql = "SELECT * FROM t FINAL" })
-	self.Do(2127, func() {
+	self.DoAssign(2126, func() { sql = "SELECT * FROM t FINAL" }, &sql)
+	self.DoAssign(2127, func() {
 		scopes = Call(G("sqlglot.optimizer.traverse_scope"), Call(G("sqlglot.parse_one"), sql, Kw("dialect", self.Dialect())))
-	})
+	}, &scopes)
 	self.Do(2128, func() { self.AssertEqual(Len(scopes), 1) })
 	self.Do(2129, func() { self.AssertEqual(Call(G("set"), A(Item(scopes, 0), "sources")), NewSet("t")) })
 	return nil
@@ -1102,26 +1116,26 @@ func test_clickhouse_TestClickhouse_test_window_functions(self *Case, a Args) Va
 func test_clickhouse_TestClickhouse_test_groupconcat(self *Case, a Args) Value {
 	var parsed, gc, parsed2, gc2, parsed3, gc3 Value
 	_ = []Value{parsed, gc, parsed2, gc2, parsed3, gc3}
-	self.Do(2141, func() { parsed = self.ValidateIdentity("SELECT groupConcat(', ')(part_name) FROM system.parts") })
-	self.Do(2142, func() { gc = Item(A(parsed, "selects"), 0) })
-	self.Do(2143, func() { M(self, "assertIsInstance", gc, A(G("sqlglot.exp"), "GroupConcat")) })
+	self.DoAssign(2141, func() { parsed = self.ValidateIdentity("SELECT groupConcat(', ')(part_name) FROM system.parts") }, &parsed)
+	self.DoAssign(2142, func() { gc = Item(A(parsed, "selects"), 0) }, &gc)
+	self.Do(2143, func() { Stmt(M(self, "assertIsInstance", gc, A(G("sqlglot.exp"), "GroupConcat"))) })
 	self.Do(2144, func() { self.AssertEqual(A(A(gc, "this"), "name"), "part_name") })
 	self.Do(2145, func() { self.AssertEqual(A(Item(A(gc, "args"), "separator"), "name"), ", ") })
-	self.Do(2148, func() { parsed2 = self.ValidateIdentity("SELECT groupConcat(part_name) FROM t") })
-	self.Do(2149, func() { gc2 = Item(A(parsed2, "selects"), 0) })
-	self.Do(2150, func() { M(self, "assertIsInstance", gc2, A(G("sqlglot.exp"), "GroupConcat")) })
+	self.DoAssign(2148, func() { parsed2 = self.ValidateIdentity("SELECT groupConcat(part_name) FROM t") }, &parsed2)
+	self.DoAssign(2149, func() { gc2 = Item(A(parsed2, "selects"), 0) }, &gc2)
+	self.Do(2150, func() { Stmt(M(self, "assertIsInstance", gc2, A(G("sqlglot.exp"), "GroupConcat"))) })
 	self.Do(2151, func() { self.AssertEqual(A(A(gc2, "this"), "name"), "part_name") })
-	self.Do(2152, func() { M(self, "assertIsNone", M(A(gc2, "args"), "get", "separator")) })
-	self.Do(2155, func() { parsed3 = self.ValidateIdentity("SELECT groupConcat(', ', 2)(part_name) FROM t") })
-	self.Do(2156, func() { gc3 = Item(A(parsed3, "selects"), 0) })
-	self.Do(2157, func() { M(self, "assertIsInstance", gc3, A(G("sqlglot.exp"), "GroupConcat")) })
-	self.Do(2158, func() { M(self, "assertIsInstance", A(gc3, "this"), A(G("sqlglot.exp"), "Limit")) })
+	self.Do(2152, func() { Stmt(M(self, "assertIsNone", M(A(gc2, "args"), "get", "separator"))) })
+	self.DoAssign(2155, func() { parsed3 = self.ValidateIdentity("SELECT groupConcat(', ', 2)(part_name) FROM t") }, &parsed3)
+	self.DoAssign(2156, func() { gc3 = Item(A(parsed3, "selects"), 0) }, &gc3)
+	self.Do(2157, func() { Stmt(M(self, "assertIsInstance", gc3, A(G("sqlglot.exp"), "GroupConcat"))) })
+	self.Do(2158, func() { Stmt(M(self, "assertIsInstance", A(gc3, "this"), A(G("sqlglot.exp"), "Limit"))) })
 	self.Do(2159, func() { self.AssertEqual(A(A(A(gc3, "this"), "this"), "name"), "part_name") })
 	self.Do(2162, func() {
-		M(Item(A(self.ValidateIdentity("SELECT groupConcatIf(x, cond) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CombinedAggFunc"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT groupConcatIf(x, cond) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CombinedAggFunc")))
 	})
 	self.Do(2165, func() {
-		M(Item(A(self.ValidateIdentity("SELECT groupConcatIf(', ')(x, cond) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CombinedParameterizedAgg"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT groupConcatIf(', ')(x, cond) FROM t"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CombinedParameterizedAgg")))
 	})
 	self.L(2170).ValidateAll("SELECT groupConcat(', ')(part_name) FROM t", Kw("read", NewDict("mysql", "SELECT GROUP_CONCAT(part_name SEPARATOR ', ') FROM t")), Kw("write", NewDict("clickhouse", "SELECT groupConcat(', ')(part_name) FROM t", "mysql", "SELECT GROUP_CONCAT(part_name SEPARATOR ', ') FROM t", "duckdb", "SELECT LISTAGG(part_name, ', ') FROM t")))
 	return nil
@@ -1131,17 +1145,17 @@ func test_clickhouse_TestClickhouse_test_functions(self *Case, a Args) Value {
 	self.L(2181).ValidateIdentity("SELECT TRANSFORM(foo, [1, 2], ['first', 'second']) FROM table")
 	self.L(2182).ValidateIdentity("SELECT TRANSFORM(foo, [1, 2], ['first', 'second'], 'default') FROM table")
 	self.Do(2185, func() {
-		M(self.ValidateIdentity("arrayMap(x -> x + 1, arr)"), "assert_is", A(G("sqlglot.exp"), "Transform"))
+		Stmt(M(self.ValidateIdentity("arrayMap(x -> x + 1, arr)"), "assert_is", A(G("sqlglot.exp"), "Transform")))
 	})
 	self.Do(2186, func() {
-		M(self.ValidateIdentity("arrayFilter(x -> x > 0, arr)"), "assert_is", A(G("sqlglot.exp"), "ArrayFilter"))
+		Stmt(M(self.ValidateIdentity("arrayFilter(x -> x > 0, arr)"), "assert_is", A(G("sqlglot.exp"), "ArrayFilter")))
 	})
 	self.Do(2187, func() {
-		M(A(Item(A(self.ValidateIdentity("SELECT arrayMap((a, b) -> a * b, [1, 2, 3], [10, 20, 30]) AS products"), "expressions"), 0), "this"), "assert_is", A(G("sqlglot.exp"), "Anonymous"))
+		Stmt(M(A(Item(A(self.ValidateIdentity("SELECT arrayMap((a, b) -> a * b, [1, 2, 3], [10, 20, 30]) AS products"), "expressions"), 0), "this"), "assert_is", A(G("sqlglot.exp"), "Anonymous")))
 	})
 	self.L(2190).ValidateIdentity("arrayMap((x, y, z) -> x + y + z, [1, 2], [3, 4], [5, 6])")
 	self.Do(2191, func() {
-		M(self.ValidateIdentity("arrayFilter((x, y) -> y, [1, 2, 3], [1, 0, 1])"), "assert_is", A(G("sqlglot.exp"), "Anonymous"))
+		Stmt(M(self.ValidateIdentity("arrayFilter((x, y) -> y, [1, 2, 3], [1, 0, 1])"), "assert_is", A(G("sqlglot.exp"), "Anonymous")))
 	})
 	return nil
 }
@@ -1152,8 +1166,8 @@ func test_clickhouse_TestClickhouse_test_array_offset(self *Case, a Args) Value 
 	self.Do(2196, func() {
 		self.AssertLogs(func(cm_ Value) {
 			cm = cm_
-			M(self, "validate_all", "SELECT col[1]", Kw("write", NewDict("bigquery", "SELECT col[0]", "duckdb", "SELECT col[1]", "hive", "SELECT col[0]", "clickhouse", "SELECT col[1]", "presto", "SELECT col[1]")))
-			M(self, "assertEqual", A(cm, "output"), NewList("INFO:sqlglot:Applying array index offset (-1)", "INFO:sqlglot:Applying array index offset (1)", "INFO:sqlglot:Applying array index offset (1)", "INFO:sqlglot:Applying array index offset (1)"))
+			Stmt(M(self, "validate_all", "SELECT col[1]", Kw("write", NewDict("bigquery", "SELECT col[0]", "duckdb", "SELECT col[1]", "hive", "SELECT col[0]", "clickhouse", "SELECT col[1]", "presto", "SELECT col[1]"))))
+			Stmt(M(self, "assertEqual", A(cm, "output"), NewList("INFO:sqlglot:Applying array index offset (-1)", "INFO:sqlglot:Applying array index offset (1)", "INFO:sqlglot:Applying array index offset (1)", "INFO:sqlglot:Applying array index offset (1)")))
 		}, G("sqlglot.helper.logger"))
 	})
 	return nil
@@ -1193,9 +1207,9 @@ func test_clickhouse_TestClickhouse_test_table_functions(self *Case, a Args) Val
 func test_clickhouse_TestClickhouse_test_sql_security(self *Case, a Args) Value {
 	var stmts, stmt Value
 	_ = []Value{stmts, stmt}
-	self.Do(2309, func() {
+	self.DoAssign(2309, func() {
 		stmts = NewList("CREATE VIEW v DEFINER='alice' SQL SECURITY DEFINER AS SELECT 1", "CREATE VIEW v SQL SECURITY DEFINER DEFINER='alice' AS SELECT 1", "CREATE VIEW v SQL SECURITY DEFINER DEFINER=CURRENT_USER AS SELECT 1", "CREATE VIEW v SQL SECURITY INVOKER AS SELECT 1", "CREATE VIEW v SQL SECURITY NONE AS SELECT 1", "CREATE MATERIALIZED VIEW v TO t SQL SECURITY DEFINER DEFINER='alice' AS SELECT 1", "CREATE MATERIALIZED VIEW v TO t SQL SECURITY INVOKER AS SELECT 1", "CREATE MATERIALIZED VIEW v TO t SQL SECURITY NONE AS SELECT 1", "ALTER TABLE v MODIFY SQL SECURITY DEFINER DEFINER='alice'", "ALTER TABLE v MODIFY SQL SECURITY DEFINER DEFINER=CURRENT_USER")
-	})
+	}, &stmts)
 	for _, item_ := range Iter(stmts) {
 		stmt = item_
 		self.SubTest(func() {
@@ -1208,20 +1222,20 @@ func test_clickhouse_TestClickhouse_test_sql_security(self *Case, a Args) Value 
 func test_clickhouse_TestClickhouse_test_refreshable_materialized_view(self *Case, a Args) Value {
 	var statements, statement Value
 	_ = []Value{statements, statement}
-	self.Do(2326, func() {
+	self.DoAssign(2326, func() {
 		statements = NewList("CREATE MATERIALIZED VIEW v REFRESH EVERY 30 SECOND AS SELECT 1", "CREATE MATERIALIZED VIEW v REFRESH AFTER 5 MINUTE AS SELECT 1", "CREATE MATERIALIZED VIEW v REFRESH DEPENDS ON db.x, db.y APPEND TO db.t AS SELECT 1", "CREATE MATERIALIZED VIEW v ON CLUSTER '{cluster}' REFRESH EVERY 1 MONTH OFFSET 5 DAY 2 HOUR RANDOMIZE FOR 1 HOUR DEPENDS ON db.x, db.y SETTINGS refresh_retries = 5 APPEND TO db.t AS SELECT 1", "CREATE MATERIALIZED VIEW v REFRESH EVERY 1 HOUR (id UInt64) AS SELECT 1 AS id", "CREATE MATERIALIZED VIEW v REFRESH DEPENDS ON dep (id UInt64) AS SELECT 1")
-	})
+	}, &statements)
 	for _, item_ := range Iter(statements) {
 		statement = item_
 		self.SubTest(func() {
-			self.Do(2337, func() { M(self.ValidateIdentity(statement), "assert_is", A(G("sqlglot.exp"), "Create")) })
+			self.Do(2337, func() { Stmt(M(self.ValidateIdentity(statement), "assert_is", A(G("sqlglot.exp"), "Create"))) })
 		}, statement)
 	}
 	self.Do(2339, func() {
-		M(self.ValidateIdentity("CREATE MATERIALIZED VIEW v TO db.t AS SELECT 1"), "assert_is", A(G("sqlglot.exp"), "Create"))
+		Stmt(M(self.ValidateIdentity("CREATE MATERIALIZED VIEW v TO db.t AS SELECT 1"), "assert_is", A(G("sqlglot.exp"), "Create")))
 	})
 	self.Do(2342, func() {
-		M(self.ValidateIdentity("CREATE MATERIALIZED VIEW v REFRESH AS SELECT 1", Kw("check_command_warning", true)), "assert_is", A(G("sqlglot.exp"), "Command"))
+		Stmt(M(self.ValidateIdentity("CREATE MATERIALIZED VIEW v REFRESH AS SELECT 1", Kw("check_command_warning", true)), "assert_is", A(G("sqlglot.exp"), "Command")))
 	})
 	return nil
 }

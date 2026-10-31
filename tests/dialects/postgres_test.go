@@ -71,7 +71,7 @@ func test_postgres_TestPostgres_test_create_tablespace(self *Case, a Args) Value
 	for _, item_ := range Iter(NewTuple("CREATE TABLE t (a INT PRIMARY KEY) TABLESPACE pg_default", "CREATE TABLE t (a INT) WITH (fillfactor=70) TABLESPACE pg_default", "CREATE INDEX i ON t(a) TABLESPACE pg_default", "CREATE MATERIALIZED VIEW mv TABLESPACE pg_default AS SELECT 1 AS a", "CREATE TABLE t (a INT, CONSTRAINT pk PRIMARY KEY (a) USING INDEX TABLESPACE pg_default)", "CREATE TABLE t (a INT, UNIQUE (a) USING INDEX TABLESPACE pg_default)", "CREATE TABLE t (a INT PRIMARY KEY USING INDEX TABLESPACE pg_default)", `CREATE TABLE t (a INT) TABLESPACE "pg_default"`, `CREATE INDEX i ON t(a) TABLESPACE "pg_default"`, `CREATE MATERIALIZED VIEW mv TABLESPACE "pg_default" AS SELECT 1 AS a`, `CREATE TABLE t (a INT PRIMARY KEY USING INDEX TABLESPACE "pg_default" DEFERRABLE INITIALLY DEFERRED)`, "CREATE TABLE t (a INT PRIMARY KEY WITH (fillfactor=70) USING INDEX TABLESPACE pg_default)", `CREATE TABLE t (a INT UNIQUE USING INDEX TABLESPACE "pg_default" DEFERRABLE)`, "CREATE TABLE t (a INT UNIQUE NULLS NOT DISTINCT WITH (fillfactor=70) USING INDEX TABLESPACE pg_default)", "CREATE TABLE t (a INT, b INT, PRIMARY KEY (a) INCLUDE (b) WITH (fillfactor=70) USING INDEX TABLESPACE pg_default DEFERRABLE)", "CREATE TABLE t (a INT, b INT, CONSTRAINT uq UNIQUE (a) INCLUDE (b) WITH (fillfactor=70) USING INDEX TABLESPACE pg_default DEFERRABLE)", `CREATE INDEX i ON t USING btree(a) INCLUDE (b) WITH (fillfactor=70) TABLESPACE "pg_default" WHERE a > 0`, "CREATE TABLE t (a INT4RANGE, EXCLUDE USING gist(a WITH &&) USING INDEX TABLESPACE pg_default WHERE (NOT a IS NULL))", "CREATE TABLE t (a INT) USING heap TABLESPACE pg_default", "CREATE TABLE t USING heap WITH (fillfactor=70) TABLESPACE pg_default AS SELECT 1 AS a WITH NO DATA", "CREATE MATERIALIZED VIEW mv USING heap WITH (fillfactor=70) TABLESPACE pg_default AS SELECT 1 AS a", "CREATE TEMPORARY TABLE t (a INT) USING heap WITH (fillfactor=70) ON COMMIT DELETE ROWS TABLESPACE pg_default", "CREATE TEMPORARY TABLE t USING heap WITH (fillfactor=70) ON COMMIT PRESERVE ROWS TABLESPACE pg_default AS SELECT 1 AS a", "CREATE TEMPORARY TABLE t ON COMMIT DELETE ROWS AS SELECT 1 AS a")) {
 		sql = item_
 		self.SubTest(func() {
-			self.Do(48, func() { create = M(self.ValidateIdentity(sql), "assert_is", A(G("sqlglot.exp"), "Create")) })
+			self.DoAssign(48, func() { create = M(self.ValidateIdentity(sql), "assert_is", A(G("sqlglot.exp"), "Create")) }, &create)
 			self.Do(49, func() { self.ValidateIdentity(M(create, "sql", "postgres", Kw("pretty", true)), sql) })
 		}, Kw("sql", sql))
 	}
@@ -85,7 +85,7 @@ func test_postgres_TestPostgres_test_is_precedence(self *Case, a Args) Value {
 		predicate = item_
 		for _, item_ := range Iter(NewTuple("IS DISTINCT FROM", "IS NOT DISTINCT FROM")) {
 			operator = item_
-			self.Do(63, func() { rhs = M(self.ParseOne(predicate), "sql", "postgres") })
+			self.DoAssign(63, func() { rhs = M(self.ParseOne(predicate), "sql", "postgres") }, &rhs)
 			self.Do(64, func() {
 				self.ValidateAll(F("SELECT NULL ", FV{V: operator}, " ", FV{V: predicate}), Kw("write", func() Value {
 					var dialect Value
@@ -137,14 +137,14 @@ func test_postgres_TestPostgres_test_json_value(self *Case, a Args) Value {
 	self.L(135).ValidateIdentity(`SELECT JSON_VALUE('{"a":42}', CASE WHEN TRUE THEN '$.a' ELSE '$.b' END)`)
 	for _, item_ := range Iter(NewTuple(`SELECT JSON_VALUE('{"a":42}', '$.a')`, `SELECT JSON_VALUE('{"a":{"b":42}}', '$.a.b' RETURNING BIGINT)`, `SELECT JSON_VALUE('{"my key":42}', '$."my key"' RETURNING BIGINT)`, "SELECT JSON_VALUE('[1,2]', 'strict $[1]' RETURNING BIGINT)", "SELECT JSON_VALUE('[1,2]', 'strict $[*]' DEFAULT 9 ON ERROR)", `SELECT JSON_VALUE('{"a":[1,2,3]}', 'lax $.a[*] ? (@ > 2)' RETURNING BIGINT)`, "SELECT JSON_VALUE('{}', '$.a' RETURNING BIGINT DEFAULT 7 ON EMPTY DEFAULT 9 ON ERROR)", `SELECT JSON_VALUE('{"a":"bad"}', '$.a' RETURNING BIGINT NULL ON EMPTY NULL ON ERROR)`, `SELECT JSON_VALUE('{"a":42}', '$.a' RETURNING BIGINT ERROR ON EMPTY ERROR ON ERROR)`, `SELECT JSON_VALUE('"123.45"', '$' RETURNING DECIMAL(5, 2))`)) {
 		sql = item_
-		self.Do(150, func() { expression = M(self.ValidateIdentity(sql), "find", A(G("sqlglot.exp"), "JSONValue")) })
-		self.Do(151, func() { M(self, "assertIsNotNone", expression) })
+		self.DoAssign(150, func() { expression = M(self.ValidateIdentity(sql), "find", A(G("sqlglot.exp"), "JSONValue")) }, &expression)
+		self.Do(151, func() { Stmt(M(self, "assertIsNotNone", expression)) })
 		self.Do(152, func() {
-			M(self, "assertIsInstance", Item(A(expression, "args"), "path"), A(G("sqlglot.exp"), "Literal"))
+			Stmt(M(self, "assertIsInstance", Item(A(expression, "args"), "path"), A(G("sqlglot.exp"), "Literal")))
 		})
 		if Truth(M(A(expression, "args"), "get", "returning")) {
 			self.Do(154, func() {
-				M(self, "assertIsInstance", Item(A(expression, "args"), "returning"), A(G("sqlglot.exp"), "DataType"))
+				Stmt(M(self, "assertIsInstance", Item(A(expression, "args"), "returning"), A(G("sqlglot.exp"), "DataType")))
 			})
 		}
 	}
@@ -154,17 +154,17 @@ func test_postgres_TestPostgres_test_json_value(self *Case, a Args) Value {
 func test_postgres_TestPostgres_test_postgres(self *Case, a Args) Value {
 	var expr, unnest, alter_table_only, sql, expected_sql, length, infix_not_like, prefix_not_like, interval, cm, width_bucket Value
 	_ = []Value{expr, unnest, alter_table_only, sql, expected_sql, length, infix_not_like, prefix_not_like, interval, cm, width_bucket}
-	self.Do(157, func() { expr = self.ParseOne("SELECT * FROM r CROSS JOIN LATERAL UNNEST(ARRAY[1]) AS s(location)") })
-	self.Do(158, func() { unnest = A(A(Item(Item(A(expr, "args"), "joins"), 0), "this"), "this") })
-	self.Do(159, func() { M(unnest, "assert_is", A(G("sqlglot.exp"), "Unnest")) })
-	self.Do(161, func() {
+	self.DoAssign(157, func() { expr = self.ParseOne("SELECT * FROM r CROSS JOIN LATERAL UNNEST(ARRAY[1]) AS s(location)") }, &expr)
+	self.DoAssign(158, func() { unnest = A(A(Item(Item(A(expr, "args"), "joins"), 0), "this"), "this") }, &unnest)
+	self.Do(159, func() { Stmt(M(unnest, "assert_is", A(G("sqlglot.exp"), "Unnest"))) })
+	self.DoAssign(161, func() {
 		alter_table_only = `ALTER TABLE ONLY "Album" ADD CONSTRAINT "FK_AlbumArtistId" FOREIGN KEY ("ArtistId") REFERENCES "Artist" ("ArtistId") ON DELETE NO ACTION ON UPDATE NO ACTION`
-	})
-	self.Do(162, func() { expr = self.ParseOne(alter_table_only) })
-	self.Do(164, func() { M(self, "assertIsInstance", expr, A(G("sqlglot.exp"), "Alter")) })
+	}, &alter_table_only)
+	self.DoAssign(162, func() { expr = self.ParseOne(alter_table_only) }, &expr)
+	self.Do(164, func() { Stmt(M(self, "assertIsInstance", expr, A(G("sqlglot.exp"), "Alter"))) })
 	self.Do(165, func() { self.AssertEqual(M(expr, "sql", Kw("dialect", "postgres")), alter_table_only) })
-	self.Do(167, func() { sql = Add(Add("ARRAY[x", Mul(",x", 27)), "]") })
-	self.Do(168, func() { expected_sql = Add(Add("ARRAY[\n  x", Mul(",\n  x", 27)), "\n]") })
+	self.DoAssign(167, func() { sql = Add(Add("ARRAY[x", Mul(",x", 27)), "]") }, &sql)
+	self.DoAssign(168, func() { expected_sql = Add(Add("ARRAY[\n  x", Mul(",\n  x", 27)), "\n]") }, &expected_sql)
 	self.Do(169, func() { self.ValidateIdentity(sql, expected_sql, Kw("pretty", true)) })
 	self.L(171).ValidateIdentity("UPDATE character SET x = 1")
 	self.L(173).ValidateIdentity(`WITH t AS (SELECT 1 AS "null") SELECT t.null FROM t`)
@@ -292,11 +292,11 @@ func test_postgres_TestPostgres_test_postgres(self *Case, a Args) Value {
 	self.L(377).ValidateIdentity(`SELECT e'update table_name set a = \'foo\' where 1 = 0' AS x FROM tab`, "SELECT e'update table_name set a = ''foo'' where 1 = 0' AS x FROM tab")
 	self.L(381).ValidateIdentity("select count() OVER(partition by a order by a range offset preceding exclude current row)", "SELECT COUNT() OVER (PARTITION BY a ORDER BY a range BETWEEN offset preceding AND CURRENT ROW EXCLUDE CURRENT ROW)")
 	self.Do(385, func() {
-		M(A(M(self.ValidateIdentity("x::JSON -> 'duration' ->> -1", "CAST(x AS JSON) -> 'duration' ->> -1"), "assert_is", A(G("sqlglot.exp"), "JSONExtractScalar")), "this"), "assert_is", A(G("sqlglot.exp"), "JSONExtract"))
+		Stmt(M(A(M(self.ValidateIdentity("x::JSON -> 'duration' ->> -1", "CAST(x AS JSON) -> 'duration' ->> -1"), "assert_is", A(G("sqlglot.exp"), "JSONExtractScalar")), "this"), "assert_is", A(G("sqlglot.exp"), "JSONExtract")))
 	})
 	self.L(389).ValidateIdentity("SELECT SUBSTRING('Thomas' FOR 3 FROM 2)", "SELECT SUBSTRING('Thomas' FROM 2 FOR 3)")
 	self.Do(393, func() {
-		M(Item(A(self.ValidateIdentity("SELECT ARRAY[1, 2, 3] <@ ARRAY[1, 2]"), "expressions"), 0), "assert_is", A(G("sqlglot.exp"), "ArrayContainedBy"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT ARRAY[1, 2, 3] <@ ARRAY[1, 2]"), "expressions"), 0), "assert_is", A(G("sqlglot.exp"), "ArrayContainedBy")))
 	})
 	self.L(396).ValidateIdentity("SELECT DATE_PART('isodow'::varchar(6), current_date)", "SELECT EXTRACT(CAST('isodow' AS VARCHAR(6)) FROM CURRENT_DATE)")
 	self.L(400).ValidateIdentity("SELECT DATE_PART('isoyear', ts)", "SELECT EXTRACT(ISOYEAR FROM ts)")
@@ -320,14 +320,14 @@ func test_postgres_TestPostgres_test_postgres(self *Case, a Args) Value {
 	self.L(462).ValidateIdentity("SELECT 'testa 1' NOT ILIKE ANY(ARRAY['testa%', 'testb%'])")
 	self.L(463).ValidateIdentity("SELECT NOT 'testa 1' LIKE ALL (ARRAY['testa%', 'testb%'])")
 	self.L(464).ValidateIdentity("SELECT NOT ('testa 1' LIKE ALL (ARRAY['testa%', 'testb%']))")
-	self.Do(465, func() { infix_not_like = Item(A(self.ParseOne("SELECT a NOT LIKE ALL (b)"), "expressions"), 0) })
-	self.Do(466, func() { prefix_not_like = Item(A(self.ParseOne("SELECT NOT a LIKE ALL (b)"), "expressions"), 0) })
-	self.Do(467, func() { M(self, "assertIsInstance", infix_not_like, A(G("sqlglot.exp"), "Like")) })
-	self.Do(468, func() { M(self, "assertTrue", M(A(infix_not_like, "args"), "get", "negate")) })
-	self.Do(469, func() { M(self, "assertIsInstance", prefix_not_like, A(G("sqlglot.exp"), "Not")) })
-	self.Do(470, func() { M(self, "assertIsInstance", A(prefix_not_like, "this"), A(G("sqlglot.exp"), "Like")) })
-	self.Do(471, func() { M(self, "assertFalse", M(A(A(prefix_not_like, "this"), "args"), "get", "negate")) })
-	self.Do(472, func() { M(self, "assertNotEqual", infix_not_like, prefix_not_like) })
+	self.DoAssign(465, func() { infix_not_like = Item(A(self.ParseOne("SELECT a NOT LIKE ALL (b)"), "expressions"), 0) }, &infix_not_like)
+	self.DoAssign(466, func() { prefix_not_like = Item(A(self.ParseOne("SELECT NOT a LIKE ALL (b)"), "expressions"), 0) }, &prefix_not_like)
+	self.Do(467, func() { Stmt(M(self, "assertIsInstance", infix_not_like, A(G("sqlglot.exp"), "Like"))) })
+	self.Do(468, func() { Stmt(M(self, "assertTrue", M(A(infix_not_like, "args"), "get", "negate"))) })
+	self.Do(469, func() { Stmt(M(self, "assertIsInstance", prefix_not_like, A(G("sqlglot.exp"), "Not"))) })
+	self.Do(470, func() { Stmt(M(self, "assertIsInstance", A(prefix_not_like, "this"), A(G("sqlglot.exp"), "Like"))) })
+	self.Do(471, func() { Stmt(M(self, "assertFalse", M(A(A(prefix_not_like, "this"), "args"), "get", "negate"))) })
+	self.Do(472, func() { Stmt(M(self, "assertNotEqual", infix_not_like, prefix_not_like)) })
 	self.L(473).ValidateIdentity("'45 days'::interval day", "CAST('45 days' AS INTERVAL DAY)")
 	self.L(477).ValidateIdentity("'x' 'y' 'z'", "CONCAT('x', 'y', 'z')")
 	self.L(481).ValidateIdentity("x::cstring", "CAST(x AS CSTRING)")
@@ -366,7 +366,7 @@ func test_postgres_TestPostgres_test_postgres(self *Case, a Args) Value {
 	self.L(613).ValidateIdentity("\n            WITH\n              json_data AS (SELECT '{\"field_id\": [1, 2, 3]}'::JSON AS data),\n              field_ids AS (SELECT 'field_id' AS field_id)\n\n            SELECT\n                JSON_ARRAY_ELEMENTS(json_data.data -> field_ids.field_id) AS element\n            FROM json_data, field_ids\n            ", "WITH json_data AS (\n  SELECT\n    CAST('{\"field_id\": [1, 2, 3]}' AS JSON) AS data\n), field_ids AS (\n  SELECT\n    'field_id' AS field_id\n)\nSELECT\n  JSON_ARRAY_ELEMENTS(json_data.data -> field_ids.field_id) AS element\nFROM json_data, field_ids", Kw("pretty", true))
 	self.L(636).ValidateAll("x ? y", Kw("write", NewDict("", "x ? y", "postgres", "x ? y")))
 	self.Do(643, func() {
-		M(self.ValidateIdentity("JSONB_CONTAINS(x, y)"), "assert_is", A(G("sqlglot.exp"), "JSONBContains"))
+		Stmt(M(self.ValidateIdentity("JSONB_CONTAINS(x, y)"), "assert_is", A(G("sqlglot.exp"), "JSONBContains")))
 	})
 	self.L(644).ValidateAll(`SELECT E'a\tb'`, Kw("write", NewDict("postgres", `SELECT e'a\tb'`, "mysql", `SELECT 'a\tb'`, "sqlite", G("sqlglot.UnsupportedError"))))
 	self.L(652).ValidateAll("SELECT CAST('2025-02-01 00:00:00' AS TIMESTAMP) - MAKE_INTERVAL(years => 1)", Kw("write", NewDict("mysql", "SELECT CAST('2025-02-01 00:00:00' AS DATETIME) - INTERVAL 1 YEAR", "postgres", "SELECT CAST('2025-02-01 00:00:00' AS TIMESTAMP) - MAKE_INTERVAL(years => 1)")))
@@ -377,16 +377,16 @@ func test_postgres_TestPostgres_test_postgres(self *Case, a Args) Value {
 	self.L(689).ValidateAll("SELECT MAKE_INTERVAL(secs => 7.5, mins => 6, hours => 5, DAYS => 4, weeks => 3, months => 2, years => 1)", Kw("write", NewDict("duckdb", "SELECT INTERVAL '7.5 second 6 minute 5 hour 4 day 3 week 2 month 1 year'", "postgres", "SELECT MAKE_INTERVAL(years => 1, months => 2, weeks => 3, DAYS => 4, hours => 5, mins => 6, secs => 7.5)")))
 	self.L(696).ValidateAll("SELECT MAKE_INTERVAL(1, 2, 3, 4, 5, 6, 7.5)", Kw("write", NewDict("duckdb", "SELECT INTERVAL '1 year 2 month 3 week 4 day 5 hour 6 minute 7.5 second'", "postgres", "SELECT MAKE_INTERVAL(1, 2, 3, 4, 5, 6, 7.5)")))
 	self.L(703).ValidateAll("SELECT MAKE_INTERVAL(days => 3) /* sqlglot.anonymous */", Kw("write", NewDict("duckdb", "SELECT MAKE_INTERVAL(days => 3) /* sqlglot.anonymous */", "postgres", "SELECT MAKE_INTERVAL(days => 3) /* sqlglot.anonymous */")))
-	self.Do(710, func() { interval = Call(G("sqlglot.parse_one"), "INTERVAL '1' QUARTER") })
-	self.Do(711, func() { M(interval, "set", "this", M(A(G("sqlglot.exp"), "Literal"), "number", "1e1000000000")) })
+	self.DoAssign(710, func() { interval = Call(G("sqlglot.parse_one"), "INTERVAL '1' QUARTER") }, &interval)
+	self.Do(711, func() { Stmt(M(interval, "set", "this", M(A(G("sqlglot.exp"), "Literal"), "number", "1e1000000000"))) })
 	self.Do(712, func() {
 		self.AssertLogs(func(cm_ Value) {
 			cm = cm_
-			M(self, "assertEqual", M(interval, "sql", "postgres"), "INTERVAL '1e1000000000 QUARTER'")
+			Stmt(M(self, "assertEqual", M(interval, "sql", "postgres"), "INTERVAL '1e1000000000 QUARTER'"))
 		}, G("sqlglot.generator.logger"), Kw("level", "WARNING"))
 	})
 	self.Do(714, func() {
-		M(self, "assertIn", "Postgres intervals need a whole number of quarters", Item(A(cm, "output"), 0))
+		Stmt(M(self, "assertIn", "Postgres intervals need a whole number of quarters", Item(A(cm, "output"), 0)))
 	})
 	self.L(715).ValidateAll("SELECT CURRENT_TIMESTAMP + INTERVAL '-3 MONTH'", Kw("read", NewDict("mysql", "SELECT DATE_ADD(CURRENT_TIMESTAMP, INTERVAL -1 QUARTER)", "postgres", "SELECT CURRENT_TIMESTAMP + INTERVAL '-3 MONTH'", "tsql", "SELECT DATEADD(QUARTER, -1, GETDATE())")))
 	self.L(723).ValidateAll("SELECT ARRAY[]::INT[] AS foo", Kw("write", NewDict("postgres", "SELECT CAST(ARRAY[] AS INT[]) AS foo", "duckdb", "SELECT CAST([] AS INT[]) AS foo")))
@@ -452,9 +452,9 @@ func test_postgres_TestPostgres_test_postgres(self *Case, a Args) Value {
 	self.L(1162).ValidateAll("merge into x using (select id) as y on a = b WHEN matched then update set x.a = y.b", Kw("write", NewDict("postgres", "MERGE INTO x USING (SELECT id) AS y ON a = b WHEN MATCHED THEN UPDATE SET a = y.b", "snowflake", "MERGE INTO x USING (SELECT id) AS y ON a = b WHEN MATCHED THEN UPDATE SET x.a = y.b")))
 	self.L(1169).ValidateAll("x / y ^ z", Kw("write", NewDict("", "x / POWER(y, z)", "postgres", "x / POWER(y, z)")))
 	self.L(1176).ValidateAll("CAST(x AS NAME)", Kw("read", NewDict("redshift", "CAST(x AS NAME)")), Kw("write", NewDict("postgres", "CAST(x AS NAME)", "redshift", "CAST(x AS NAME)")))
-	self.Do(1186, func() { M(self, "assertIsInstance", self.ParseOne("id::UUID"), A(G("sqlglot.exp"), "Cast")) })
+	self.Do(1186, func() { Stmt(M(self, "assertIsInstance", self.ParseOne("id::UUID"), A(G("sqlglot.exp"), "Cast"))) })
 	self.Do(1188, func() {
-		M(A(self.ValidateIdentity(`1::"int"`, "CAST(1 AS INT)"), "to"), "is_type", A(A(A(G("sqlglot.exp"), "DataType"), "Type"), "INT"))
+		Stmt(M(A(self.ValidateIdentity(`1::"int"`, "CAST(1 AS INT)"), "to"), "is_type", A(A(A(G("sqlglot.exp"), "DataType"), "Type"), "INT")))
 	})
 	self.Do(1189, func() {
 		_ = Eq(A(A(self.ValidateIdentity(`1::"udt"`, `CAST(1 AS "udt")`), "to"), "this"), A(A(A(G("sqlglot.exp"), "DataType"), "Type"), "USERDEFINED"))
@@ -483,7 +483,7 @@ func test_postgres_TestPostgres_test_postgres(self *Case, a Args) Value {
 	self.L(1268).ValidateIdentity("SELECT OVERLAY(a PLACING b FROM 1)")
 	self.L(1269).ValidateIdentity("SELECT OVERLAY(a PLACING b FROM 1 FOR 1)")
 	self.Do(1270, func() {
-		M(self.ValidateIdentity("ARRAY[1, 2, 3] && ARRAY[1, 2]"), "assert_is", A(G("sqlglot.exp"), "ArrayOverlaps"))
+		Stmt(M(self.ValidateIdentity("ARRAY[1, 2, 3] && ARRAY[1, 2]"), "assert_is", A(G("sqlglot.exp"), "ArrayOverlaps")))
 	})
 	self.L(1272).ValidateAll(`SELECT JSONB_EXISTS('{"a": [1,2,3]}', 'a')`, Kw("write", NewDict("postgres", `SELECT JSONB_EXISTS('{"a": [1,2,3]}', 'a')`, "duckdb", `SELECT JSON_EXISTS('{"a": [1,2,3]}', '$.a')`)))
 	self.L(1279).ValidateAll("WITH t AS (SELECT ARRAY[1, 2, 3] AS col) SELECT * FROM t WHERE 1 <= ANY(col) AND 2 = ANY(col)", Kw("write", NewDict("postgres", "WITH t AS (SELECT ARRAY[1, 2, 3] AS col) SELECT * FROM t WHERE 1 <= ANY(col) AND 2 = ANY(col)", "hive", "WITH t AS (SELECT ARRAY(1, 2, 3) AS col) SELECT * FROM t WHERE EXISTS(col, x -> 1 <= x) AND EXISTS(col, x -> 2 = x)", "spark2", "WITH t AS (SELECT ARRAY(1, 2, 3) AS col) SELECT * FROM t WHERE EXISTS(col, x -> 1 <= x) AND EXISTS(col, x -> 2 = x)", "spark", "WITH t AS (SELECT ARRAY(1, 2, 3) AS col) SELECT * FROM t WHERE EXISTS(col, x -> 1 <= x) AND EXISTS(col, x -> 2 = x)", "databricks", "WITH t AS (SELECT ARRAY(1, 2, 3) AS col) SELECT * FROM t WHERE EXISTS(col, x -> 1 <= x) AND EXISTS(col, x -> 2 = x)")))
@@ -496,18 +496,22 @@ func test_postgres_TestPostgres_test_postgres(self *Case, a Args) Value {
 	self.L(1335).ValidateIdentity("SELECT * FROM foo WHERE id = %s")
 	self.L(1336).ValidateIdentity("SELECT * FROM foo WHERE id = %(id_param)s")
 	self.L(1337).ValidateIdentity("SELECT * FROM foo WHERE id = ?")
-	self.Do(1339, func() { M(self.ValidateIdentity("a ? b"), "assert_is", A(G("sqlglot.exp"), "JSONBContainsTopKey")) })
-	self.Do(1342, func() { M(self.ValidateIdentity("a @> b"), "assert_is", A(G("sqlglot.exp"), "ArrayContainsAll")) })
+	self.Do(1339, func() {
+		Stmt(M(self.ValidateIdentity("a ? b"), "assert_is", A(G("sqlglot.exp"), "JSONBContainsTopKey")))
+	})
+	self.Do(1342, func() { Stmt(M(self.ValidateIdentity("a @> b"), "assert_is", A(G("sqlglot.exp"), "ArrayContainsAll"))) })
 	self.L(1344).ValidateIdentity("a ^@ b", "STARTS_WITH(a, b)")
 	self.Do(1346, func() {
-		M(self.ValidateIdentity("a ?| b"), "assert_is", A(G("sqlglot.exp"), "JSONBContainsAnyTopKeys"))
+		Stmt(M(self.ValidateIdentity("a ?| b"), "assert_is", A(G("sqlglot.exp"), "JSONBContainsAnyTopKeys")))
 	})
 	self.L(1347).ValidateIdentity(`SELECT '{"a":1, "b":2, "c":3}'::jsonb ?| array['b', 'c']`, `SELECT CAST('{"a":1, "b":2, "c":3}' AS JSONB) ?| ARRAY['b', 'c']`)
 	self.Do(1352, func() {
-		M(self.ValidateIdentity("a ?& b"), "assert_is", A(G("sqlglot.exp"), "JSONBContainsAllTopKeys"))
+		Stmt(M(self.ValidateIdentity("a ?& b"), "assert_is", A(G("sqlglot.exp"), "JSONBContainsAllTopKeys")))
 	})
 	self.L(1353).ValidateIdentity(`SELECT '["a", "b"]'::jsonb ?& array['a', 'b']`, `SELECT CAST('["a", "b"]' AS JSONB) ?& ARRAY['a', 'b']`)
-	self.Do(1358, func() { M(self.ValidateIdentity("a #- b"), "assert_is", A(G("sqlglot.exp"), "JSONBDeleteAtPath")) })
+	self.Do(1358, func() {
+		Stmt(M(self.ValidateIdentity("a #- b"), "assert_is", A(G("sqlglot.exp"), "JSONBDeleteAtPath")))
+	})
 	self.L(1359).ValidateIdentity(`SELECT '["a", {"b":1}]'::jsonb #- '{1,b}'`, `SELECT CAST('["a", {"b":1}]' AS JSONB) #- '{1,b}'`)
 	self.L(1364).ValidateIdentity("SELECT JSON_AGG(DISTINCT name) FROM users")
 	self.L(1365).ValidateIdentity("SELECT JSON_AGG(c1 ORDER BY c1) FROM (VALUES ('c'), ('b'), ('a')) AS t(c1)")
@@ -517,10 +521,10 @@ func test_postgres_TestPostgres_test_postgres(self *Case, a Args) Value {
 	self.L(1392).ValidateAll("CREATE TABLE table1 (a INT, b INT, PRIMARY KEY (a))", Kw("read", NewDict("sqlite", "CREATE TABLE table1 (a INT, b INT, PRIMARY KEY (a))", "postgres", "CREATE TABLE table1 (a INT, b INT, PRIMARY KEY (a))")))
 	self.L(1399).ValidateIdentity("SELECT NUMRANGE(1.1, 2.2) -|- NUMRANGE(2.2, 3.3)")
 	self.L(1400).ValidateIdentity("SELECT SLOPE(point '(4,4)', point '(0,0)')", "SELECT SLOPE(CAST('(4,4)' AS POINT), CAST('(0,0)' AS POINT))")
-	self.Do(1405, func() { width_bucket = self.ValidateIdentity("WIDTH_BUCKET(10, ARRAY[5, 15])") })
-	self.Do(1406, func() { M(self, "assertIsNotNone", M(A(width_bucket, "args"), "get", "threshold")) })
-	self.Do(1408, func() { width_bucket = self.ValidateIdentity("WIDTH_BUCKET(10, 5, 15, 25)") })
-	self.Do(1409, func() { M(self, "assertIsNone", M(A(width_bucket, "args"), "get", "threshold")) })
+	self.DoAssign(1405, func() { width_bucket = self.ValidateIdentity("WIDTH_BUCKET(10, ARRAY[5, 15])") }, &width_bucket)
+	self.Do(1406, func() { Stmt(M(self, "assertIsNotNone", M(A(width_bucket, "args"), "get", "threshold"))) })
+	self.DoAssign(1408, func() { width_bucket = self.ValidateIdentity("WIDTH_BUCKET(10, 5, 15, 25)") }, &width_bucket)
+	self.Do(1409, func() { Stmt(M(self, "assertIsNone", M(A(width_bucket, "args"), "get", "threshold"))) })
 	self.L(1411).ValidateAll("UPDATE foo SET a = bar.a, b = bar.b FROM bar WHERE foo.id = bar.id", Kw("write", NewDict("postgres", "UPDATE foo SET a = bar.a, b = bar.b FROM bar WHERE foo.id = bar.id", "doris", "UPDATE foo SET a = bar.a, b = bar.b FROM bar WHERE foo.id = bar.id", "starrocks", "UPDATE foo SET a = bar.a, b = bar.b FROM bar WHERE foo.id = bar.id", "mysql", "UPDATE foo JOIN bar ON TRUE SET foo.a = bar.a, foo.b = bar.b WHERE foo.id = bar.id", "singlestore", "UPDATE foo JOIN bar ON TRUE SET foo.a = bar.a, foo.b = bar.b WHERE foo.id = bar.id")))
 	self.L(1422).ValidateIdentity("SELECT MLEAST(VARIADIC ARRAY[10, -1, 5, 4.4])")
 	self.L(1423).ValidateIdentity("SELECT MLEAST(VARIADIC ARRAY[]::numeric[])", "SELECT MLEAST(VARIADIC CAST(ARRAY[] AS DECIMAL[]))")
@@ -532,34 +536,34 @@ func test_postgres_TestPostgres_test_ddl(self *Case, a Args) Value {
 	var create_type, expr, cdef, column, op Value
 	_ = []Value{create_type, expr, cdef, column, op}
 	self.Do(1434, func() {
-		M(Item(A(Item(A(A(self.ParseOne("CREATE TABLE t (a udt)"), "this"), "expressions"), 0), "args"), "kind"), "assert_is", A(G("sqlglot.exp"), "DataType"))
+		Stmt(M(Item(A(Item(A(A(self.ParseOne("CREATE TABLE t (a udt)"), "this"), "expressions"), 0), "args"), "kind"), "assert_is", A(G("sqlglot.exp"), "DataType")))
 	})
-	self.Do(1438, func() {
+	self.DoAssign(1438, func() {
 		create_type = M(self.ValidateIdentity("CREATE TYPE mood AS ENUM ('sad', 'ok', 'happy')"), "assert_is", A(G("sqlglot.exp"), "Create"))
-	})
+	}, &create_type)
 	self.Do(1441, func() {
-		M(self, "assertTrue", M(M(A(create_type, "expression"), "assert_is", A(G("sqlglot.exp"), "DataType")), "is_type", A(A(G("sqlglot.exp"), "DType"), "ENUM")))
+		Stmt(M(self, "assertTrue", M(M(A(create_type, "expression"), "assert_is", A(G("sqlglot.exp"), "DataType")), "is_type", A(A(G("sqlglot.exp"), "DType"), "ENUM"))))
 	})
 	self.Do(1443, func() {
-		M(self.ValidateIdentity("CREATE TYPE mood AS ENUM ()"), "assert_is", A(G("sqlglot.exp"), "Create"))
+		Stmt(M(self.ValidateIdentity("CREATE TYPE mood AS ENUM ()"), "assert_is", A(G("sqlglot.exp"), "Create")))
 	})
 	self.L(1445).ValidateIdentity("CREATE VIEW v AS SELECT * FROM start WITH CHECK OPTION", Kw("check_command_warning", true))
 	self.L(1448).ValidateIdentity("CREATE VIEW start WITH (security_barrier=TRUE) AS SELECT 1")
-	self.Do(1450, func() {
+	self.DoAssign(1450, func() {
 		create_type = M(self.ValidateIdentity("CREATE TYPE inventory_item AS (name TEXT, supplier_id INT, price DECIMAL)"), "assert_is", A(G("sqlglot.exp"), "Create"))
-	})
-	self.Do(1453, func() { M(A(create_type, "expression"), "assert_is", A(G("sqlglot.exp"), "Schema")) })
+	}, &create_type)
+	self.Do(1453, func() { Stmt(M(A(create_type, "expression"), "assert_is", A(G("sqlglot.exp"), "Schema"))) })
 	self.Do(1455, func() {
-		M(self.ValidateIdentity("CREATE TYPE public.mood AS ENUM ('sad', 'ok')"), "assert_is", A(G("sqlglot.exp"), "Create"))
+		Stmt(M(self.ValidateIdentity("CREATE TYPE public.mood AS ENUM ('sad', 'ok')"), "assert_is", A(G("sqlglot.exp"), "Create")))
 	})
 	self.L(1459).ValidateIdentity("CREATE TYPE widget", Kw("check_command_warning", true))
 	self.L(1460).ValidateIdentity("CREATE TYPE float8range AS RANGE (subtype = float8, subtype_diff = float8mi)", Kw("check_command_warning", true))
 	self.Do(1466, func() {
-		M(self, "assertIsInstance", M(self.ParseOne("CREATE TABLE p.t (c oid)"), "find", A(G("sqlglot.exp"), "DataType")), A(G("sqlglot.exp"), "ObjectIdentifier"))
+		Stmt(M(self, "assertIsInstance", M(self.ParseOne("CREATE TABLE p.t (c oid)"), "find", A(G("sqlglot.exp"), "DataType")), A(G("sqlglot.exp"), "ObjectIdentifier")))
 	})
-	self.Do(1470, func() { expr = self.ParseOne("CREATE TABLE t (x INTERVAL day)") })
-	self.Do(1471, func() { cdef = M(expr, "find", A(G("sqlglot.exp"), "ColumnDef")) })
-	self.Do(1472, func() { M(Item(A(cdef, "args"), "kind"), "assert_is", A(G("sqlglot.exp"), "DataType")) })
+	self.DoAssign(1470, func() { expr = self.ParseOne("CREATE TABLE t (x INTERVAL day)") }, &expr)
+	self.DoAssign(1471, func() { cdef = M(expr, "find", A(G("sqlglot.exp"), "ColumnDef")) }, &cdef)
+	self.Do(1472, func() { Stmt(M(Item(A(cdef, "args"), "kind"), "assert_is", A(G("sqlglot.exp"), "DataType"))) })
 	self.Do(1473, func() { self.AssertEqual(M(expr, "sql", Kw("dialect", "postgres")), "CREATE TABLE t (x INTERVAL DAY)") })
 	self.L(1475).ValidateIdentity(`ALTER INDEX "IX_Ratings_Column1" RENAME TO "IX_Ratings_Column2"`)
 	self.L(1476).ValidateIdentity(`CREATE TABLE x (a TEXT COLLATE "de_DE")`)
@@ -630,15 +634,15 @@ func test_postgres_TestPostgres_test_ddl(self *Case, a Args) Value {
 	self.L(1601).ValidateIdentity("CREATE FUNCTION add(INT, INT) RETURNS INT SET search_path TO 'public' AS 'select $1 + $2;' LANGUAGE SQL IMMUTABLE", Kw("check_command_warning", true))
 	self.L(1605).ValidateIdentity("CREATE FUNCTION x(INT) RETURNS INT SET foo FROM CURRENT", Kw("check_command_warning", true))
 	self.Do(1609, func() {
-		M(self.ValidateIdentity("CREATE FUNCTION add(integer, integer) RETURNS integer AS 'select $1 + $2;' LANGUAGE SQL IMMUTABLE CALLED ON NULL INPUT", "CREATE FUNCTION add(integer, integer) RETURNS INT LANGUAGE SQL IMMUTABLE CALLED ON NULL INPUT AS 'select $1 + $2;'"), "assert_is", A(G("sqlglot.exp"), "Create"))
+		Stmt(M(self.ValidateIdentity("CREATE FUNCTION add(integer, integer) RETURNS integer AS 'select $1 + $2;' LANGUAGE SQL IMMUTABLE CALLED ON NULL INPUT", "CREATE FUNCTION add(integer, integer) RETURNS INT LANGUAGE SQL IMMUTABLE CALLED ON NULL INPUT AS 'select $1 + $2;'"), "assert_is", A(G("sqlglot.exp"), "Create")))
 	})
 	self.L(1613).ValidateIdentity("CREATE CONSTRAINT TRIGGER my_trigger AFTER INSERT OR DELETE OR UPDATE OF col_a, col_b ON public.my_table DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION DO_STH()")
 	self.L(1616).ValidateIdentity("CREATE UNLOGGED TABLE foo AS WITH t(c) AS (SELECT 1) SELECT * FROM (SELECT c AS c FROM t) AS temp")
 	self.L(1619).ValidateIdentity("ALTER TABLE foo ADD COLUMN id BIGINT NOT NULL PRIMARY KEY DEFAULT 1, ADD CONSTRAINT fk_orders_user FOREIGN KEY (id) REFERENCES foo (id)")
-	self.Do(1622, func() {
+	self.DoAssign(1622, func() {
 		Unpack(Item(A(M(self.ValidateIdentity("ALTER TABLE t ADD COLUMN if INT"), "assert_is", A(G("sqlglot.exp"), "Alter")), "args"), "actions"), &column)
-	})
-	self.Do(1627, func() { M(column, "assert_is", A(G("sqlglot.exp"), "ColumnDef")) })
+	}, &column)
+	self.Do(1627, func() { Stmt(M(column, "assert_is", A(G("sqlglot.exp"), "ColumnDef"))) })
 	self.Do(1628, func() { self.AssertEqual(A(column, "name"), "if") })
 	self.L(1629).ValidateIdentity("ALTER TABLE t ALTER COLUMN b RESTART", Kw("check_command_warning", true))
 	self.L(1630).ValidateIdentity("ALTER TABLE t ALTER COLUMN b SET STATISTICS 100", Kw("check_command_warning", true))
@@ -695,13 +699,13 @@ func test_postgres_TestPostgres_test_ddl(self *Case, a Args) Value {
 	self.Do(1789, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			Call(G("sqlglot.transpile"), "CREATE TABLE products (price DECIMAL CHECK price > 0)", Kw("read", "postgres"))
+			Stmt(Call(G("sqlglot.transpile"), "CREATE TABLE products (price DECIMAL CHECK price > 0)", Kw("read", "postgres")))
 		}, G("sqlglot.ParseError"))
 	})
 	self.Do(1791, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			Call(G("sqlglot.transpile"), "CREATE TABLE products (price DECIMAL, CHECK price > 1)", Kw("read", "postgres"))
+			Stmt(Call(G("sqlglot.transpile"), "CREATE TABLE products (price DECIMAL, CHECK price > 1)", Kw("read", "postgres")))
 		}, G("sqlglot.ParseError"))
 	})
 	return nil
@@ -713,10 +717,10 @@ func test_postgres_TestPostgres_test_alter_mixed_actions(self *Case, a Args) Val
 	for _, item_ := range Iter(NewTuple("ALTER TABLE t ADD COLUMN a INT, DROP COLUMN b, ADD COLUMN c INT, DROP COLUMN d", "ALTER TABLE t ADD CONSTRAINT c UNIQUE (a), DROP CONSTRAINT d", "ALTER TABLE t ALTER COLUMN c SET DEFAULT 1, ADD COLUMN d INT", "ALTER TABLE t ADD COLUMN a INT, DROP COLUMN if", "ALTER TABLE t ADD COLUMN a INT, DROP COLUMN partitioned_by CASCADE")) {
 		sql = item_
 		self.SubTest(func() {
-			self.Do(1806, func() { alter = M(self.ValidateIdentity(sql), "assert_is", A(G("sqlglot.exp"), "Alter")) })
+			self.DoAssign(1806, func() { alter = M(self.ValidateIdentity(sql), "assert_is", A(G("sqlglot.exp"), "Alter")) }, &alter)
 			for _, item_ := range Iter(Item(A(alter, "args"), "actions")) {
 				action = item_
-				self.Do(1808, func() { M(self, "assertNotIsInstance", action, A(G("sqlglot.exp"), "Command")) })
+				self.Do(1808, func() { Stmt(M(self, "assertNotIsInstance", action, A(G("sqlglot.exp"), "Command"))) })
 			}
 		}, sql)
 	}
@@ -724,7 +728,7 @@ func test_postgres_TestPostgres_test_alter_mixed_actions(self *Case, a Args) Val
 		sql = item_
 		self.SubTest(func() {
 			self.Do(1817, func() {
-				M(self.ValidateIdentity(sql, Kw("check_command_warning", true)), "assert_is", A(G("sqlglot.exp"), "Command"))
+				Stmt(M(self.ValidateIdentity(sql, Kw("check_command_warning", true)), "assert_is", A(G("sqlglot.exp"), "Command")))
 			})
 		}, sql)
 	}
@@ -739,7 +743,7 @@ func test_postgres_TestPostgres_test_called_on_null_input_malformed(self *Case, 
 		self.Do(1829, func() {
 			self.AssertRaises(func(cm_ Value) {
 				_ = cm_
-				M(self, "parse_one", sql)
+				Stmt(M(self, "parse_one", sql))
 			}, G("sqlglot.ParseError"))
 		})
 	}
@@ -758,23 +762,23 @@ func test_postgres_TestPostgres_test_alter_drop_column(self *Case, a Args) Value
 	self.L(1846).ValidateIdentity("ALTER TABLE t DROP IF EXISTS if CASCADE", "ALTER TABLE t DROP COLUMN IF EXISTS if CASCADE")
 	self.L(1850).ValidateIdentity("ALTER TABLE t DROP b, DROP view CASCADE", "ALTER TABLE t DROP COLUMN b, DROP COLUMN view CASCADE")
 	self.Do(1854, func() {
-		M(Item(Item(A(self.ValidateIdentity("ALTER TABLE t DROP COLUMN cascade"), "args"), "actions"), 0), "assert_is", A(G("sqlglot.exp"), "Drop"))
+		Stmt(M(Item(Item(A(self.ValidateIdentity("ALTER TABLE t DROP COLUMN cascade"), "args"), "actions"), 0), "assert_is", A(G("sqlglot.exp"), "Drop")))
 	})
 	self.Do(1857, func() {
-		M(Item(Item(A(self.ValidateIdentity("ALTER TABLE t DROP COLUMN restrict"), "args"), "actions"), 0), "assert_is", A(G("sqlglot.exp"), "Drop"))
+		Stmt(M(Item(Item(A(self.ValidateIdentity("ALTER TABLE t DROP COLUMN restrict"), "args"), "actions"), 0), "assert_is", A(G("sqlglot.exp"), "Drop")))
 	})
 	self.Do(1860, func() {
-		M(Item(Item(A(self.ValidateIdentity("ALTER TABLE t DROP CONSTRAINT restrict"), "args"), "actions"), 0), "assert_is", A(G("sqlglot.exp"), "Drop"))
+		Stmt(M(Item(Item(A(self.ValidateIdentity("ALTER TABLE t DROP CONSTRAINT restrict"), "args"), "actions"), 0), "assert_is", A(G("sqlglot.exp"), "Drop")))
 	})
 	self.Do(1863, func() {
-		M(Item(Item(A(self.ValidateIdentity("ALTER TABLE t DROP COLUMN partitioned_by"), "args"), "actions"), 0), "assert_is", A(G("sqlglot.exp"), "Drop"))
+		Stmt(M(Item(Item(A(self.ValidateIdentity("ALTER TABLE t DROP COLUMN partitioned_by"), "args"), "actions"), 0), "assert_is", A(G("sqlglot.exp"), "Drop")))
 	})
 	self.L(1866).ValidateIdentity("ALTER TABLE t DROP COLUMN partitioned_by CASCADE")
-	self.Do(1867, func() {
+	self.DoAssign(1867, func() {
 		Unpack(Item(A(self.ValidateIdentity("ALTER TABLE t DROP COLUMN if CASCADE, DROP COLUMN b"), "args"), "actions"), &drop_if, &drop_b)
-	})
-	self.Do(1870, func() { M(drop_if, "assert_is", A(G("sqlglot.exp"), "Drop")) })
-	self.Do(1871, func() { M(drop_b, "assert_is", A(G("sqlglot.exp"), "Drop")) })
+	}, &drop_if, &drop_b)
+	self.Do(1870, func() { Stmt(M(drop_if, "assert_is", A(G("sqlglot.exp"), "Drop"))) })
+	self.Do(1871, func() { Stmt(M(drop_b, "assert_is", A(G("sqlglot.exp"), "Drop"))) })
 	return nil
 }
 
@@ -796,8 +800,8 @@ func test_postgres_TestPostgres_test_array_offset(self *Case, a Args) Value {
 	self.Do(1914, func() {
 		self.AssertLogs(func(cm_ Value) {
 			cm = cm_
-			M(self, "validate_all", "SELECT col[1]", Kw("write", NewDict("bigquery", "SELECT col[0]", "duckdb", "SELECT col[1]", "hive", "SELECT col[0]", "postgres", "SELECT col[1]", "presto", "SELECT col[1]")))
-			M(self, "assertEqual", A(cm, "output"), NewList("INFO:sqlglot:Applying array index offset (-1)", "INFO:sqlglot:Applying array index offset (1)", "INFO:sqlglot:Applying array index offset (1)", "INFO:sqlglot:Applying array index offset (1)"))
+			Stmt(M(self, "validate_all", "SELECT col[1]", Kw("write", NewDict("bigquery", "SELECT col[0]", "duckdb", "SELECT col[1]", "hive", "SELECT col[0]", "postgres", "SELECT col[1]", "presto", "SELECT col[1]"))))
+			Stmt(M(self, "assertEqual", A(cm, "output"), NewList("INFO:sqlglot:Applying array index offset (-1)", "INFO:sqlglot:Applying array index offset (1)", "INFO:sqlglot:Applying array index offset (1)", "INFO:sqlglot:Applying array index offset (1)")))
 		}, G("sqlglot.helper.logger"))
 	})
 	return nil
@@ -848,10 +852,10 @@ func test_postgres_TestPostgres_test_corr(self *Case, a Args) Value {
 
 func test_postgres_TestPostgres_test_regexp_binary(self *Case, a Args) Value {
 	self.Do(2072, func() {
-		M(self, "assertIsInstance", self.ParseOne("'thomas' ~ '.*thomas.*'"), A(G("sqlglot.exp"), "Binary"))
+		Stmt(M(self, "assertIsInstance", self.ParseOne("'thomas' ~ '.*thomas.*'"), A(G("sqlglot.exp"), "Binary")))
 	})
 	self.Do(2073, func() {
-		M(self, "assertIsInstance", self.ParseOne("'thomas' ~* '.*thomas.*'"), A(G("sqlglot.exp"), "Binary"))
+		Stmt(M(self, "assertIsInstance", self.ParseOne("'thomas' ~* '.*thomas.*'"), A(G("sqlglot.exp"), "Binary")))
 	})
 	return nil
 }
@@ -859,12 +863,12 @@ func test_postgres_TestPostgres_test_regexp_binary(self *Case, a Args) Value {
 func test_postgres_TestPostgres_test_unnest_json_array(self *Case, a Args) Value {
 	var trino_input, expected_postgres Value
 	_ = []Value{trino_input, expected_postgres}
-	self.Do(2076, func() {
+	self.DoAssign(2076, func() {
 		trino_input = "\n            WITH t(boxcrate) AS (\n              SELECT JSON '[{\"boxes\": [{\"name\": \"f1\", \"type\": \"plant\", \"color\": \"red\"}]}]'\n            )\n            SELECT\n              JSON_EXTRACT_SCALAR(boxes,'$.name')  AS name,\n              JSON_EXTRACT_SCALAR(boxes,'$.type')  AS type,\n              JSON_EXTRACT_SCALAR(boxes,'$.color') AS color\n            FROM t\n            CROSS JOIN UNNEST(CAST(boxcrate AS array(json))) AS x(tbox)\n            CROSS JOIN UNNEST(CAST(json_extract(tbox, '$.boxes') AS array(json))) AS y(boxes)\n        "
-	})
-	self.Do(2089, func() {
+	}, &trino_input)
+	self.DoAssign(2089, func() {
 		expected_postgres = "WITH t(boxcrate) AS (\n  SELECT\n    CAST('[{\"boxes\": [{\"name\": \"f1\", \"type\": \"plant\", \"color\": \"red\"}]}]' AS JSON)\n)\nSELECT\n  JSON_EXTRACT_PATH_TEXT(boxes, 'name') AS name,\n  JSON_EXTRACT_PATH_TEXT(boxes, 'type') AS type,\n  JSON_EXTRACT_PATH_TEXT(boxes, 'color') AS color\nFROM t\nCROSS JOIN JSON_ARRAY_ELEMENTS(CAST(boxcrate AS JSON)) AS x(tbox)\nCROSS JOIN JSON_ARRAY_ELEMENTS(CAST(JSON_EXTRACT_PATH(tbox, 'boxes') AS JSON)) AS y(boxes)"
-	})
+	}, &expected_postgres)
 	self.Do(2101, func() {
 		self.ValidateAll(expected_postgres, Kw("read", NewDict("trino", trino_input)), Kw("pretty", true))
 	})
@@ -951,16 +955,16 @@ func test_postgres_TestPostgres_test_udt(self *Case, a Args) Value {
 			var sql Value
 			_ = []Value{sql}
 			sql = a.Get(0, "sql", nil)
-			M(A(M(self, "validate_identity", sql), "to"), "assert_is", A(G("sqlglot.exp"), "DataType"))
+			Stmt(M(A(M(self, "validate_identity", sql), "to"), "assert_is", A(G("sqlglot.exp"), "DataType")))
 			return nil
 		})
 	})
-	self.Do(2239, func() { Call(_validate_udt, "CAST(5 AS MyType)") })
-	self.Do(2240, func() { Call(_validate_udt, `CAST(5 AS "MyType")`) })
-	self.Do(2241, func() { Call(_validate_udt, "CAST(5 AS MySchema.MyType)") })
-	self.Do(2242, func() { Call(_validate_udt, `CAST(5 AS "MySchema"."MyType")`) })
-	self.Do(2243, func() { Call(_validate_udt, `CAST(5 AS MySchema."MyType")`) })
-	self.Do(2244, func() { Call(_validate_udt, `CAST(5 AS "MyCatalog"."MySchema"."MyType")`) })
+	self.Do(2239, func() { Stmt(Call(_validate_udt, "CAST(5 AS MyType)")) })
+	self.Do(2240, func() { Stmt(Call(_validate_udt, `CAST(5 AS "MyType")`)) })
+	self.Do(2241, func() { Stmt(Call(_validate_udt, "CAST(5 AS MySchema.MyType)")) })
+	self.Do(2242, func() { Stmt(Call(_validate_udt, `CAST(5 AS "MySchema"."MyType")`)) })
+	self.Do(2243, func() { Stmt(Call(_validate_udt, `CAST(5 AS MySchema."MyType")`)) })
+	self.Do(2244, func() { Stmt(Call(_validate_udt, `CAST(5 AS "MyCatalog"."MySchema"."MyType")`)) })
 	return nil
 }
 
@@ -1023,9 +1027,9 @@ func test_postgres_TestPostgres_test_locks(self *Case, a Args) Value {
 func test_postgres_TestPostgres_test_grant(self *Case, a Args) Value {
 	var grant_cmds, sql, advanced_grants Value
 	_ = []Value{grant_cmds, sql, advanced_grants}
-	self.Do(2313, func() {
+	self.DoAssign(2313, func() {
 		grant_cmds = NewList("GRANT SELECT ON TABLE users TO role1", "GRANT INSERT, DELETE ON TABLE orders TO user1", "GRANT SELECT ON employees TO manager WITH GRANT OPTION", "GRANT USAGE ON SCHEMA finance TO user2", "GRANT ALL PRIVILEGES ON DATABASE mydb TO PUBLIC", "GRANT CREATE ON SCHEMA public TO developer", "GRANT CONNECT ON DATABASE testdb TO readonly_user", "GRANT TEMPORARY ON DATABASE testdb TO temp_user", "GRANT TRIGGER ON orders TO audit_role", "GRANT REFERENCES ON products TO foreign_key_user", "GRANT TRUNCATE ON logs TO admin_role", "GRANT UPDATE(salary) ON employees TO hr_manager", "GRANT SELECT(id, name), UPDATE(email) ON customers TO customer_service")
-	})
+	}, &grant_cmds)
 	for _, item_ := range Iter(grant_cmds) {
 		sql = item_
 		self.SubTest(func() {
@@ -1033,9 +1037,9 @@ func test_postgres_TestPostgres_test_grant(self *Case, a Args) Value {
 		}, F("Testing PostgreSQL's GRANT statement: ", FV{V: sql}))
 	}
 	self.L(2333).ValidateIdentity("GRANT EXECUTE ON FUNCTION calculate_bonus(integer) TO analyst", "GRANT EXECUTE ON FUNCTION CALCULATE_BONUS(integer) TO analyst")
-	self.Do(2338, func() {
+	self.DoAssign(2338, func() {
 		advanced_grants = NewList("GRANT INSERT, DELETE ON ALL TABLES IN SCHEMA myschema TO user1", "GRANT developer_role TO john", "GRANT admin_role TO mary WITH ADMIN OPTION")
-	})
+	}, &advanced_grants)
 	for _, item_ := range Iter(advanced_grants) {
 		sql = item_
 		self.SubTest(func() {
@@ -1048,9 +1052,9 @@ func test_postgres_TestPostgres_test_grant(self *Case, a Args) Value {
 func test_postgres_TestPostgres_test_revoke(self *Case, a Args) Value {
 	var revoke_cmds, sql, advanced_revoke_cmds Value
 	_ = []Value{revoke_cmds, sql, advanced_revoke_cmds}
-	self.Do(2349, func() {
+	self.DoAssign(2349, func() {
 		revoke_cmds = NewList("REVOKE SELECT ON TABLE users FROM role1", "REVOKE INSERT, DELETE ON TABLE orders FROM user1", "REVOKE USAGE ON SCHEMA finance FROM user2", "REVOKE ALL PRIVILEGES ON DATABASE mydb FROM PUBLIC", "REVOKE CREATE ON SCHEMA public FROM developer", "REVOKE CONNECT ON DATABASE testdb FROM readonly_user", "REVOKE TEMPORARY ON DATABASE testdb FROM temp_user", "REVOKE TRIGGER ON orders FROM audit_role", "REVOKE REFERENCES ON products FROM foreign_key_user", "REVOKE TRUNCATE ON logs FROM admin_role", "REVOKE USAGE ON SCHEMA finance FROM user2 CASCADE", "REVOKE SELECT ON TABLE orders FROM user1 RESTRICT", "REVOKE GRANT OPTION FOR SELECT ON employees FROM manager", "REVOKE GRANT OPTION FOR SELECT ON employees FROM manager RESTRICT", "REVOKE UPDATE(salary) ON employees FROM hr_manager", "REVOKE SELECT(id, name), UPDATE(email) ON customers FROM customer_service")
-	})
+	}, &revoke_cmds)
 	for _, item_ := range Iter(revoke_cmds) {
 		sql = item_
 		self.SubTest(func() {
@@ -1058,9 +1062,9 @@ func test_postgres_TestPostgres_test_revoke(self *Case, a Args) Value {
 		}, F("Testing PostgreSQL's REVOKE statement: ", FV{V: sql}))
 	}
 	self.L(2372).ValidateIdentity("REVOKE EXECUTE ON FUNCTION calculate_bonus(integer) FROM analyst", "REVOKE EXECUTE ON FUNCTION CALCULATE_BONUS(integer) FROM analyst")
-	self.Do(2377, func() {
+	self.DoAssign(2377, func() {
 		advanced_revoke_cmds = NewList("REVOKE INSERT, DELETE ON ALL TABLES IN SCHEMA myschema FROM user1", "REVOKE developer_role FROM john", "REVOKE admin_role FROM mary")
-	})
+	}, &advanced_revoke_cmds)
 	for _, item_ := range Iter(advanced_revoke_cmds) {
 		sql = item_
 		self.SubTest(func() {
@@ -1080,7 +1084,7 @@ func test_postgres_TestPostgres_test_begin_transaction(self *Case, a Args) Value
 			level = item_
 			self.SubTest(func() {
 				self.Do(2406, func() {
-					M(self.ValidateIdentity(F("BEGIN ", FV{V: keyword}, " ", FV{V: level}, ", ", FV{V: level}), F("BEGIN ", FV{V: level}, ", ", FV{V: level})), "assert_is", A(G("sqlglot.exp"), "Transaction"))
+					Stmt(M(self.ValidateIdentity(F("BEGIN ", FV{V: keyword}, " ", FV{V: level}, ", ", FV{V: level}), F("BEGIN ", FV{V: level}, ", ", FV{V: level})), "assert_is", A(G("sqlglot.exp"), "Transaction")))
 				})
 			}, F("Testing Postgres's BEGIN ", FV{V: keyword}, " ", FV{V: level}))
 		}
@@ -1104,9 +1108,9 @@ func test_postgres_TestPostgres_test_interval_span(self *Case, a Args) Value {
 		}, F("Postgres INTERVAL span, omitted DAY TO SECOND unit: ", FV{V: time_str}))
 	}
 	self.SubTest(func() {
-		self.Do(2428, func() { day_time_str = "a > INTERVAL '1 00:00' AND TRUE" })
+		self.DoAssign(2428, func() { day_time_str = "a > INTERVAL '1 00:00' AND TRUE" }, &day_time_str)
 		self.Do(2429, func() { self.ValidateIdentity(day_time_str, "a > INTERVAL '1 00:00' AND TRUE") })
-		self.Do(2430, func() { M(self, "assertIsInstance", self.ParseOne(day_time_str), A(G("sqlglot.exp"), "And")) })
+		self.Do(2430, func() { Stmt(M(self, "assertIsInstance", self.ParseOne(day_time_str), A(G("sqlglot.exp"), "And"))) })
 	}, "Postgres INTERVAL span, omitted unit with following AND")
 	return nil
 }
@@ -1114,15 +1118,15 @@ func test_postgres_TestPostgres_test_interval_span(self *Case, a Args) Value {
 func test_postgres_TestPostgres_test_postgres_create_trigger(self *Case, a Args) Value {
 	var basic_triggers, referencing_triggers, constraint_triggers, sql Value
 	_ = []Value{basic_triggers, referencing_triggers, constraint_triggers, sql}
-	self.Do(2433, func() {
+	self.DoAssign(2433, func() {
 		basic_triggers = NewList("CREATE TRIGGER check_update BEFORE UPDATE ON accounts FOR EACH ROW EXECUTE FUNCTION CHECK_ACCOUNT_UPDATE()", "CREATE TRIGGER log_insert AFTER INSERT ON users FOR EACH ROW EXECUTE FUNCTION LOG_CHANGES()", "CREATE TRIGGER audit_changes AFTER INSERT OR UPDATE OR DELETE ON products FOR EACH ROW EXECUTE FUNCTION AUDIT_LOG()", "CREATE TRIGGER check_balance BEFORE UPDATE OF balance, status ON accounts FOR EACH ROW EXECUTE FUNCTION VALIDATE_BALANCE()", "CREATE TRIGGER conditional_trigger BEFORE UPDATE ON users FOR EACH ROW WHEN (OLD.id <> NEW.id) EXECUTE FUNCTION CHECK_ID_CHANGE()", "CREATE TRIGGER statement_trigger AFTER INSERT ON orders FOR EACH STATEMENT EXECUTE FUNCTION UPDATE_SUMMARY()", "CREATE TRIGGER instead_trigger INSTEAD OF INSERT ON user_view FOR EACH ROW EXECUTE FUNCTION HANDLE_INSERT()", "CREATE OR REPLACE TRIGGER replace_trigger BEFORE INSERT ON users FOR EACH ROW EXECUTE FUNCTION LOG_INSERT()", "CREATE TRIGGER param_trigger BEFORE INSERT ON users FOR EACH ROW EXECUTE FUNCTION LOG_WITH_PARAMS('insert', 'users')", "CREATE TRIGGER my_trigger BEFORE INSERT ON myschema.users FOR EACH ROW EXECUTE FUNCTION LOG_CHANGES()", "CREATE TRIGGER trg_foo BEFORE UPDATE ON bar.bat FOR EACH ROW EXECUTE FUNCTION baz.asdf()", "CREATE TRIGGER trg_foo BEFORE UPDATE ON bar.bat FOR EACH ROW EXECUTE FUNCTION c.s.asdf('x', 1)", "CREATE TRIGGER truncate_trigger BEFORE TRUNCATE ON users FOR EACH STATEMENT EXECUTE FUNCTION LOG_TRUNCATE()", "CREATE TRIGGER complex_when BEFORE UPDATE ON accounts FOR EACH ROW WHEN (OLD.balance IS DISTINCT FROM NEW.balance AND NEW.balance > 0) EXECUTE FUNCTION CHECK_BALANCE()", "CREATE TRIGGER emp_stamp BEFORE INSERT OR UPDATE ON emp FOR EACH ROW EXECUTE FUNCTION EMP_STAMP()", "CREATE TRIGGER view_insert INSTEAD OF INSERT ON my_view FOR EACH ROW EXECUTE FUNCTION VIEW_INSERT_ROW()", "CREATE TRIGGER check_update BEFORE UPDATE OF balance ON accounts FOR EACH ROW EXECUTE FUNCTION CHECK_ACCOUNT_UPDATE()", "CREATE TRIGGER restock AFTER UPDATE ON products FOR EACH ROW WHEN (OLD.count <> NEW.count) EXECUTE FUNCTION RESTOCK_ITEM()", "CREATE TRIGGER multi_col_update BEFORE UPDATE OF col1, col2, col3, col4 ON accounts FOR EACH ROW EXECUTE FUNCTION CHECK_COLUMNS()", "CREATE TRIGGER all_events AFTER INSERT OR UPDATE OR DELETE OR TRUNCATE ON audit_table FOR EACH STATEMENT EXECUTE FUNCTION LOG_ALL_CHANGES()")
-	})
-	self.Do(2456, func() {
+	}, &basic_triggers)
+	self.DoAssign(2456, func() {
 		referencing_triggers = NewList("CREATE TRIGGER track_new_rows AFTER INSERT ON users REFERENCING NEW TABLE AS new_data FOR EACH STATEMENT EXECUTE FUNCTION PROCESS_NEW_USERS()", "CREATE TRIGGER track_changes AFTER UPDATE ON accounts REFERENCING OLD TABLE AS old_data NEW TABLE AS new_data FOR EACH STATEMENT EXECUTE FUNCTION COMPARE_CHANGES()", "CREATE TRIGGER statistics_update AFTER UPDATE ON sales REFERENCING OLD TABLE AS old_sales NEW TABLE AS new_sales FOR EACH STATEMENT EXECUTE FUNCTION UPDATE_STATISTICS()")
-	})
-	self.Do(2462, func() {
+	}, &referencing_triggers)
+	self.DoAssign(2462, func() {
 		constraint_triggers = NewList("CREATE CONSTRAINT TRIGGER check_integrity AFTER INSERT ON users FOR EACH ROW EXECUTE FUNCTION VALIDATE_USER()", "CREATE CONSTRAINT TRIGGER deferred_check AFTER INSERT ON orders DEFERRABLE FOR EACH ROW EXECUTE FUNCTION CHECK_ORDER()", "CREATE CONSTRAINT TRIGGER deferred_check AFTER INSERT ON orders DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION CHECK_ORDER()", "CREATE CONSTRAINT TRIGGER immediate_check AFTER INSERT ON orders NOT DEFERRABLE INITIALLY IMMEDIATE FOR EACH ROW EXECUTE FUNCTION CHECK_ORDER()", "CREATE CONSTRAINT TRIGGER fk_check AFTER UPDATE ON orders FROM users FOR EACH ROW EXECUTE FUNCTION CHECK_FOREIGN_KEY()", "CREATE CONSTRAINT TRIGGER fk_check AFTER UPDATE ON orders FROM public.users FOR EACH ROW EXECUTE FUNCTION CHECK_FOREIGN_KEY()", "CREATE CONSTRAINT TRIGGER if_dist_exists AFTER INSERT OR UPDATE ON films DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION CHECK_FOREIGN_KEY('distributors', 'did')", "CREATE CONSTRAINT TRIGGER check_fk AFTER INSERT ON orders FROM customers FOR EACH ROW EXECUTE FUNCTION CHECK_CUSTOMER_EXISTS()", "CREATE CONSTRAINT TRIGGER complex_trigger AFTER UPDATE OF col1, col2 ON mytable FROM reftable DEFERRABLE INITIALLY DEFERRED REFERENCING OLD TABLE AS old_data NEW TABLE AS new_data FOR EACH STATEMENT WHEN (OLD.status <> NEW.status) EXECUTE FUNCTION COMPLEX_CHECK('param1', 'param2')")
-	})
+	}, &constraint_triggers)
 	for _, item_ := range Iter(Add(Add(basic_triggers, referencing_triggers), constraint_triggers)) {
 		sql = item_
 		self.SubTest(func() {
@@ -1147,8 +1151,8 @@ func test_postgres_TestPostgres_test_preserve_is_not_null(self *Case, a Args) Va
 	self.L(2492).ValidateIdentity("SELECT NOT r IS NOT NULL FROM t")
 	self.L(2493).ValidateIdentity("SELECT r NOTNULL FROM t", "SELECT r IS NOT NULL FROM t")
 	self.L(2494).ValidateIdentity("SELECT r ISNULL FROM t", "SELECT r IS NULL FROM t")
-	self.Do(2496, func() { is_not_null = self.ParseOne("r IS NOT NULL") })
-	self.Do(2497, func() { M(is_not_null, "assert_is", A(G("sqlglot.exp"), "Is")) })
-	self.Do(2498, func() { M(self, "assertTrue", M(A(is_not_null, "args"), "get", "negate")) })
+	self.DoAssign(2496, func() { is_not_null = self.ParseOne("r IS NOT NULL") }, &is_not_null)
+	self.Do(2497, func() { Stmt(M(is_not_null, "assert_is", A(G("sqlglot.exp"), "Is"))) })
+	self.Do(2498, func() { Stmt(M(self, "assertTrue", M(A(is_not_null, "args"), "get", "negate"))) })
 	return nil
 }

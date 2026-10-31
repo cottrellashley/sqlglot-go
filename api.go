@@ -68,7 +68,7 @@ func BuildFunc(name string, converted []*exp.Expr, kwargs []exp.Arg, d *Dialect)
 			}
 			fn = exp.New(kind, kv...)
 		} else {
-			return nil, fmt.Errorf("Unable to convert '%s' into a Func. Either manually construct "+
+			return nil, errs.Valuef("Unable to convert '%s' into a Func. Either manually construct "+
 				"the Func expression of interest or parse the function call.", name)
 		}
 	} else {
@@ -83,10 +83,10 @@ func BuildFunc(name string, converted []*exp.Expr, kwargs []exp.Arg, d *Dialect)
 		fn = exp.New(exp.Anonymous, kv...)
 	}
 	if fn == nil {
-		return nil, fmt.Errorf("Unable to convert '%s' into a Func.", name)
+		return nil, errs.Valuef("Unable to convert '%s' into a Func.", name)
 	}
-	for _, msg := range fn.ErrorMessages(converted) {
-		return nil, fmt.Errorf("%s", msg)
+	if msgs := fn.ErrorMessages(converted); len(msgs) > 0 {
+		return nil, errs.Valuef("%s", msgs[0])
 	}
 	return fn, nil
 }

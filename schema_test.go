@@ -27,7 +27,7 @@ func (customSchema) GetUDFType(udf any, dialect any, normalize *bool) (*exp.Expr
 	return exp.DTypeUnknown.IntoExpr(), nil
 }
 func (customSchema) SupportedTableArgs() ([]string, error) { return []string{"this"}, nil }
-func (customSchema) Empty() bool                            { return false }
+func (customSchema) Empty() bool                           { return false }
 
 // TestCustomSchema is the Go equivalent of test_schema.py's test_custom_schema, which
 // subclasses Schema inline.

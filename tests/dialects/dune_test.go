@@ -32,7 +32,9 @@ func test_dune_TestDune_test_dune(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewTuple("deadbeef", "deadbeefdead", "deadbeefdeadbeef", "deadbeefdeadbeefde", "deadbeefdeadbeefdead", "deadbeefdeadbeefdeadbeef", "deadbeefdeadbeefdeadbeefdeadbeef")) {
 		hex_literal = item_
 		self.SubTest(func() {
-			self.Do(22, func() { M(self.ParseOne(F("0x", FV{V: hex_literal})), "assert_is", A(G("sqlglot.exp"), "HexString")) })
+			self.Do(22, func() {
+				Stmt(M(self.ParseOne(F("0x", FV{V: hex_literal})), "assert_is", A(G("sqlglot.exp"), "HexString")))
+			})
 			self.Do(24, func() {
 				self.ValidateAll(F("SELECT 0x", FV{V: hex_literal}), Kw("read", NewDict("dune", F("SELECT X'", FV{V: hex_literal}, "'"), "postgres", F("SELECT x'", FV{V: hex_literal}, "'"), "trino", F("SELECT X'", FV{V: hex_literal}, "'"))), Kw("write", NewDict("dune", F("SELECT 0x", FV{V: hex_literal}), "postgres", F("SELECT x'", FV{V: hex_literal}, "'"), "trino", F("SELECT x'", FV{V: hex_literal}, "'"))))
 			})

@@ -39,7 +39,7 @@ func test_helper_TestHelper_test_tsort(self *Case, a Args) Value {
 	self.Do(24, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			Call(G("sqlglot.helper.tsort"), NewDict("a", NewSet("b", "c"), "b", NewSet("a"), "c", Call(G("set"))))
+			Stmt(Call(G("sqlglot.helper.tsort"), NewDict("a", NewSet("b", "c"), "b", NewSet("a"), "c", Call(G("set")))))
 		}, G("ValueError"))
 	})
 	return nil
@@ -48,8 +48,8 @@ func test_helper_TestHelper_test_tsort(self *Case, a Args) Value {
 func test_helper_TestHelper_test_name_sequence(self *Case, a Args) Value {
 	var s1, s2 Value
 	_ = []Value{s1, s2}
-	self.Do(34, func() { s1 = Call(G("sqlglot.helper.name_sequence"), "a") })
-	self.Do(35, func() { s2 = Call(G("sqlglot.helper.name_sequence"), "b") })
+	self.DoAssign(34, func() { s1 = Call(G("sqlglot.helper.name_sequence"), "a") }, &s1)
+	self.DoAssign(35, func() { s2 = Call(G("sqlglot.helper.name_sequence"), "b") }, &s2)
 	self.Do(37, func() { self.AssertEqual(Call(s1), "a0") })
 	self.Do(38, func() { self.AssertEqual(Call(s1), "a1") })
 	self.Do(39, func() { self.AssertEqual(Call(s2), "b0") })
@@ -69,7 +69,7 @@ func test_helper_TestHelper_test_to_int(self *Case, a Args) Value {
 		}, value)
 	}
 	self.Do(60, func() { self.AssertEqual(Call(G("sqlglot.helper.to_int"), "999", Kw("max_digits", 3)), 999) })
-	self.Do(61, func() { M(self, "assertIsNone", Call(G("sqlglot.helper.to_int"), "1000", Kw("max_digits", 3))) })
+	self.Do(61, func() { Stmt(M(self, "assertIsNone", Call(G("sqlglot.helper.to_int"), "1000", Kw("max_digits", 3)))) })
 	return nil
 }
 

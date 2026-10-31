@@ -24,6 +24,9 @@ type KindSpec struct {
 	// collected in VarLenKey ("expressions" by default).
 	VarLen    bool
 	VarLenKey string
+	// Module is the qualified module name used in class reprs ("sqlglot.expressions" by
+	// default).
+	Module string
 }
 
 var registerMu sync.Mutex
@@ -99,6 +102,7 @@ func RegisterKind(spec KindSpec) Kind {
 		info.varLenKey = "expressions"
 	}
 	kindTable[k] = info
+	kindModule[k] = spec.Module
 	for _, table := range implTables {
 		for _, b := range info.bases {
 			if table[b] != InvalidKind {

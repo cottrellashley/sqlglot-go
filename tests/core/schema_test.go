@@ -38,16 +38,16 @@ var test_schema_TestSchema = &Class{
 func test_schema_TestSchema_test_ref_type(self *Case, a Args) Value {
 	var schema, datatype, expression Value
 	_ = []Value{schema, datatype, expression}
-	self.Do(13, func() {
+	self.DoAssign(13, func() {
 		schema = Call(G("sqlglot.schema.MappingSchema"), NewDict("orders", NewDict("customer", "REF(public.customer)")))
-	})
-	self.Do(14, func() { datatype = M(A(G("sqlglot.exp"), "DataType"), "build", "REF(public.customer)") })
+	}, &schema)
+	self.DoAssign(14, func() { datatype = M(A(G("sqlglot.exp"), "DataType"), "build", "REF(public.customer)") }, &datatype)
 	self.Do(15, func() {
 		self.AssertEqual(M(schema, "get_column_type", M(G("sqlglot.exp"), "to_table", "orders"), "customer"), datatype)
 	})
-	self.Do(17, func() {
+	self.DoAssign(17, func() {
 		expression = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), Call(G("sqlglot.optimizer.qualify.qualify"), Call(G("sqlglot.parse_one"), "SELECT customer, ARRAY(customer), COALESCE(customer, NULL), CAST(customer AS REF(public.customer)) FROM orders"), Kw("schema", schema)), Kw("schema", schema))
-	})
+	}, &expression)
 	self.Do(27, func() { self.AssertEqual(A(Item(A(expression, "selects"), 0), "type"), datatype) })
 	self.Do(28, func() {
 		self.AssertEqual(A(Item(A(expression, "selects"), 1), "type"), M(A(G("sqlglot.exp"), "DataType"), "build", "ARRAY<REF(public.customer)>"))
@@ -70,7 +70,7 @@ func test_schema_TestSchema_assert_column_names(self *Case, a Args) Value {
 	for _, item_ := range Iter(table_results) {
 		Unpack(item_, &table, &result)
 		self.SubTest(func() {
-			self.Do(39, func() { self.AssertEqual(M(schema, "column_names", Call(G("sqlglot.to_table"), table)), result) })
+			Stmt(M(self, "assertEqual", M(schema, "column_names", Call(G("sqlglot.to_table"), table)), result))
 		}, F(FV{V: table}, " -> ", FV{V: result}))
 	}
 	return nil
@@ -84,12 +84,10 @@ func test_schema_TestSchema_assert_column_names_raises(self *Case, a Args) Value
 	for _, item_ := range Iter(tables) {
 		table = item_
 		self.SubTest(func() {
-			self.Do(44, func() {
-				self.AssertRaises(func(cm_ Value) {
-					_ = cm_
-					M(schema, "column_names", Call(G("sqlglot.to_table"), table))
-				}, G("sqlglot.errors.SchemaError"))
-			})
+			self.AssertRaises(func(cm_ Value) {
+				_ = cm_
+				Stmt(M(schema, "column_names", Call(G("sqlglot.to_table"), table)))
+			}, G("sqlglot.errors.SchemaError"))
 		}, table)
 	}
 	return nil
@@ -103,7 +101,7 @@ func test_schema_TestSchema_assert_column_names_empty(self *Case, a Args) Value 
 	for _, item_ := range Iter(tables) {
 		table = item_
 		self.SubTest(func() {
-			self.Do(50, func() { self.AssertEqual(M(schema, "column_names", Call(G("sqlglot.to_table"), table)), NewList()) })
+			Stmt(M(self, "assertEqual", M(schema, "column_names", Call(G("sqlglot.to_table"), table)), NewList()))
 		}, table)
 	}
 	return nil
@@ -112,55 +110,55 @@ func test_schema_TestSchema_assert_column_names_empty(self *Case, a Args) Value 
 func test_schema_TestSchema_test_schema(self *Case, a Args) Value {
 	var schema Value
 	_ = []Value{schema}
-	self.Do(53, func() {
+	self.DoAssign(53, func() {
 		schema = Call(G("sqlglot.schema.ensure_schema"), NewDict("x", NewDict("a", "uint64"), "y", NewDict("b", "uint64", "c", "uint64")))
-	})
+	}, &schema)
 	self.Do(65, func() {
-		M(self, "assert_column_names", schema, NewTuple("x", NewList("a")), NewTuple("y", NewList("b", "c")), NewTuple("z.x", NewList("a")), NewTuple("z.x.y", NewList("b", "c")))
+		Stmt(M(self, "assert_column_names", schema, NewTuple("x", NewList("a")), NewTuple("y", NewList("b", "c")), NewTuple("z.x", NewList("a")), NewTuple("z.x.y", NewList("b", "c"))))
 	})
-	self.Do(73, func() { M(self, "assert_column_names_empty", schema, "z", "z.z", "z.z.z") })
+	self.Do(73, func() { Stmt(M(self, "assert_column_names_empty", schema, "z", "z.z", "z.z.z")) })
 	return nil
 }
 
 func test_schema_TestSchema_test_schema_db(self *Case, a Args) Value {
 	var schema Value
 	_ = []Value{schema}
-	self.Do(81, func() {
+	self.DoAssign(81, func() {
 		schema = Call(G("sqlglot.schema.ensure_schema"), NewDict("d1", NewDict("x", NewDict("a", "uint64"), "y", NewDict("b", "uint64")), "d2", NewDict("x", NewDict("c", "uint64"))))
-	})
+	}, &schema)
 	self.Do(99, func() {
-		M(self, "assert_column_names", schema, NewTuple("d1.x", NewList("a")), NewTuple("d2.x", NewList("c")), NewTuple("y", NewList("b")), NewTuple("d1.y", NewList("b")), NewTuple("z.d1.y", NewList("b")))
+		Stmt(M(self, "assert_column_names", schema, NewTuple("d1.x", NewList("a")), NewTuple("d2.x", NewList("c")), NewTuple("y", NewList("b")), NewTuple("d1.y", NewList("b")), NewTuple("z.d1.y", NewList("b"))))
 	})
-	self.Do(108, func() { M(self, "assert_column_names_raises", schema, "x") })
-	self.Do(113, func() { M(self, "assert_column_names_empty", schema, "z.x", "z.y") })
+	self.Do(108, func() { Stmt(M(self, "assert_column_names_raises", schema, "x")) })
+	self.Do(113, func() { Stmt(M(self, "assert_column_names_empty", schema, "z.x", "z.y")) })
 	return nil
 }
 
 func test_schema_TestSchema_test_schema_catalog(self *Case, a Args) Value {
 	var schema Value
 	_ = []Value{schema}
-	self.Do(120, func() {
+	self.DoAssign(120, func() {
 		schema = Call(G("sqlglot.schema.ensure_schema"), NewDict("c1", NewDict("d1", NewDict("x", NewDict("a", "uint64"), "y", NewDict("b", "uint64"), "z", NewDict("c", "uint64"))), "c2", NewDict("d1", NewDict("y", NewDict("d", "uint64"), "z", NewDict("e", "uint64")), "d2", NewDict("z", NewDict("f", "uint64")))))
-	})
+	}, &schema)
 	self.Do(153, func() {
-		M(self, "assert_column_names", schema, NewTuple("x", NewList("a")), NewTuple("d1.x", NewList("a")), NewTuple("c1.d1.x", NewList("a")), NewTuple("c1.d1.y", NewList("b")), NewTuple("c1.d1.z", NewList("c")), NewTuple("c2.d1.y", NewList("d")), NewTuple("c2.d1.z", NewList("e")), NewTuple("d2.z", NewList("f")), NewTuple("c2.d2.z", NewList("f")))
+		Stmt(M(self, "assert_column_names", schema, NewTuple("x", NewList("a")), NewTuple("d1.x", NewList("a")), NewTuple("c1.d1.x", NewList("a")), NewTuple("c1.d1.y", NewList("b")), NewTuple("c1.d1.z", NewList("c")), NewTuple("c2.d1.y", NewList("d")), NewTuple("c2.d1.z", NewList("e")), NewTuple("d2.z", NewList("f")), NewTuple("c2.d2.z", NewList("f"))))
 	})
-	self.Do(166, func() { M(self, "assert_column_names_raises", schema, "y", "z", "d1.y", "d1.z") })
-	self.Do(174, func() { M(self, "assert_column_names_empty", schema, "q", "d2.x", "a.b.c") })
+	self.Do(166, func() { Stmt(M(self, "assert_column_names_raises", schema, "y", "z", "d1.y", "d1.z")) })
+	self.Do(174, func() { Stmt(M(self, "assert_column_names_empty", schema, "q", "d2.x", "a.b.c")) })
 	return nil
 }
 
 func test_schema_TestSchema_test_schema_add_table_with_and_without_mapping(self *Case, a Args) Value {
 	var schema Value
 	_ = []Value{schema}
-	self.Do(182, func() { schema = Call(G("sqlglot.schema.MappingSchema")) })
-	self.Do(183, func() { M(schema, "add_table", "test") })
+	self.DoAssign(182, func() { schema = Call(G("sqlglot.schema.MappingSchema")) }, &schema)
+	self.Do(183, func() { Stmt(M(schema, "add_table", "test")) })
 	self.Do(184, func() { self.AssertEqual(M(schema, "column_names", "test"), NewList()) })
-	self.Do(185, func() { M(schema, "add_table", "test", NewDict("x", "string")) })
+	self.Do(185, func() { Stmt(M(schema, "add_table", "test", NewDict("x", "string"))) })
 	self.Do(186, func() { self.AssertEqual(M(schema, "column_names", "test"), NewList("x")) })
-	self.Do(187, func() { M(schema, "add_table", "test", NewDict("x", "string", "y", "int")) })
+	self.Do(187, func() { Stmt(M(schema, "add_table", "test", NewDict("x", "string", "y", "int"))) })
 	self.Do(188, func() { self.AssertEqual(M(schema, "column_names", "test"), NewList("x", "y")) })
-	self.Do(189, func() { M(schema, "add_table", "test") })
+	self.Do(189, func() { Stmt(M(schema, "add_table", "test")) })
 	self.Do(190, func() { self.AssertEqual(M(schema, "column_names", "test"), NewList("x", "y")) })
 	return nil
 }
@@ -168,7 +166,7 @@ func test_schema_TestSchema_test_schema_add_table_with_and_without_mapping(self 
 func test_schema_TestSchema_test_schema_get_column_type(self *Case, a Args) Value {
 	var schema Value
 	_ = []Value{schema}
-	self.Do(193, func() { schema = Call(G("sqlglot.schema.MappingSchema"), NewDict("A", NewDict("b", "varchar"))) })
+	self.DoAssign(193, func() { schema = Call(G("sqlglot.schema.MappingSchema"), NewDict("A", NewDict("b", "varchar"))) }, &schema)
 	self.Do(194, func() {
 		self.AssertEqual(A(M(schema, "get_column_type", "a", "B"), "this"), A(A(A(G("sqlglot.exp"), "DataType"), "Type"), "VARCHAR"))
 	})
@@ -181,27 +179,27 @@ func test_schema_TestSchema_test_schema_get_column_type(self *Case, a Args) Valu
 	self.Do(202, func() {
 		self.AssertEqual(A(M(schema, "get_column_type", M(G("sqlglot.exp"), "table_", "a"), "b"), "this"), A(A(A(G("sqlglot.exp"), "DataType"), "Type"), "VARCHAR"))
 	})
-	self.Do(205, func() {
+	self.DoAssign(205, func() {
 		schema = Call(G("sqlglot.schema.MappingSchema"), NewDict("a", NewDict("b", NewDict("c", "varchar"))))
-	})
+	}, &schema)
 	self.Do(206, func() {
 		self.AssertEqual(A(M(schema, "get_column_type", M(G("sqlglot.exp"), "table_", "b", Kw("db", "a")), M(G("sqlglot.exp"), "column", "c")), "this"), A(A(A(G("sqlglot.exp"), "DataType"), "Type"), "VARCHAR"))
 	})
 	self.Do(210, func() {
 		self.AssertEqual(A(M(schema, "get_column_type", M(G("sqlglot.exp"), "table_", "b", Kw("db", "a")), "c"), "this"), A(A(A(G("sqlglot.exp"), "DataType"), "Type"), "VARCHAR"))
 	})
-	self.Do(213, func() {
+	self.DoAssign(213, func() {
 		schema = Call(G("sqlglot.schema.MappingSchema"), NewDict("a", NewDict("b", NewDict("c", NewDict("d", "varchar")))))
-	})
+	}, &schema)
 	self.Do(214, func() {
 		self.AssertEqual(A(M(schema, "get_column_type", M(G("sqlglot.exp"), "table_", "c", Kw("db", "b"), Kw("catalog", "a")), M(G("sqlglot.exp"), "column", "d")), "this"), A(A(A(G("sqlglot.exp"), "DataType"), "Type"), "VARCHAR"))
 	})
 	self.Do(218, func() {
 		self.AssertEqual(A(M(schema, "get_column_type", M(G("sqlglot.exp"), "table_", "c", Kw("db", "b"), Kw("catalog", "a")), "d"), "this"), A(A(A(G("sqlglot.exp"), "DataType"), "Type"), "VARCHAR"))
 	})
-	self.Do(223, func() {
+	self.DoAssign(223, func() {
 		schema = Call(G("sqlglot.schema.MappingSchema"), NewDict("foo", NewDict("bar", Call(G("sqlglot.parse_one"), "INT", Kw("into", A(G("sqlglot.exp"), "DataType"))))))
-	})
+	}, &schema)
 	self.Do(224, func() {
 		self.AssertEqual(A(M(schema, "get_column_type", "foo", "bar"), "this"), A(A(A(G("sqlglot.exp"), "DataType"), "Type"), "INT"))
 	})
@@ -211,77 +209,77 @@ func test_schema_TestSchema_test_schema_get_column_type(self *Case, a Args) Valu
 func test_schema_TestSchema_test_schema_normalization(self *Case, a Args) Value {
 	var schema, table_z, table_w, col_type, struct_type Value
 	_ = []Value{schema, table_z, table_w, col_type, struct_type}
-	self.Do(227, func() {
+	self.DoAssign(227, func() {
 		schema = Call(G("sqlglot.schema.MappingSchema"), Kw("schema", NewDict("x", NewDict("`y`", NewDict("Z", NewDict("a", "INT", "`B`", "VARCHAR"), "w", NewDict("C", "INT"))))), Kw("dialect", "clickhouse"))
-	})
-	self.Do(232, func() { table_z = M(G("sqlglot.exp"), "table_", "Z", Kw("db", "y"), Kw("catalog", "x")) })
-	self.Do(233, func() { table_w = M(G("sqlglot.exp"), "table_", "w", Kw("db", "y"), Kw("catalog", "x")) })
+	}, &schema)
+	self.DoAssign(232, func() { table_z = M(G("sqlglot.exp"), "table_", "Z", Kw("db", "y"), Kw("catalog", "x")) }, &table_z)
+	self.DoAssign(233, func() { table_w = M(G("sqlglot.exp"), "table_", "w", Kw("db", "y"), Kw("catalog", "x")) }, &table_w)
 	self.Do(235, func() { self.AssertEqual(M(schema, "column_names", table_z), NewList("a", "B")) })
 	self.Do(236, func() { self.AssertEqual(M(schema, "column_names", table_w), NewList("C")) })
-	self.Do(238, func() {
+	self.DoAssign(238, func() {
 		schema = Call(G("sqlglot.schema.MappingSchema"), Kw("schema", NewDict("x", NewDict("`y`", "INT"))), Kw("dialect", "clickhouse"))
-	})
+	}, &schema)
 	self.Do(239, func() { self.AssertEqual(M(schema, "column_names", M(G("sqlglot.exp"), "table_", "x")), NewList("y")) })
-	self.Do(242, func() { schema = Call(G("sqlglot.schema.MappingSchema")) })
-	self.Do(243, func() { M(schema, "add_table", "Foo", NewDict("SomeColumn", "INT", `"SomeColumn"`, "DOUBLE")) })
+	self.DoAssign(242, func() { schema = Call(G("sqlglot.schema.MappingSchema")) }, &schema)
+	self.Do(243, func() { Stmt(M(schema, "add_table", "Foo", NewDict("SomeColumn", "INT", `"SomeColumn"`, "DOUBLE"))) })
 	self.Do(244, func() {
 		self.AssertEqual(M(schema, "column_names", M(G("sqlglot.exp"), "table_", "fOO")), NewList("somecolumn", "SomeColumn"))
 	})
-	self.Do(247, func() {
+	self.DoAssign(247, func() {
 		schema = Call(G("sqlglot.schema.MappingSchema"), Kw("schema", NewDict("x", NewDict("foo", "int", `"bLa"`, "int"))), Kw("dialect", "snowflake"))
-	})
+	}, &schema)
 	self.Do(248, func() {
 		self.AssertEqual(M(schema, "column_names", M(G("sqlglot.exp"), "table_", "x")), NewList("FOO", "bLa"))
 	})
-	self.Do(251, func() {
+	self.DoAssign(251, func() {
 		schema = Call(G("sqlglot.schema.MappingSchema"), Kw("schema", NewDict("x", NewDict("foo", "int"))), Kw("normalize", false), Kw("dialect", "snowflake"))
-	})
+	}, &schema)
 	self.Do(252, func() {
 		self.AssertEqual(M(schema, "column_names", M(G("sqlglot.exp"), "table_", "x")), NewList("foo"))
 	})
-	self.Do(256, func() {
+	self.DoAssign(256, func() {
 		schema = Call(G("sqlglot.schema.MappingSchema"), Kw("schema", NewDict("[Fo]", NewDict("x", "int"))), Kw("dialect", "tsql"))
-	})
+	}, &schema)
 	self.Do(257, func() {
 		self.AssertEqual(M(schema, "column_names", "[Fo]"), M(schema, "column_names", "`fo`", Kw("dialect", "clickhouse")))
 	})
-	self.Do(263, func() {
+	self.DoAssign(263, func() {
 		schema = Call(G("sqlglot.schema.MappingSchema"), Kw("schema", NewDict("Foo", NewDict("`BaR`", "int"))), Kw("dialect", "bigquery"))
-	})
+	}, &schema)
 	self.Do(264, func() { self.AssertEqual(M(schema, "column_names", "Foo"), NewList("bar")) })
 	self.Do(265, func() { self.AssertEqual(M(schema, "column_names", "foo"), NewList()) })
-	self.Do(268, func() {
+	self.DoAssign(268, func() {
 		schema = Call(G("sqlglot.schema.MappingSchema"), Kw("schema", NewDict("X", NewDict("y", "int"))), Kw("normalize", false), Kw("dialect", "snowflake"))
-	})
+	}, &schema)
 	self.Do(269, func() { self.AssertEqual(M(schema, "column_names", "x", Kw("normalize", true)), NewList("y")) })
-	self.Do(273, func() {
+	self.DoAssign(273, func() {
 		schema = Call(G("sqlglot.schema.MappingSchema"), NewDict("t", NewDict("col", "STRUCT<FooBar INT>")), Kw("dialect", "bigquery"))
-	})
-	self.Do(274, func() { col_type = M(schema, "get_column_type", "t", "col") })
+	}, &schema)
+	self.DoAssign(274, func() { col_type = M(schema, "get_column_type", "t", "col") }, &col_type)
 	self.Do(275, func() { self.AssertEqual(A(Item(A(col_type, "expressions"), 0), "name"), "foobar") })
-	self.Do(278, func() {
+	self.DoAssign(278, func() {
 		schema = Call(G("sqlglot.schema.MappingSchema"), NewDict("t", NewDict("col", "STRUCT<FooBar INT>")), Kw("dialect", "snowflake"))
-	})
-	self.Do(279, func() { col_type = M(schema, "get_column_type", "T", "COL") })
+	}, &schema)
+	self.DoAssign(279, func() { col_type = M(schema, "get_column_type", "T", "COL") }, &col_type)
 	self.Do(280, func() { self.AssertEqual(A(Item(A(col_type, "expressions"), 0), "name"), "FOOBAR") })
-	self.Do(283, func() {
+	self.DoAssign(283, func() {
 		schema = Call(G("sqlglot.schema.MappingSchema"), NewDict("t", NewDict("col", "STRUCT<FooBar INT>")), Kw("dialect", "clickhouse"))
-	})
-	self.Do(284, func() { col_type = M(schema, "get_column_type", "t", "col") })
+	}, &schema)
+	self.DoAssign(284, func() { col_type = M(schema, "get_column_type", "t", "col") }, &col_type)
 	self.Do(285, func() { self.AssertEqual(A(Item(A(col_type, "expressions"), 0), "name"), "FooBar") })
-	self.Do(288, func() {
+	self.DoAssign(288, func() {
 		schema = Call(G("sqlglot.schema.MappingSchema"), NewDict("t", NewDict("col", "STRUCT<Outer STRUCT<Inner INT>>")), Kw("dialect", "bigquery"))
-	})
-	self.Do(291, func() { col_type = M(schema, "get_column_type", "t", "col") })
+	}, &schema)
+	self.DoAssign(291, func() { col_type = M(schema, "get_column_type", "t", "col") }, &col_type)
 	self.Do(292, func() { self.AssertEqual(A(Item(A(col_type, "expressions"), 0), "name"), "outer") })
 	self.Do(293, func() {
 		self.AssertEqual(A(Item(A(A(Item(A(col_type, "expressions"), 0), "kind"), "expressions"), 0), "name"), "inner")
 	})
-	self.Do(296, func() {
+	self.DoAssign(296, func() {
 		schema = Call(G("sqlglot.schema.MappingSchema"), NewDict("t", NewDict("col", "ARRAY<STRUCT<FooBar INT>>")), Kw("dialect", "bigquery"))
-	})
-	self.Do(297, func() { col_type = M(schema, "get_column_type", "t", "col") })
-	self.Do(298, func() { struct_type = Item(A(col_type, "expressions"), 0) })
+	}, &schema)
+	self.DoAssign(297, func() { col_type = M(schema, "get_column_type", "t", "col") }, &col_type)
+	self.DoAssign(298, func() { struct_type = Item(A(col_type, "expressions"), 0) }, &struct_type)
 	self.Do(299, func() { self.AssertEqual(A(Item(A(struct_type, "expressions"), 0), "name"), "foobar") })
 	return nil
 }
@@ -289,24 +287,24 @@ func test_schema_TestSchema_test_schema_normalization(self *Case, a Args) Value 
 func test_schema_TestSchema_test_same_number_of_qualifiers(self *Case, a Args) Value {
 	var schema, ctx Value
 	_ = []Value{schema, ctx}
-	self.Do(302, func() {
+	self.DoAssign(302, func() {
 		schema = Call(G("sqlglot.schema.MappingSchema"), NewDict("x", NewDict("y", NewDict("c1", "int"))))
-	})
+	}, &schema)
 	self.Do(304, func() {
 		self.AssertRaises(func(cm_ Value) {
 			ctx = cm_
-			M(schema, "add_table", "z", NewDict("c2", "int"))
+			Stmt(M(schema, "add_table", "z", NewDict("c2", "int")))
 		}, G("sqlglot.errors.SchemaError"))
 	})
 	self.Do(307, func() {
 		self.AssertEqual(Str(A(ctx, "exception")), "Table z must match the schema's nesting level: 2.")
 	})
-	self.Do(312, func() { schema = Call(G("sqlglot.schema.MappingSchema")) })
-	self.Do(313, func() { M(schema, "add_table", "x.y", NewDict("c1", "int")) })
+	self.DoAssign(312, func() { schema = Call(G("sqlglot.schema.MappingSchema")) }, &schema)
+	self.Do(313, func() { Stmt(M(schema, "add_table", "x.y", NewDict("c1", "int"))) })
 	self.Do(315, func() {
 		self.AssertRaises(func(cm_ Value) {
 			ctx = cm_
-			M(schema, "add_table", "z", NewDict("c2", "int"))
+			Stmt(M(schema, "add_table", "z", NewDict("c2", "int")))
 		}, G("sqlglot.errors.SchemaError"))
 	})
 	self.Do(318, func() {
@@ -315,7 +313,7 @@ func test_schema_TestSchema_test_same_number_of_qualifiers(self *Case, a Args) V
 	self.Do(323, func() {
 		self.AssertRaises(func(cm_ Value) {
 			ctx = cm_
-			Call(G("sqlglot.schema.MappingSchema"), NewDict("x", NewDict("y", NewDict("c1", "int")), "z", NewDict("c2", "int")))
+			Stmt(Call(G("sqlglot.schema.MappingSchema"), NewDict("x", NewDict("y", NewDict("c1", "int")), "z", NewDict("c2", "int"))))
 		}, G("sqlglot.errors.SchemaError"))
 	})
 	self.Do(326, func() {
@@ -324,7 +322,7 @@ func test_schema_TestSchema_test_same_number_of_qualifiers(self *Case, a Args) V
 	self.Do(331, func() {
 		self.AssertRaises(func(cm_ Value) {
 			ctx = cm_
-			Call(G("sqlglot.schema.MappingSchema"), NewDict("catalog", NewDict("db", NewDict("tbl", NewDict("col", "a"))), "tbl2", NewDict("col", "b")))
+			Stmt(Call(G("sqlglot.schema.MappingSchema"), NewDict("catalog", NewDict("db", NewDict("tbl", NewDict("col", "a"))), "tbl2", NewDict("col", "b"))))
 		}, G("sqlglot.errors.SchemaError"))
 	})
 	self.Do(340, func() {
@@ -333,7 +331,7 @@ func test_schema_TestSchema_test_same_number_of_qualifiers(self *Case, a Args) V
 	self.Do(345, func() {
 		self.AssertRaises(func(cm_ Value) {
 			ctx = cm_
-			Call(G("sqlglot.schema.MappingSchema"), NewDict("tbl2", NewDict("col", "b"), "catalog", NewDict("db", NewDict("tbl", NewDict("col", "a")))))
+			Stmt(Call(G("sqlglot.schema.MappingSchema"), NewDict("tbl2", NewDict("col", "b"), "catalog", NewDict("db", NewDict("tbl", NewDict("col", "a"))))))
 		}, G("sqlglot.errors.SchemaError"))
 	})
 	self.Do(354, func() {
@@ -345,19 +343,19 @@ func test_schema_TestSchema_test_same_number_of_qualifiers(self *Case, a Args) V
 func test_schema_TestSchema_test_has_column(self *Case, a Args) Value {
 	var schema Value
 	_ = []Value{schema}
-	self.Do(360, func() { schema = Call(G("sqlglot.schema.MappingSchema"), NewDict("x", NewDict("c", "int"))) })
-	self.Do(361, func() { M(self, "assertTrue", M(schema, "has_column", "x", M(G("sqlglot.exp"), "column", "c"))) })
-	self.Do(362, func() { M(self, "assertFalse", M(schema, "has_column", "x", M(G("sqlglot.exp"), "column", "k"))) })
+	self.DoAssign(360, func() { schema = Call(G("sqlglot.schema.MappingSchema"), NewDict("x", NewDict("c", "int"))) }, &schema)
+	self.Do(361, func() { Stmt(M(self, "assertTrue", M(schema, "has_column", "x", M(G("sqlglot.exp"), "column", "c")))) })
+	self.Do(362, func() { Stmt(M(self, "assertFalse", M(schema, "has_column", "x", M(G("sqlglot.exp"), "column", "k")))) })
 	return nil
 }
 
 func test_schema_TestSchema_test_find(self *Case, a Args) Value {
 	var schema, found Value
 	_ = []Value{schema, found}
-	self.Do(365, func() { schema = Call(G("sqlglot.schema.MappingSchema"), NewDict("x", NewDict("c", "int"))) })
-	self.Do(366, func() { found = M(schema, "find", M(G("sqlglot.exp"), "to_table", "x")) })
+	self.DoAssign(365, func() { schema = Call(G("sqlglot.schema.MappingSchema"), NewDict("x", NewDict("c", "int"))) }, &schema)
+	self.DoAssign(366, func() { found = M(schema, "find", M(G("sqlglot.exp"), "to_table", "x")) }, &found)
 	self.Do(367, func() { self.AssertEqual(found, NewDict("c", "int")) })
-	self.Do(368, func() { found = M(schema, "find", M(G("sqlglot.exp"), "to_table", "x"), Kw("ensure_data_types", true)) })
+	self.DoAssign(368, func() { found = M(schema, "find", M(G("sqlglot.exp"), "to_table", "x"), Kw("ensure_data_types", true)) }, &found)
 	self.Do(369, func() { self.AssertEqual(found, NewDict("c", M(A(G("sqlglot.exp"), "DataType"), "build", "int"))) })
 	return nil
 }

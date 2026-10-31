@@ -43,7 +43,7 @@ var test_hive_TestHive = &Class{
 func test_hive_TestHive_test_add_columns(self *Case, a Args) Value {
 	var sql Value
 	_ = []Value{sql}
-	self.Do(9, func() { sql = "ALTER TABLE Payments ADD COLUMNS (Stock DECIMAL(38, 0), dropid VARCHAR(500))" })
+	self.DoAssign(9, func() { sql = "ALTER TABLE Payments ADD COLUMNS (Stock DECIMAL(38, 0), dropid VARCHAR(500))" }, &sql)
 	self.Do(10, func() {
 		self.ValidateAll(sql, Kw("write", NewDict("hive", sql, "spark", sql, "oracle", "ALTER TABLE Payments ADD (Stock NUMBER(38, 0), dropid VARCHAR2(500))", "snowflake", "ALTER TABLE Payments ADD Stock DECIMAL(38, 0), dropid VARCHAR(500)", "tsql", "ALTER TABLE Payments ADD Stock NUMERIC(38, 0), dropid VARCHAR(500)")))
 	})
@@ -91,17 +91,17 @@ func test_hive_TestHive_test_ddl(self *Case, a Args) Value {
 	self.L(237).ValidateAll("ALTER TABLE x CHANGE COLUMN a a VARCHAR(10) CASCADE", Kw("write", NewDict("hive", "ALTER TABLE x CHANGE COLUMN a a VARCHAR(10) CASCADE", "spark", "ALTER TABLE x ALTER COLUMN a TYPE VARCHAR(10)")))
 	self.L(245).ValidateIdentity("ALTER TABLE X ADD COLUMNS (y INT, z STRING)")
 	self.L(246).ValidateIdentity("ALTER TABLE X ADD COLUMNS (y INT, z STRING) CASCADE")
-	self.Do(247, func() {
+	self.DoAssign(247, func() {
 		replace = self.ValidateIdentity("ALTER TABLE X REPLACE COLUMNS (y INT COMMENT 'c', z STRING) CASCADE")
-	})
+	}, &replace)
 	self.Do(250, func() {
-		M(self, "assertIsInstance", Item(Item(A(replace, "args"), "actions"), 0), A(G("sqlglot.exp"), "ReplaceColumns"))
+		Stmt(M(self, "assertIsInstance", Item(Item(A(replace, "args"), "actions"), 0), A(G("sqlglot.exp"), "ReplaceColumns")))
 	})
 	for _, item_ := range Iter(NewTuple("ALTER TABLE t REPLACE COLUMNS (a INT COMMENT 'it''s')", "ALTER TABLE t REPLACE COLUMNS (a UNIONTYPE<INT, STRING>)", "ALTER TABLE t REPLACE COLUMNS (a TIMESTAMPLOCALTZ)")) {
 		sql = item_
 		self.SubTest(func() {
 			self.Do(259, func() {
-				M(self, "assertIsInstance", self.ValidateIdentity(sql, Kw("check_command_warning", true)), A(G("sqlglot.exp"), "Command"))
+				Stmt(M(self, "assertIsInstance", self.ValidateIdentity(sql, Kw("check_command_warning", true)), A(G("sqlglot.exp"), "Command")))
 			})
 		}, sql)
 	}
@@ -225,9 +225,9 @@ func test_hive_TestHive_test_hive(self *Case, a Args) Value {
 	self.L(752).ValidateAll("LOCATE('a', x)", Kw("write", NewDict("duckdb", "STRPOS(x, 'a')", "presto", "STRPOS(x, 'a')", "hive", "LOCATE('a', x)", "spark", "LOCATE('a', x)")))
 	self.L(761).ValidateAll("LOCATE('a', x, 3)", Kw("write", NewDict("duckdb", "CASE WHEN STRPOS(SUBSTRING(x, 3), 'a') = 0 THEN 0 ELSE STRPOS(SUBSTRING(x, 3), 'a') + 3 - 1 END", "presto", "IF(STRPOS(SUBSTR(x, 3), 'a') = 0, 0, STRPOS(SUBSTR(x, 3), 'a') + 3 - 1)", "hive", "LOCATE('a', x, 3)", "spark", "LOCATE('a', x, 3)")))
 	self.L(771).ValidateAll("INITCAP('new york')", Kw("write", NewDict("hive", "INITCAP('new york')", "spark", "INITCAP('new york')")))
-	self.Do(778, func() { expression = self.ParseOne("INITCAP('new york')") })
+	self.DoAssign(778, func() { expression = self.ParseOne("INITCAP('new york')") }, &expression)
 	self.Do(779, func() {
-		M(self, "assert_duckdb_sql", expression, Kw("includes", NewTuple("REGEXP_MATCHES(", "ARRAY_TO_STRING(")), Kw("chr_chars", NewTuple("\u000b", "\u001c", "\u001d", "\u001e", "\u001f")))
+		Stmt(M(self, "assert_duckdb_sql", expression, Kw("includes", NewTuple("REGEXP_MATCHES(", "ARRAY_TO_STRING(")), Kw("chr_chars", NewTuple("\u000b", "\u001c", "\u001d", "\u001e", "\u001f"))))
 	})
 	self.L(784).ValidateAll("SELECT * FROM x.z TABLESAMPLE(10 PERCENT) y", Kw("write", NewDict("hive", "SELECT * FROM x.z TABLESAMPLE (10 PERCENT) AS y", "spark", "SELECT * FROM x.z TABLESAMPLE (10 PERCENT) AS y")))
 	self.L(791).ValidateAll("GET_JSON_OBJECT(x, '$.name')", Kw("write", NewDict("presto", "JSON_EXTRACT_SCALAR(x, '$.name')", "hive", "GET_JSON_OBJECT(x, '$.name')", "spark", "GET_JSON_OBJECT(x, '$.name')")))
@@ -244,12 +244,12 @@ func test_hive_TestHive_test_hive(self *Case, a Args) Value {
 	self.L(922).ValidateAll("SELECT a, SUM(c) FROM t GROUP BY a, DATE_FORMAT(b, 'yyyy') GROUPING SETS ((a, DATE_FORMAT(b, 'yyyy')), a)", Kw("write", NewDict("hive", "SELECT a, SUM(c) FROM t GROUP BY a, DATE_FORMAT(b, 'yyyy') GROUPING SETS ((a, DATE_FORMAT(b, 'yyyy')), a)")))
 	self.L(928).ValidateAll("SELECT TRUNC(CAST(ds AS TIMESTAMP), 'MONTH')", Kw("read", NewDict("hive", "SELECT TRUNC(CAST(ds AS TIMESTAMP), 'MONTH')", "presto", "SELECT DATE_TRUNC('MONTH', CAST(ds AS TIMESTAMP))")), Kw("write", NewDict("presto", "SELECT DATE_TRUNC('MONTH', TRY_CAST(ds AS TIMESTAMP))")))
 	self.Do(940, func() {
-		M(self.ValidateIdentity("TRUNC(date_col, 'MM')"), "assert_is", A(G("sqlglot.exp"), "TimestampTrunc"))
+		Stmt(M(self.ValidateIdentity("TRUNC(date_col, 'MM')"), "assert_is", A(G("sqlglot.exp"), "TimestampTrunc")))
 	})
 	self.L(943).ValidateAll("CAST(3.14159 AS BIGINT)", Kw("read", NewDict("postgres", "TRUNC(3.14159, 2)")))
 	self.L(948).ValidateAll("REGEXP_EXTRACT('abc', '(a)(b)(c)')", Kw("read", NewDict("hive", "REGEXP_EXTRACT('abc', '(a)(b)(c)')", "spark2", "REGEXP_EXTRACT('abc', '(a)(b)(c)')", "spark", "REGEXP_EXTRACT('abc', '(a)(b)(c)')", "databricks", "REGEXP_EXTRACT('abc', '(a)(b)(c)')")), Kw("write", NewDict("hive", "REGEXP_EXTRACT('abc', '(a)(b)(c)')", "spark2", "REGEXP_EXTRACT('abc', '(a)(b)(c)')", "spark", "REGEXP_EXTRACT('abc', '(a)(b)(c)')", "databricks", "REGEXP_EXTRACT('abc', '(a)(b)(c)')", "presto", "REGEXP_EXTRACT('abc', '(a)(b)(c)', 1)", "trino", "REGEXP_EXTRACT('abc', '(a)(b)(c)', 1)", "duckdb", "REGEXP_EXTRACT('abc', '(a)(b)(c)', 1)")))
 	self.Do(967, func() {
-		M(self.ValidateIdentity("EXISTS(col, x -> x % 2 = 0)"), "assert_is", A(G("sqlglot.exp"), "Exists"))
+		Stmt(M(self.ValidateIdentity("EXISTS(col, x -> x % 2 = 0)"), "assert_is", A(G("sqlglot.exp"), "Exists")))
 	})
 	self.L(969).ValidateAll("SELECT EXISTS(ARRAY(2, 3), x -> x % 2 = 0)", Kw("read", NewDict("hive", "SELECT EXISTS(ARRAY(2, 3), x -> x % 2 = 0)", "spark2", "SELECT EXISTS(ARRAY(2, 3), x -> x % 2 = 0)", "spark", "SELECT EXISTS(ARRAY(2, 3), x -> x % 2 = 0)", "databricks", "SELECT EXISTS(ARRAY(2, 3), x -> x % 2 = 0)")), Kw("write", NewDict("spark2", "SELECT EXISTS(ARRAY(2, 3), x -> x % 2 = 0)", "spark", "SELECT EXISTS(ARRAY(2, 3), x -> x % 2 = 0)", "databricks", "SELECT EXISTS(ARRAY(2, 3), x -> x % 2 = 0)")))
 	self.L(984).ValidateIdentity("SELECT 1_2")
@@ -302,14 +302,18 @@ func test_hive_TestHive_test_percentile(self *Case, a Args) Value {
 	self.L(1118).ValidateAll("PERCENTILE(x, 0.5)", Kw("write", NewDict("duckdb", "QUANTILE(x, 0.5)", "presto", "APPROX_PERCENTILE(x, 0.5)", "hive", "PERCENTILE(x, 0.5)", "spark2", "PERCENTILE(x, 0.5)", "spark", "PERCENTILE(x, 0.5)", "databricks", "PERCENTILE(x, 0.5)")))
 	self.L(1130).ValidateAll("PERCENTILE(DISTINCT x, 0.5)", Kw("read", NewDict("hive", "PERCENTILE(DISTINCT x, 0.5)", "spark", "PERCENTILE(DISTINCT x, 0.5)", "databricks", "PERCENTILE(DISTINCT x, 0.5)")), Kw("write", NewDict("spark", "PERCENTILE(DISTINCT x, 0.5)", "databricks", "PERCENTILE(DISTINCT x, 0.5)")))
 	self.L(1143).ValidateAll("PERCENTILE(x, 0.5)", Kw("read", NewDict("hive", "PERCENTILE(ALL x, 0.5)", "spark2", "PERCENTILE(ALL x, 0.5)", "spark", "PERCENTILE(ALL x, 0.5)", "databricks", "PERCENTILE(ALL x, 0.5)")))
-	self.Do(1153, func() { quantile_expr = self.ValidateIdentity("PERCENTILE(DISTINCT x, 0.5)") })
-	self.Do(1154, func() { M(quantile_expr, "assert_is", A(G("sqlglot.exp"), "Quantile")) })
-	self.Do(1155, func() { M(A(quantile_expr, "this"), "assert_is", A(G("sqlglot.exp"), "Distinct")) })
-	self.Do(1156, func() { M(M(A(quantile_expr, "args"), "get", "quantile"), "assert_is", A(G("sqlglot.exp"), "Literal")) })
-	self.Do(1158, func() { quantile_expr = self.ValidateIdentity("PERCENTILE(ALL x, 0.5)", "PERCENTILE(x, 0.5)") })
-	self.Do(1159, func() { M(quantile_expr, "assert_is", A(G("sqlglot.exp"), "Quantile")) })
-	self.Do(1160, func() { M(A(quantile_expr, "this"), "assert_is", A(G("sqlglot.exp"), "Column")) })
-	self.Do(1161, func() { M(M(A(quantile_expr, "args"), "get", "quantile"), "assert_is", A(G("sqlglot.exp"), "Literal")) })
+	self.DoAssign(1153, func() { quantile_expr = self.ValidateIdentity("PERCENTILE(DISTINCT x, 0.5)") }, &quantile_expr)
+	self.Do(1154, func() { Stmt(M(quantile_expr, "assert_is", A(G("sqlglot.exp"), "Quantile"))) })
+	self.Do(1155, func() { Stmt(M(A(quantile_expr, "this"), "assert_is", A(G("sqlglot.exp"), "Distinct"))) })
+	self.Do(1156, func() {
+		Stmt(M(M(A(quantile_expr, "args"), "get", "quantile"), "assert_is", A(G("sqlglot.exp"), "Literal")))
+	})
+	self.DoAssign(1158, func() { quantile_expr = self.ValidateIdentity("PERCENTILE(ALL x, 0.5)", "PERCENTILE(x, 0.5)") }, &quantile_expr)
+	self.Do(1159, func() { Stmt(M(quantile_expr, "assert_is", A(G("sqlglot.exp"), "Quantile"))) })
+	self.Do(1160, func() { Stmt(M(A(quantile_expr, "this"), "assert_is", A(G("sqlglot.exp"), "Column"))) })
+	self.Do(1161, func() {
+		Stmt(M(M(A(quantile_expr, "args"), "get", "quantile"), "assert_is", A(G("sqlglot.exp"), "Literal")))
+	})
 	return nil
 }
 
@@ -320,26 +324,26 @@ func test_hive_TestHive_test_create_function_using(self *Case, a Args) Value {
 	self.L(1170).ValidateIdentity("CREATE OR REPLACE TEMPORARY FUNCTION some_func AS 'my_jar.SomeFunctionUDF' USING JAR 's3://bucket/my.jar'")
 	self.L(1175).ValidateIdentity("CREATE FUNCTION my_func AS 'com.example.MyFunc' USING FILE 'hdfs://path/to/file.py'")
 	self.L(1180).ValidateIdentity("CREATE FUNCTION my_func AS 'com.example.MyFunc' USING ARCHIVE 'hdfs://path/to/archive.zip'")
-	self.Do(1185, func() {
+	self.DoAssign(1185, func() {
 		expr = self.ParseOne("CREATE FUNCTION my_func AS 'com.example.MyFunc' USING JAR 'hdfs://path/to/my.jar'")
-	})
-	self.Do(1188, func() { M(self, "assertIsInstance", expr, A(G("sqlglot.exp"), "Create")) })
-	self.Do(1189, func() { using_prop = M(expr, "find", A(G("sqlglot.exp"), "UsingProperty")) })
-	self.Do(1190, func() { M(self, "assertIsNotNone", using_prop) })
+	}, &expr)
+	self.Do(1188, func() { Stmt(M(self, "assertIsInstance", expr, A(G("sqlglot.exp"), "Create"))) })
+	self.DoAssign(1189, func() { using_prop = M(expr, "find", A(G("sqlglot.exp"), "UsingProperty")) }, &using_prop)
+	self.Do(1190, func() { Stmt(M(self, "assertIsNotNone", using_prop)) })
 	self.Do(1191, func() { self.AssertEqual(Item(A(using_prop, "args"), "kind"), "JAR") })
 	self.Do(1192, func() { self.AssertEqual(A(A(using_prop, "this"), "this"), "hdfs://path/to/my.jar") })
-	self.Do(1195, func() {
+	self.DoAssign(1195, func() {
 		create = M(G("sqlglot.exp"), "Create", Kw("this", M(G("sqlglot.exp"), "Table", Kw("this", M(G("sqlglot.exp"), "to_identifier", "my_func")))), Kw("kind", "FUNCTION"), Kw("expression", M(A(G("sqlglot.exp"), "Literal"), "string", "com.example.MyFunc")), Kw("properties", M(G("sqlglot.exp"), "Properties", Kw("expressions", NewList(M(G("sqlglot.exp"), "UsingProperty", Kw("this", M(A(G("sqlglot.exp"), "Literal"), "string", "s3://bucket/new.jar")), Kw("kind", "JAR")))))))
-	})
+	}, &create)
 	self.Do(1205, func() {
 		self.AssertEqual(M(create, "sql", Kw("dialect", "hive")), "CREATE FUNCTION my_func AS 'com.example.MyFunc' USING JAR 's3://bucket/new.jar'")
 	})
-	self.Do(1211, func() {
+	self.DoAssign(1211, func() {
 		expr = self.ParseOne("CREATE FUNCTION my_func AS 'com.example.MyFunc' USING JAR 'hdfs://old/path.jar'")
-	})
-	self.Do(1214, func() { using_prop = M(expr, "find", A(G("sqlglot.exp"), "UsingProperty")) })
+	}, &expr)
+	self.DoAssign(1214, func() { using_prop = M(expr, "find", A(G("sqlglot.exp"), "UsingProperty")) }, &using_prop)
 	self.Do(1215, func() {
-		M(using_prop, "set", "this", M(A(G("sqlglot.exp"), "Literal"), "string", "hdfs://new/path.jar"))
+		Stmt(M(using_prop, "set", "this", M(A(G("sqlglot.exp"), "Literal"), "string", "hdfs://new/path.jar")))
 	})
 	self.Do(1216, func() {
 		self.AssertEqual(M(expr, "sql", Kw("dialect", "hive")), "CREATE FUNCTION my_func AS 'com.example.MyFunc' USING JAR 'hdfs://new/path.jar'")
@@ -362,9 +366,9 @@ func test_hive_TestHive_test_multitable_inserts(self *Case, a Args) Value {
 	self.L(1254).ValidateIdentity("-- a\nFROM x\n-- b\nINSERT OVERWRITE TABLE t SELECT k\n-- c\nINSERT INTO u SELECT v", "/* a */ FROM x /* b */ INSERT OVERWRITE TABLE t SELECT k /* c */ INSERT INTO u SELECT v")
 	self.L(1258).ValidateIdentity("FROM (FROM x LATERAL VIEW EXPLODE(arr) a AS c SELECT k, c) AS s INSERT INTO t SELECT s.c INSERT INTO u SELECT s.k", "FROM (SELECT k, c FROM x LATERAL VIEW EXPLODE(arr) a AS c) AS s INSERT INTO t SELECT s.c INSERT INTO u SELECT s.k")
 	self.L(1262).ValidateAll("FROM x INSERT INTO t SELECT v QUALIFY ROW_NUMBER() OVER (PARTITION BY k ORDER BY v) = 1", Kw("write", NewDict("hive", G("sqlglot.UnsupportedError"), "spark", G("sqlglot.UnsupportedError"), "databricks", "FROM x INSERT INTO t SELECT v QUALIFY ROW_NUMBER() OVER (PARTITION BY k ORDER BY v) = 1")))
-	self.Do(1271, func() {
+	self.DoAssign(1271, func() {
 		ast = M(self.ValidateIdentity("FROM x INSERT OVERWRITE TABLE a SELECT k INSERT INTO b SELECT v WHERE k > 0"), "assert_is", A(G("sqlglot.exp"), "MultitableInserts"))
-	})
+	}, &ast)
 	self.Do(1274, func() { self.AssertEqual(M(Item(A(ast, "args"), "source"), "sql"), "x") })
 	self.Do(1275, func() {
 		self.AssertEqual(func() Value {

@@ -42,8 +42,8 @@ func test_serde_TestSerde_test_serde(self *Case, a Args) Value {
 	for _, item_ := range Iter(Call(G("tests.helpers.load_sql_fixtures"), "identity.sql")) {
 		sql = item_
 		self.SubTest(func() {
-			self.Do(26, func() { before = Call(G("sqlglot.parse_one"), sql) })
-			self.Do(27, func() { after = M(self, "dump_load", before) })
+			self.DoAssign(26, func() { before = Call(G("sqlglot.parse_one"), sql) }, &before)
+			self.DoAssign(27, func() { after = M(self, "dump_load", before) }, &after)
 			self.Do(28, func() { self.AssertEqual(Repr(before), Repr(after)) })
 		}, sql)
 	}
@@ -58,10 +58,10 @@ func test_serde_TestSerde_test_custom_expression(self *Case, a Args) Value {
 func test_serde_TestSerde_test_type_annotations(self *Case, a Args) Value {
 	var before, after Value
 	_ = []Value{before, after}
-	self.Do(37, func() {
+	self.DoAssign(37, func() {
 		before = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), Call(G("sqlglot.parse_one"), "CAST('1' AS STRUCT<x ARRAY<INT>>)"))
-	})
-	self.Do(38, func() { after = M(self, "dump_load", before) })
+	}, &before)
+	self.DoAssign(38, func() { after = M(self, "dump_load", before) }, &after)
 	self.Do(39, func() { self.AssertEqual(A(before, "type"), A(after, "type")) })
 	self.Do(40, func() { self.AssertEqual(A(A(before, "this"), "type"), A(A(after, "this"), "type")) })
 	return nil
@@ -70,9 +70,9 @@ func test_serde_TestSerde_test_type_annotations(self *Case, a Args) Value {
 func test_serde_TestSerde_test_meta(self *Case, a Args) Value {
 	var before, after Value
 	_ = []Value{before, after}
-	self.Do(43, func() { before = Call(G("sqlglot.parse_one"), "SELECT * FROM X") })
+	self.DoAssign(43, func() { before = Call(G("sqlglot.parse_one"), "SELECT * FROM X") }, &before)
 	self.Do(44, func() { SetItem(A(before, "meta"), "x", 1) })
-	self.Do(45, func() { after = M(self, "dump_load", before) })
+	self.DoAssign(45, func() { after = M(self, "dump_load", before) }, &after)
 	self.Do(46, func() { self.AssertEqual(A(before, "meta"), A(after, "meta")) })
 	return nil
 }
@@ -80,10 +80,10 @@ func test_serde_TestSerde_test_meta(self *Case, a Args) Value {
 func test_serde_TestSerde_test_recursion(self *Case, a Args) Value {
 	var sql, expr, before Value
 	_ = []Value{sql, expr, before}
-	self.Do(49, func() { sql = "SELECT 1" })
+	self.DoAssign(49, func() { sql = "SELECT 1" }, &sql)
 	self.Do(50, func() { sql = Add(sql, Mul(" UNION ALL SELECT 1", 5000)) })
-	self.Do(51, func() { expr = Call(G("sqlglot.parse_one"), sql) })
-	self.Do(52, func() { before = M(expr, "sql") })
+	self.DoAssign(51, func() { expr = Call(G("sqlglot.parse_one"), sql) }, &expr)
+	self.DoAssign(52, func() { before = M(expr, "sql") }, &before)
 	self.Do(53, func() { self.AssertEqual(before, M(M(self, "dump_load", expr), "sql")) })
 	self.Do(54, func() { self.AssertEqual(before, M(M(G("pickle"), "loads", M(G("pickle"), "dumps", expr)), "sql")) })
 	return nil

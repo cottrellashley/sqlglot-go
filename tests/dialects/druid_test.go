@@ -37,7 +37,7 @@ func test_druid_TestDruid_test_druid(self *Case, a Args) Value {
 	self.L(15).ValidateIdentity("SELECT FLOOR(price, 2) AS rounded_price FROM t")
 	self.L(16).ValidateIdentity("SELECT CURRENT_TIMESTAMP")
 	self.L(17).ValidateIdentity("SELECT ARRAY[1, 2, 3]")
-	self.Do(20, func() {
+	self.DoAssign(20, func() {
 		write = func() Value {
 			var dialect Value
 			_ = []Value{dialect}
@@ -48,7 +48,7 @@ func test_druid_TestDruid_test_druid(self *Case, a Args) Value {
 			}
 			return out
 		}()
-	})
+	}, &write)
 	self.Do(21, func() { self.ValidateAll("FLOOR(__time TO WEEK)", Kw("write", write)) })
 	return nil
 }
@@ -56,7 +56,7 @@ func test_druid_TestDruid_test_druid(self *Case, a Args) Value {
 func test_druid_TestDruid_test_json_value(self *Case, a Args) Value {
 	var json_doc Value
 	_ = []Value{json_doc}
-	self.Do(27, func() { json_doc = `'{"item": "shoes", "price": "49.95"}'` })
+	self.DoAssign(27, func() { json_doc = `'{"item": "shoes", "price": "49.95"}'` }, &json_doc)
 	self.Do(28, func() { self.ValidateIdentity(F("SELECT JSON_VALUE(", FV{V: json_doc}, ", '$.item')")) })
 	self.Do(29, func() {
 		self.ValidateIdentity(F("SELECT JSON_VALUE(", FV{V: json_doc}, ", '$.price' RETURNING DOUBLE)"))

@@ -54,12 +54,12 @@ var test_singlestore_TestSingleStore = &Class{
 func test_singlestore_TestSingleStore_test_singlestore(self *Case, a Args) Value {
 	var ast Value
 	_ = []Value{ast}
-	self.Do(10, func() {
+	self.DoAssign(10, func() {
 		ast = Call(G("sqlglot.parse_one"), "SELECT id AS my_id FROM data WHERE my_id = 1 GROUP BY my_id HAVING my_id = 1", Kw("dialect", self.Dialect()))
-	})
-	self.Do(14, func() {
+	}, &ast)
+	self.DoAssign(14, func() {
 		ast = Call(G("sqlglot.optimizer.qualify.qualify"), ast, Kw("dialect", self.Dialect()), Kw("schema", NewDict("data", NewDict("id", "INT", "my_id", "INT"))))
-	})
+	}, &ast)
 	self.Do(15, func() {
 		self.AssertEqual("SELECT `data`.`id` AS `my_id` FROM `data` AS `data` WHERE `data`.`my_id` = 1 GROUP BY `data`.`my_id` HAVING `data`.`id` = 1", M(ast, "sql", Kw("dialect", self.Dialect())))
 	})
@@ -181,13 +181,13 @@ func test_singlestore_TestSingleStore_test_json(self *Case, a Args) Value {
 	self.L(273).ValidateIdentity("SELECT JSON_AGG(t.*) FROM t")
 	self.L(274).ValidateAll("SELECT JSON_BUILD_ARRAY(id, name) FROM t", Kw("read", NewDict("singlestore", "SELECT JSON_BUILD_ARRAY(id, name) FROM t", "oracle", "SELECT JSON_ARRAY(id, name) FROM t")))
 	self.Do(281, func() {
-		M(self.ValidateIdentity("JSON_BUILD_ARRAY(id, name)"), "assert_is", A(G("sqlglot.exp"), "JSONArray"))
+		Stmt(M(self.ValidateIdentity("JSON_BUILD_ARRAY(id, name)"), "assert_is", A(G("sqlglot.exp"), "JSONArray")))
 	})
 	self.L(282).ValidateAll(`SELECT BSON_MATCH_ANY_EXISTS('{"x":true}', 'x')`, Kw("read", NewDict("singlestore", `SELECT BSON_MATCH_ANY_EXISTS('{"x":true}', 'x')`, "", `SELECT JSONB_EXISTS('{"x":true}', 'x')`)))
 	self.L(289).ValidateAll(`SELECT JSON_MATCH_ANY_EXISTS('{"a":1}', 'a')`, Kw("read", NewDict("singlestore", `SELECT JSON_MATCH_ANY_EXISTS('{"a":1}', 'a')`, "oracle", `SELECT JSON_EXISTS('{"a":1}', '$.a')`)))
 	self.L(296).ValidateAll("SELECT JSON_BUILD_OBJECT('name', name) FROM t", Kw("read", NewDict("singlestore", "SELECT JSON_BUILD_OBJECT('name', name) FROM t", "", "SELECT JSON_OBJECT('name', name) FROM t")))
 	self.Do(303, func() {
-		M(self.ValidateIdentity("JSON_BUILD_OBJECT('name', name)"), "assert_is", A(G("sqlglot.exp"), "JSONObject"))
+		Stmt(M(self.ValidateIdentity("JSON_BUILD_OBJECT('name', name)"), "assert_is", A(G("sqlglot.exp"), "JSONObject")))
 	})
 	return nil
 }
@@ -335,13 +335,13 @@ func test_singlestore_TestSingleStore_test_collate_sql(self *Case, a Args) Value
 
 func test_singlestore_TestSingleStore_test_match_against(self *Case, a Args) Value {
 	self.Do(918, func() {
-		M(Item(A(self.ValidateIdentity("SELECT MATCH(name) AGAINST('search term') FROM products"), "expressions"), 0), "assert_is", A(G("sqlglot.exp"), "MatchAgainst"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT MATCH(name) AGAINST('search term') FROM products"), "expressions"), 0), "assert_is", A(G("sqlglot.exp"), "MatchAgainst")))
 	})
 	self.Do(921, func() {
-		M(Item(A(self.ValidateIdentity("SELECT MATCH(name, name) AGAINST('book') FROM products"), "expressions"), 0), "assert_is", A(G("sqlglot.exp"), "MatchAgainst"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT MATCH(name, name) AGAINST('book') FROM products"), "expressions"), 0), "assert_is", A(G("sqlglot.exp"), "MatchAgainst")))
 	})
 	self.Do(924, func() {
-		M(Item(A(self.ValidateIdentity("SELECT MATCH(TABLE products2) AGAINST('search term') FROM products2"), "expressions"), 0), "assert_is", A(G("sqlglot.exp"), "MatchAgainst"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT MATCH(TABLE products2) AGAINST('search term') FROM products2"), "expressions"), 0), "assert_is", A(G("sqlglot.exp"), "MatchAgainst")))
 	})
 	return nil
 }

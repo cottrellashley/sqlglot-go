@@ -64,12 +64,12 @@ var test_oracle_TestOracle = &Class{
 func test_oracle_TestOracle_test_create_table_tablespace(self *Case, a Args) Value {
 	var sql, create Value
 	_ = []Value{sql, create}
-	self.Do(10, func() { sql = "CREATE TABLE t (id NUMBER) TABLESPACE ts" })
-	self.Do(11, func() { create = M(self.ValidateIdentity(sql), "assert_is", A(G("sqlglot.exp"), "Create")) })
+	self.DoAssign(10, func() { sql = "CREATE TABLE t (id NUMBER) TABLESPACE ts" }, &sql)
+	self.DoAssign(11, func() { create = M(self.ValidateIdentity(sql), "assert_is", A(G("sqlglot.exp"), "Create")) }, &create)
 	self.Do(12, func() { self.AssertEqual(A(create, "kind"), "TABLE") })
-	self.Do(13, func() { M(self, "assertIsInstance", A(create, "this"), A(G("sqlglot.exp"), "Schema")) })
+	self.Do(13, func() { Stmt(M(self, "assertIsInstance", A(create, "this"), A(G("sqlglot.exp"), "Schema"))) })
 	self.Do(14, func() {
-		M(self, "assertIsInstance", Item(A(A(create, "this"), "expressions"), 0), A(G("sqlglot.exp"), "ColumnDef"))
+		Stmt(M(self, "assertIsInstance", Item(A(A(create, "this"), "expressions"), 0), A(G("sqlglot.exp"), "ColumnDef")))
 	})
 	self.L(15).ValidateIdentity(`CREATE TABLE t (id NUMBER) TABLESPACE "Mixed Ts"`)
 	self.Do(16, func() {
@@ -84,53 +84,53 @@ func test_oracle_TestOracle_test_create_table_physical_properties(self *Case, a 
 	for _, item_ := range Iter(NewTuple("PCTFREE 10", "PCTUSED 40", "INITRANS 2", "MAXTRANS 255", "LOGGING", "NOLOGGING", "PCTFREE 10 PCTUSED 40 INITRANS 2 MAXTRANS 255 NOLOGGING", "LOGGING TABLESPACE users PCTFREE 10")) {
 		clause = item_
 		self.SubTest(func() {
-			self.Do(33, func() {
+			self.DoAssign(33, func() {
 				create = M(self.ValidateIdentity(F("CREATE TABLE t (id NUMBER) ", FV{V: clause})), "assert_is", A(G("sqlglot.exp"), "Create"))
-			})
-			self.Do(36, func() { M(self, "assertIsInstance", A(create, "this"), A(G("sqlglot.exp"), "Schema")) })
+			}, &create)
+			self.Do(36, func() { Stmt(M(self, "assertIsInstance", A(create, "this"), A(G("sqlglot.exp"), "Schema"))) })
 			self.Do(37, func() {
-				M(self, "assertIsInstance", Item(A(A(create, "this"), "expressions"), 0), A(G("sqlglot.exp"), "ColumnDef"))
+				Stmt(M(self, "assertIsInstance", Item(A(A(create, "this"), "expressions"), 0), A(G("sqlglot.exp"), "ColumnDef")))
 			})
 			self.Do(38, func() {
-				M(self, "assertIsInstance", Item(A(Item(A(create, "args"), "properties"), "expressions"), 0), A(G("sqlglot.exp"), "PhysicalProperty"))
+				Stmt(M(self, "assertIsInstance", Item(A(Item(A(create, "args"), "properties"), "expressions"), 0), A(G("sqlglot.exp"), "PhysicalProperty")))
 			})
 			self.Do(41, func() {
 				self.AssertRaisesRegex(func(cm_ Value) {
 					_ = cm_
-					M(create, "sql", "postgres", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE")))
+					Stmt(M(create, "sql", "postgres", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE"))))
 				}, G("sqlglot.UnsupportedError"), "physicalproperty")
 			})
 		}, Kw("clause", clause))
 	}
 	self.L(44).ValidateIdentity("create table t (id number) pctfree 10 nologging", "CREATE TABLE t (id NUMBER) PCTFREE 10 NOLOGGING")
 	self.L(48).ValidateIdentity(`CREATE TABLE "t" ("id" NUMBER) PCTFREE 10 NOLOGGING`, Kw("identify", true))
-	self.Do(49, func() {
+	self.DoAssign(49, func() {
 		create = M(self.ValidateIdentity("CREATE TABLE t PCTFREE 10 NOLOGGING AS SELECT 1 AS id FROM dual"), "assert_is", A(G("sqlglot.exp"), "Create"))
-	})
-	self.Do(52, func() { M(self, "assertIsInstance", A(create, "expression"), A(G("sqlglot.exp"), "Select")) })
+	}, &create)
+	self.Do(52, func() { Stmt(M(self, "assertIsInstance", A(create, "expression"), A(G("sqlglot.exp"), "Select"))) })
 	return nil
 }
 
 func test_oracle_TestOracle_test_create_table_storage(self *Case, a Args) Value {
 	var create, tablespace, pctfree, storage, options, clause Value
 	_ = []Value{create, tablespace, pctfree, storage, options, clause}
-	self.Do(55, func() {
+	self.DoAssign(55, func() {
 		create = M(self.ValidateIdentity("CREATE TABLE t (id NUMBER) TABLESPACE ts PCTFREE 10 STORAGE (INITIAL 64K)"), "assert_is", A(G("sqlglot.exp"), "Create"))
-	})
+	}, &create)
 	self.Do(58, func() { self.AssertEqual(A(create, "kind"), "TABLE") })
-	self.Do(59, func() { M(self, "assertIsInstance", A(create, "this"), A(G("sqlglot.exp"), "Schema")) })
+	self.Do(59, func() { Stmt(M(self, "assertIsInstance", A(create, "this"), A(G("sqlglot.exp"), "Schema"))) })
 	self.Do(60, func() {
-		M(self, "assertIsInstance", Item(A(A(create, "this"), "expressions"), 0), A(G("sqlglot.exp"), "ColumnDef"))
+		Stmt(M(self, "assertIsInstance", Item(A(A(create, "this"), "expressions"), 0), A(G("sqlglot.exp"), "ColumnDef")))
 	})
-	self.Do(61, func() {
+	self.DoAssign(61, func() {
 		Unpack(A(Item(A(create, "args"), "properties"), "expressions"), &tablespace, &pctfree, &storage)
-	})
-	self.Do(62, func() { M(self, "assertIsInstance", tablespace, A(G("sqlglot.exp"), "TableSpaceProperty")) })
+	}, &tablespace, &pctfree, &storage)
+	self.Do(62, func() { Stmt(M(self, "assertIsInstance", tablespace, A(G("sqlglot.exp"), "TableSpaceProperty"))) })
 	self.Do(63, func() { self.AssertEqual(A(pctfree, "name"), "PCTFREE") })
 	self.Do(64, func() {
 		self.AssertEqual(Item(A(pctfree, "args"), "value"), M(A(G("sqlglot.exp"), "Literal"), "number", 10))
 	})
-	self.Do(65, func() { M(self, "assertIsInstance", storage, A(G("sqlglot.exp"), "StorageProperty")) })
+	self.Do(65, func() { Stmt(M(self, "assertIsInstance", storage, A(G("sqlglot.exp"), "StorageProperty"))) })
 	self.Do(66, func() { self.AssertEqual(A(Item(A(storage, "expressions"), 0), "name"), "INITIAL") })
 	self.Do(67, func() {
 		self.AssertEqual(Item(A(Item(A(storage, "expressions"), 0), "args"), "value"), M(G("sqlglot.exp"), "var", "64K"))
@@ -138,22 +138,22 @@ func test_oracle_TestOracle_test_create_table_storage(self *Case, a Args) Value 
 	for _, item_ := range Iter(NewTuple("INITIAL 65536 NEXT 1048576", "INITIAL 64K NEXT 1M MINEXTENTS 1 MAXEXTENTS UNLIMITED MAXSIZE 2M PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1 BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT", "MAXEXTENTS 100 MAXSIZE UNLIMITED BUFFER_POOL KEEP FLASH_CACHE NONE CELL_FLASH_CACHE KEEP", "BUFFER_POOL RECYCLE FLASH_CACHE KEEP CELL_FLASH_CACHE NONE")) {
 		options = item_
 		self.SubTest(func() {
-			self.Do(78, func() {
+			self.DoAssign(78, func() {
 				create = M(self.ValidateIdentity(F("CREATE TABLE t (id NUMBER) STORAGE (", FV{V: options}, ") TABLESPACE users LOGGING")), "assert_is", A(G("sqlglot.exp"), "Create"))
-			})
+			}, &create)
 			self.Do(81, func() {
 				self.AssertRaisesRegex(func(cm_ Value) {
 					_ = cm_
-					M(create, "sql", "postgres", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE")))
+					Stmt(M(create, "sql", "postgres", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE"))))
 				}, G("sqlglot.UnsupportedError"), "storageproperty")
 			})
 		}, Kw("options", options))
 	}
 	self.L(84).ValidateIdentity("CREATE TABLE t (id NUMBER) storage (initial 64 k next 1 m) nologging", "CREATE TABLE t (id NUMBER) STORAGE (INITIAL 64K NEXT 1M) NOLOGGING")
-	self.Do(88, func() {
+	self.DoAssign(88, func() {
 		create = M(self.ValidateIdentity("CREATE TABLE t STORAGE (INITIAL 64K) NOLOGGING AS SELECT 1 AS id FROM dual"), "assert_is", A(G("sqlglot.exp"), "Create"))
-	})
-	self.Do(91, func() { M(self, "assertIsInstance", A(create, "expression"), A(G("sqlglot.exp"), "Select")) })
+	}, &create)
+	self.Do(91, func() { Stmt(M(self, "assertIsInstance", A(create, "expression"), A(G("sqlglot.exp"), "Select"))) })
 	self.L(92).ValidateIdentity("CREATE TABLE t (\n  id NUMBER\n)\nPCTFREE 10\nSTORAGE (INITIAL 64K NEXT 1M)\nLOGGING", Kw("pretty", true))
 	for _, item_ := range Iter(NewTuple("PCTFREE", "STORAGE ()", "STORAGE (INITIAL)", "STORAGE (FREELIST 1)", "STORAGE (INITIAL 64K", "STORAGE (INITIAL 64K UNKNOWN 1)")) {
 		clause = item_
@@ -161,7 +161,7 @@ func test_oracle_TestOracle_test_create_table_storage(self *Case, a Args) Value 
 			self.Do(105, func() {
 				self.AssertRaises(func(cm_ Value) {
 					_ = cm_
-					M(self, "parse_one", F("CREATE TABLE t (id NUMBER) ", FV{V: clause}))
+					Stmt(M(self, "parse_one", F("CREATE TABLE t (id NUMBER) ", FV{V: clause})))
 				}, G("sqlglot.ParseError"))
 			})
 		}, Kw("clause", clause))
@@ -179,10 +179,10 @@ func test_oracle_TestOracle_test_partition_selection(self *Case, a Args) Value {
 			for _, item_ := range Iter(NewTuple("", " s")) {
 				alias = item_
 				self.SubTest(func() {
-					self.Do(113, func() { sql = F(`SELECT * FROM "SH"."SALES" `, FV{V: keyword}, "(", FV{V: name}, ")", FV{V: alias}) })
-					self.Do(114, func() { table = M(self.ValidateIdentity(sql), "find", A(G("sqlglot.exp"), "Table")) })
-					self.Do(115, func() { partition = Item(A(table, "args"), "partition") })
-					self.Do(116, func() { M(self, "assertIsInstance", partition, A(G("sqlglot.exp"), "Partition")) })
+					self.DoAssign(113, func() { sql = F(`SELECT * FROM "SH"."SALES" `, FV{V: keyword}, "(", FV{V: name}, ")", FV{V: alias}) }, &sql)
+					self.DoAssign(114, func() { table = M(self.ValidateIdentity(sql), "find", A(G("sqlglot.exp"), "Table")) }, &table)
+					self.DoAssign(115, func() { partition = Item(A(table, "args"), "partition") }, &partition)
+					self.Do(116, func() { Stmt(M(self, "assertIsInstance", partition, A(G("sqlglot.exp"), "Partition"))) })
 					self.Do(117, func() { self.AssertEqual(Item(A(partition, "args"), "subpartition"), Eq(keyword, "SUBPARTITION")) })
 					self.Do(118, func() { self.AssertEqual(M(Item(A(partition, "expressions"), 0), "sql", "oracle"), name) })
 					self.Do(119, func() { self.AssertEqual(A(table, "alias"), M(alias, "strip")) })
@@ -205,20 +205,20 @@ func test_oracle_TestOracle_test_insert_partition(self *Case, a Args) Value {
 			for _, item_ := range Iter(NewTuple("", " (col1)")) {
 				columns = item_
 				self.SubTest(func() {
-					self.Do(134, func() {
+					self.DoAssign(134, func() {
 						sql = F("INSERT INTO sales ", FV{V: keyword}, "(p1)", FV{V: alias}, FV{V: columns}, " VALUES (1)")
-					})
-					self.Do(135, func() { insert = self.ValidateIdentity(sql) })
-					self.Do(136, func() { table = M(insert, "find", A(G("sqlglot.exp"), "Table")) })
+					}, &sql)
+					self.DoAssign(135, func() { insert = self.ValidateIdentity(sql) }, &insert)
+					self.DoAssign(136, func() { table = M(insert, "find", A(G("sqlglot.exp"), "Table")) }, &table)
 					self.Do(137, func() {
-						M(self, "assertIsInstance", Item(A(table, "args"), "partition"), A(G("sqlglot.exp"), "Partition"))
+						Stmt(M(self, "assertIsInstance", Item(A(table, "args"), "partition"), A(G("sqlglot.exp"), "Partition")))
 					})
 					self.Do(138, func() {
 						self.AssertEqual(Item(A(Item(A(table, "args"), "partition"), "args"), "subpartition"), Eq(keyword, "SUBPARTITION"))
 					})
 					self.Do(141, func() { self.AssertEqual(A(table, "alias"), M(alias, "strip")) })
 					if Truth(columns) {
-						self.Do(143, func() { M(self, "assertIsInstance", A(insert, "this"), A(G("sqlglot.exp"), "Schema")) })
+						self.Do(143, func() { Stmt(M(self, "assertIsInstance", A(insert, "this"), A(G("sqlglot.exp"), "Schema"))) })
 						self.Do(144, func() { self.AssertEqual(A(Item(A(A(insert, "this"), "expressions"), 0), "name"), "col1") })
 					}
 				}, Kw("keyword", keyword), Kw("alias", alias), Kw("columns", columns))
@@ -241,10 +241,10 @@ func test_oracle_TestOracle_test_flashback(self *Case, a Args) Value {
 		for _, item_ := range Iter(NewTuple("", " s")) {
 			alias = item_
 			self.SubTest(func() {
-				self.Do(171, func() { sql = F(`SELECT * FROM "SH"."SALES" AS OF `, FV{V: kind}, " ", FV{V: value}, FV{V: alias}) })
-				self.Do(172, func() { table = M(self.ValidateIdentity(sql), "find", A(G("sqlglot.exp"), "Table")) })
-				self.Do(173, func() { version = Item(A(table, "args"), "version") })
-				self.Do(174, func() { M(self, "assertIsInstance", version, A(G("sqlglot.exp"), "Version")) })
+				self.DoAssign(171, func() { sql = F(`SELECT * FROM "SH"."SALES" AS OF `, FV{V: kind}, " ", FV{V: value}, FV{V: alias}) }, &sql)
+				self.DoAssign(172, func() { table = M(self.ValidateIdentity(sql), "find", A(G("sqlglot.exp"), "Table")) }, &table)
+				self.DoAssign(173, func() { version = Item(A(table, "args"), "version") }, &version)
+				self.Do(174, func() { Stmt(M(self, "assertIsInstance", version, A(G("sqlglot.exp"), "Version"))) })
 				self.Do(175, func() { self.AssertEqual(A(version, "this"), kind) })
 				self.Do(176, func() { self.AssertEqual(M(version, "text", "kind"), "AS OF") })
 				self.Do(177, func() { self.AssertEqual(M(A(version, "expression"), "sql", "oracle"), value) })
@@ -270,7 +270,7 @@ func test_oracle_TestOracle_test_oracle(self *Case, a Args) Value {
 	self.L(219).ValidateIdentity("1 /* /* */", "1 /* / * */")
 	self.L(220).ValidateAll("SELECT CONNECT_BY_ROOT x y", Kw("write", NewDict("", "SELECT CONNECT_BY_ROOT x AS y", "oracle", "SELECT CONNECT_BY_ROOT x AS y")))
 	self.Do(227, func() {
-		M(self.ParseOne("ALTER TABLE tbl_name DROP FOREIGN KEY fk_symbol"), "assert_is", A(G("sqlglot.exp"), "Alter"))
+		Stmt(M(self.ParseOne("ALTER TABLE tbl_name DROP FOREIGN KEY fk_symbol"), "assert_is", A(G("sqlglot.exp"), "Alter")))
 	})
 	self.L(229).ValidateIdentity("SELECT NTH_VALUE(x, 2) FROM FIRST OVER (ORDER BY y) AS c FROM t")
 	self.L(230).ValidateIdentity("SELECT NTH_VALUE(x, 2) FROM LAST IGNORE NULLS OVER (ORDER BY y) AS c FROM t")
@@ -280,16 +280,20 @@ func test_oracle_TestOracle_test_oracle(self *Case, a Args) Value {
 	self.L(238).ValidateIdentity("SELECT BITMAP_CONSTRUCT_AGG(value)")
 	self.L(239).ValidateIdentity("DBMS_RANDOM.NORMAL")
 	self.Do(240, func() {
-		M(self.ValidateIdentity("DBMS_RANDOM.VALUE(low, high)"), "assert_is", A(G("sqlglot.exp"), "Rand"))
+		Stmt(M(self.ValidateIdentity("DBMS_RANDOM.VALUE(low, high)"), "assert_is", A(G("sqlglot.exp"), "Rand")))
 	})
-	self.Do(241, func() { M(self.ValidateIdentity("DBMS_RANDOM.VALUE()"), "assert_is", A(G("sqlglot.exp"), "Rand")) })
+	self.Do(241, func() {
+		Stmt(M(self.ValidateIdentity("DBMS_RANDOM.VALUE()"), "assert_is", A(G("sqlglot.exp"), "Rand")))
+	})
 	self.L(242).ValidateIdentity("CAST(value AS NUMBER DEFAULT 0 ON CONVERSION ERROR)")
 	self.L(243).ValidateIdentity("SYSDATE")
 	self.L(244).ValidateIdentity("CREATE GLOBAL TEMPORARY TABLE t AS SELECT * FROM orders")
 	self.L(245).ValidateIdentity("CREATE PRIVATE TEMPORARY TABLE t AS SELECT * FROM orders")
 	self.L(246).ValidateIdentity("REGEXP_REPLACE('source', 'search')")
 	self.L(247).ValidateIdentity("TIMESTAMP(3) WITH TIME ZONE")
-	self.Do(248, func() { M(self.ValidateIdentity("SYSTIMESTAMP"), "assert_is", A(G("sqlglot.exp"), "Systimestamp")) })
+	self.Do(248, func() {
+		Stmt(M(self.ValidateIdentity("SYSTIMESTAMP"), "assert_is", A(G("sqlglot.exp"), "Systimestamp")))
+	})
 	self.L(249).ValidateIdentity("SELECT SYSTIMESTAMP AT TIME ZONE 'UTC'")
 	self.L(250).ValidateIdentity("CURRENT_TIMESTAMP(precision)")
 	self.L(251).ValidateIdentity("ALTER TABLE tbl_name DROP FOREIGN KEY fk_symbol")
@@ -483,14 +487,14 @@ func test_oracle_TestOracle_test_json_table(self *Case, a Args) Value {
 func test_oracle_TestOracle_test_connect_by(self *Case, a Args) Value {
 	var start, connect, body, pretty, query Value
 	_ = []Value{start, connect, body, pretty, query}
-	self.Do(896, func() { start = "START WITH last_name = 'King'" })
-	self.Do(897, func() { connect = "CONNECT BY PRIOR employee_id = manager_id AND LEVEL <= 4" })
-	self.Do(898, func() {
+	self.DoAssign(896, func() { start = "START WITH last_name = 'King'" }, &start)
+	self.DoAssign(897, func() { connect = "CONNECT BY PRIOR employee_id = manager_id AND LEVEL <= 4" }, &connect)
+	self.DoAssign(898, func() {
 		body = "\n            SELECT last_name \"Employee\",\n            LEVEL, SYS_CONNECT_BY_PATH(last_name, '/') \"Path\"\n            FROM employees\n            WHERE level <= 3 AND department_id = 80\n        "
-	})
-	self.Do(904, func() {
+	}, &body)
+	self.DoAssign(904, func() {
 		pretty = "SELECT\n  last_name AS \"Employee\",\n  LEVEL,\n  SYS_CONNECT_BY_PATH(last_name, '/') AS \"Path\"\nFROM employees\nWHERE\n  level <= 3 AND department_id = 80\nSTART WITH last_name = 'King'\nCONNECT BY PRIOR employee_id = manager_id AND LEVEL <= 4"
-	})
+	}, &pretty)
 	for _, item_ := range Iter(NewTuple(F(FV{V: body}, FV{V: start}, FV{V: connect}), F(FV{V: body}, FV{V: connect}, FV{V: start}))) {
 		query = item_
 		self.Do(915, func() { self.ValidateIdentity(query, pretty, Kw("pretty", true)) })
@@ -501,23 +505,23 @@ func test_oracle_TestOracle_test_connect_by(self *Case, a Args) Value {
 func test_oracle_TestOracle_test_recursive_cte(self *Case, a Args) Value {
 	var cte, select_, search, cycle, with_ Value
 	_ = []Value{cte, select_, search, cycle, with_}
-	self.Do(918, func() {
+	self.DoAssign(918, func() {
 		cte = "WITH dup_hiredate(eid, emp_last, mgr_id, reportLevel, hire_date, job_id) AS (SELECT employee_id, last_name, manager_id, 0 AS reportLevel, hire_date, job_id FROM employees WHERE manager_id IS NULL UNION ALL SELECT e.employee_id, e.last_name, e.manager_id, r.reportLevel + 1 AS reportLevel, e.hire_date, e.job_id FROM dup_hiredate r, employees e WHERE r.eid = e.manager_id)"
-	})
-	self.Do(919, func() {
+	}, &cte)
+	self.DoAssign(919, func() {
 		select_ = "SELECT LPAD(' ', 2 * reportLevel) || emp_last AS emp_name, eid, mgr_id, hire_date, job_id"
-	})
-	self.Do(920, func() { search = "SEARCH DEPTH FIRST BY hire_date SET order1" })
-	self.Do(921, func() { cycle = "CYCLE hire_date SET is_cycle TO 'Y' DEFAULT 'N'" })
+	}, &select_)
+	self.DoAssign(920, func() { search = "SEARCH DEPTH FIRST BY hire_date SET order1" }, &search)
+	self.DoAssign(921, func() { cycle = "CYCLE hire_date SET is_cycle TO 'Y' DEFAULT 'N'" }, &cycle)
 	self.Do(923, func() {
 		self.ValidateIdentity(F(FV{V: cte}, " ", FV{V: search}, " ", FV{V: select_}, " FROM dup_hiredate ORDER BY order1"))
 	})
 	self.Do(924, func() {
 		self.ValidateIdentity(F(FV{V: cte}, " ", FV{V: cycle}, " ", FV{V: select_}, ", is_cycle FROM dup_hiredate"))
 	})
-	self.Do(926, func() {
+	self.DoAssign(926, func() {
 		with_ = Item(A(self.ValidateIdentity(F(FV{V: cte}, " ", FV{V: search}, " ", FV{V: cycle}, " ", FV{V: select_}, ", is_cycle FROM dup_hiredate ORDER BY order1")), "args"), "with_")
-	})
+	}, &with_)
 	self.Do(929, func() { self.AssertEqual(Item(A(Item(A(with_, "args"), "search"), "args"), "kind"), "DEPTH") })
 	self.Do(930, func() { self.AssertEqual(Item(A(Item(A(with_, "args"), "cycle"), "args"), "kind"), "CYCLE") })
 	self.Do(931, func() {
@@ -558,7 +562,7 @@ func test_oracle_TestOracle_test_unrecognized_query_restriction(self *Case, a Ar
 			self.Do(958, func() {
 				self.AssertRaises(func(cm_ Value) {
 					_ = cm_
-					Call(G("sqlglot.parse_one"), sql, Kw("read", "oracle"), Kw("error_level", A(G("sqlglot.ErrorLevel"), "RAISE")))
+					Stmt(Call(G("sqlglot.parse_one"), sql, Kw("read", "oracle"), Kw("error_level", A(G("sqlglot.ErrorLevel"), "RAISE"))))
 				}, G("sqlglot.ParseError"))
 			})
 		}, sql)
@@ -607,9 +611,9 @@ func test_oracle_TestOracle_test_json_functions(self *Case, a Args) Value {
 func test_oracle_TestOracle_test_grant(self *Case, a Args) Value {
 	var grant_cmds, sql Value
 	_ = []Value{grant_cmds, sql}
-	self.Do(1070, func() {
+	self.DoAssign(1070, func() {
 		grant_cmds = NewList("GRANT purchases_reader_role TO george, maria", "GRANT USAGE ON TYPE price TO finance_role", "GRANT USAGE ON DERBY AGGREGATE types.maxPrice TO sales_role")
-	})
+	}, &grant_cmds)
 	for _, item_ := range Iter(grant_cmds) {
 		sql = item_
 		self.SubTest(func() {
@@ -628,9 +632,9 @@ func test_oracle_TestOracle_test_grant(self *Case, a Args) Value {
 func test_oracle_TestOracle_test_revoke(self *Case, a Args) Value {
 	var revoke_cmds, sql Value
 	_ = []Value{revoke_cmds, sql}
-	self.Do(1088, func() {
+	self.DoAssign(1088, func() {
 		revoke_cmds = NewList("REVOKE purchases_reader_role FROM george, maria", "REVOKE USAGE ON TYPE price FROM finance_role", "REVOKE USAGE ON DERBY AGGREGATE types.maxPrice FROM sales_role")
-	})
+	}, &revoke_cmds)
 	for _, item_ := range Iter(revoke_cmds) {
 		sql = item_
 		self.SubTest(func() {
@@ -664,20 +668,24 @@ func test_oracle_TestOracle_test_datetrunc(self *Case, a Args) Value {
 
 func test_oracle_TestOracle_test_trunc_type_inference(self *Case, a Args) Value {
 	self.Do(1137, func() {
-		M(self.ParseOne("TRUNC(CAST(x AS DATE), 'MONTH')"), "assert_is", A(G("sqlglot.exp"), "DateTrunc"))
+		Stmt(M(self.ParseOne("TRUNC(CAST(x AS DATE), 'MONTH')"), "assert_is", A(G("sqlglot.exp"), "DateTrunc")))
 	})
-	self.Do(1138, func() { M(self.ParseOne("TRUNC(SYSDATE, 'MONTH')"), "assert_is", A(G("sqlglot.exp"), "DateTrunc")) })
-	self.Do(1141, func() { M(self.ParseOne("TRUNC(col, 'MONTH')"), "assert_is", A(G("sqlglot.exp"), "DateTrunc")) })
-	self.Do(1144, func() { M(self.ValidateIdentity("TRUNC(3.14159, 2)"), "assert_is", A(G("sqlglot.exp"), "Trunc")) })
-	self.Do(1147, func() { M(self.ValidateIdentity("TRUNC(price, 0)"), "assert_is", A(G("sqlglot.exp"), "Trunc")) })
-	self.Do(1150, func() { M(self.ValidateIdentity("TRUNC(foo, bar)"), "assert_is", A(G("sqlglot.exp"), "Anonymous")) })
+	self.Do(1138, func() {
+		Stmt(M(self.ParseOne("TRUNC(SYSDATE, 'MONTH')"), "assert_is", A(G("sqlglot.exp"), "DateTrunc")))
+	})
+	self.Do(1141, func() { Stmt(M(self.ParseOne("TRUNC(col, 'MONTH')"), "assert_is", A(G("sqlglot.exp"), "DateTrunc"))) })
+	self.Do(1144, func() { Stmt(M(self.ValidateIdentity("TRUNC(3.14159, 2)"), "assert_is", A(G("sqlglot.exp"), "Trunc"))) })
+	self.Do(1147, func() { Stmt(M(self.ValidateIdentity("TRUNC(price, 0)"), "assert_is", A(G("sqlglot.exp"), "Trunc"))) })
+	self.Do(1150, func() {
+		Stmt(M(self.ValidateIdentity("TRUNC(foo, bar)"), "assert_is", A(G("sqlglot.exp"), "Anonymous")))
+	})
 	return nil
 }
 
 func test_oracle_TestOracle_test_trunc(self *Case, a Args) Value {
 	var unit Value
 	_ = []Value{unit}
-	self.Do(1154, func() { M(self.ValidateIdentity("TRUNC(3.14159)"), "assert_is", A(G("sqlglot.exp"), "Trunc")) })
+	self.Do(1154, func() { Stmt(M(self.ValidateIdentity("TRUNC(3.14159)"), "assert_is", A(G("sqlglot.exp"), "Trunc"))) })
 	self.L(1155).ValidateAll("TRUNC(3.14159)", Kw("write", NewDict("oracle", "TRUNC(3.14159)", "postgres", "TRUNC(3.14159)", "mysql", "TRUNCATE(3.14159, 0)", "tsql", "ROUND(3.14159, 0, 1)")))
 	self.L(1166).ValidateAll("TRUNC(3.14159, 2)", Kw("read", NewDict("mysql", "TRUNCATE(3.14159, 2)", "postgres", "TRUNC(3.14159, 2)", "snowflake", "TRUNC(3.14159, 2)")), Kw("write", NewDict("oracle", "TRUNC(3.14159, 2)", "postgres", "TRUNC(3.14159, 2)", "mysql", "TRUNCATE(3.14159, 2)", "tsql", "ROUND(3.14159, 2, 1)", "snowflake", "TRUNC(3.14159, 2)", "bigquery", "TRUNC(3.14159, 2)", "duckdb", "TRUNC(3.14159, 2)", "presto", "TRUNCATE(3.14159, 2)", "clickhouse", "trunc(3.14159, 2)", "spark", "CAST(3.14159 AS BIGINT)")))
 	for _, item_ := range Iter(NewTuple("DAY", "WEEK", "MONTH", "QUARTER", "YEAR")) {
@@ -726,17 +734,21 @@ func test_oracle_TestOracle_test_prior(self *Case, a Args) Value {
 	self.Do(1247, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			Call(G("sqlglot.parse_one"), "PRIOR as foo", Kw("read", "oracle"))
+			Stmt(Call(G("sqlglot.parse_one"), "PRIOR as foo", Kw("read", "oracle")))
 		}, G("sqlglot.ParseError"))
 	})
 	return nil
 }
 
 func test_oracle_TestOracle_test_utc_time(self *Case, a Args) Value {
-	self.Do(1251, func() { M(self.ValidateIdentity("UTC_TIME()"), "assert_is", A(G("sqlglot.exp"), "UtcTime")) })
-	self.Do(1252, func() { M(self.ValidateIdentity("UTC_TIME(6)"), "assert_is", A(G("sqlglot.exp"), "UtcTime")) })
-	self.Do(1253, func() { M(self.ValidateIdentity("UTC_TIMESTAMP()"), "assert_is", A(G("sqlglot.exp"), "UtcTimestamp")) })
-	self.Do(1254, func() { M(self.ValidateIdentity("UTC_TIMESTAMP(6)"), "assert_is", A(G("sqlglot.exp"), "UtcTimestamp")) })
+	self.Do(1251, func() { Stmt(M(self.ValidateIdentity("UTC_TIME()"), "assert_is", A(G("sqlglot.exp"), "UtcTime"))) })
+	self.Do(1252, func() { Stmt(M(self.ValidateIdentity("UTC_TIME(6)"), "assert_is", A(G("sqlglot.exp"), "UtcTime"))) })
+	self.Do(1253, func() {
+		Stmt(M(self.ValidateIdentity("UTC_TIMESTAMP()"), "assert_is", A(G("sqlglot.exp"), "UtcTimestamp")))
+	})
+	self.Do(1254, func() {
+		Stmt(M(self.ValidateIdentity("UTC_TIMESTAMP(6)"), "assert_is", A(G("sqlglot.exp"), "UtcTimestamp")))
+	})
 	return nil
 }
 
@@ -754,9 +766,9 @@ func test_oracle_TestOracle_test_merge(self *Case, a Args) Value {
 func test_oracle_TestOracle_test_merge_builder_alias(self *Case, a Args) Value {
 	var merge_stmt Value
 	_ = []Value{merge_stmt}
-	self.Do(1282, func() {
+	self.DoAssign(1282, func() {
 		merge_stmt = M(G("sqlglot.exp"), "merge", "WHEN MATCHED THEN UPDATE SET my_table.col1 = source_table.col1", "WHEN NOT MATCHED THEN INSERT (my_table.id, my_table.col1) VALUES (source_table.id, source_table.col1)", Kw("into", "my_table"), Kw("using", "(SELECT * FROM something) source_table"), Kw("on", "my_table.id = source_table.id"), Kw("dialect", "oracle"))
-	})
+	}, &merge_stmt)
 	self.Do(1290, func() {
 		self.AssertEqual(M(merge_stmt, "sql", "oracle"), "MERGE INTO my_table USING (SELECT * FROM something) source_table ON my_table.id = source_table.id WHEN MATCHED THEN UPDATE SET my_table.col1 = source_table.col1 WHEN NOT MATCHED THEN INSERT (my_table.id, my_table.col1) VALUES (source_table.id, source_table.col1)")
 	})
@@ -766,12 +778,12 @@ func test_oracle_TestOracle_test_merge_builder_alias(self *Case, a Args) Value {
 func test_oracle_TestOracle_test_pseudocolumns(self *Case, a Args) Value {
 	var ast, qualified Value
 	_ = []Value{ast, qualified}
-	self.Do(1296, func() {
+	self.DoAssign(1296, func() {
 		ast = self.ValidateIdentity("WITH t AS (SELECT 1 AS COL) SELECT col, ROWID FROM t WHERE ROWNUM = 1")
-	})
-	self.Do(1299, func() { M(self, "assertIsNone", M(ast, "find", A(G("sqlglot.exp"), "Pseudocolumn"))) })
-	self.Do(1301, func() { qualified = Call(G("sqlglot.optimizer.qualify.qualify"), ast, Kw("dialect", "oracle")) })
-	self.Do(1302, func() { M(self, "assertIsNotNone", M(qualified, "find", A(G("sqlglot.exp"), "Pseudocolumn"))) })
+	}, &ast)
+	self.Do(1299, func() { Stmt(M(self, "assertIsNone", M(ast, "find", A(G("sqlglot.exp"), "Pseudocolumn")))) })
+	self.DoAssign(1301, func() { qualified = Call(G("sqlglot.optimizer.qualify.qualify"), ast, Kw("dialect", "oracle")) }, &qualified)
+	self.Do(1302, func() { Stmt(M(self, "assertIsNotNone", M(qualified, "find", A(G("sqlglot.exp"), "Pseudocolumn")))) })
 	self.Do(1304, func() {
 		self.AssertEqual(M(qualified, "sql", Kw("dialect", "oracle")), `WITH "T" AS (SELECT 1 AS "COL") SELECT "T"."COL" AS "COL", ROWID AS "ROWID" FROM "T" "T" WHERE ROWNUM = 1`)
 	})
@@ -796,9 +808,9 @@ func test_oracle_TestOracle_test_alternative_quoting(self *Case, a Args) Value {
 	self.L(1333).ValidateIdentity("SELECT q'[a''b]' FROM dual", "SELECT 'a''''b' FROM dual")
 	self.L(1334).ValidateIdentity("SELECT q'[a]b]' FROM dual", "SELECT 'a]b' FROM dual")
 	self.L(1335).ValidateIdentity(`SELECT q'|\n|' FROM dual`, `SELECT '\n' FROM dual`)
-	self.Do(1337, func() {
+	self.DoAssign(1337, func() {
 		expressions = Call(G("sqlglot.parse"), "INSERT INTO t VALUES (q'[a;b]'); CREATE TABLE u (id NUMBER)", Kw("read", "oracle"))
-	})
+	}, &expressions)
 	self.Do(1340, func() {
 		self.AssertEqual(func() Value {
 			var e Value
@@ -822,11 +834,11 @@ func test_oracle_TestOracle_test_national_alternative_quoting(self *Case, a Args
 		for _, item_ := range Iter(NewTuple(NewTuple("'[it's]'", "N'it''s'"), NewTuple("'{it's}'", "N'it''s'"), NewTuple("'(it's)'", "N'it''s'"), NewTuple("'<it's>'", "N'it''s'"), NewTuple("'!it's!'", "N'it''s'"), NewTuple("']it's]'", "N'it''s'"), NewTuple("''it's''", "N'it''s'"), NewTuple("'Ait'sA'", "N'it''s'"), NewTuple("'0it's0'", "N'it''s'"), NewTuple("'[a''b]'", "N'a''''b'"), NewTuple("'[a]b]'", "N'a]b'"), NewTuple(`'|\n|'`, `N'\n'`), NewTuple("'[a\nb]'", "N'a\nb'"), NewTuple("'[é漢]'", "N'é漢'"), NewTuple("'[]'", "N''"), NewTuple("'[a;b]'", "N'a;b'"))) {
 			Unpack(item_, &quoted, &expected)
 			self.SubTest(func() {
-				self.Do(1366, func() {
+				self.DoAssign(1366, func() {
 					expression = self.ValidateIdentity(F("SELECT ", FV{V: prefix}, FV{V: quoted}, " FROM dual"), F("SELECT ", FV{V: expected}, " FROM dual"))
-				})
+				}, &expression)
 				self.Do(1369, func() {
-					M(self, "assertIsInstance", Item(A(expression, "expressions"), 0), A(G("sqlglot.exp"), "National"))
+					Stmt(M(self, "assertIsInstance", Item(A(expression, "expressions"), 0), A(G("sqlglot.exp"), "National")))
 				})
 			}, Kw("prefix", prefix), Kw("quoted", quoted))
 		}
@@ -837,22 +849,22 @@ func test_oracle_TestOracle_test_national_alternative_quoting(self *Case, a Args
 func test_oracle_TestOracle_test_full_procedure(self *Case, a Args) Value {
 	var sql, expected_sqls, expr, expected_sql Value
 	_ = []Value{sql, expected_sqls, expr, expected_sql}
-	self.Do(1372, func() {
+	self.DoAssign(1372, func() {
 		sql = "\n        CREATE OR REPLACE PROCEDURE query_emp(\n            p_id     IN  VARCHAR2,\n            p_name   OUT VARCHAR2,\n            p_salary OUT NUMBER\n        ) AS\n        BEGIN\n            SELECT last_name, salary \n            INTO p_name, p_salary\n            FROM employees\n            WHERE employee_id = p_id;\n        END;\n        "
-	})
-	self.Do(1386, func() {
+	}, &sql)
+	self.DoAssign(1386, func() {
 		expected_sqls = NewList("CREATE OR REPLACE PROCEDURE query_emp(p_id IN VARCHAR2, p_name OUT VARCHAR2, p_salary OUT NUMBER) AS BEGIN SELECT last_name, salary INTO p_name, p_salary FROM employees WHERE employee_id = p_id; END")
-	})
+	}, &expected_sqls)
 	for _, item_ := range Iter(Call(G("zip"), Call(G("sqlglot.parse"), sql, Kw("read", "oracle")), expected_sqls)) {
 		Unpack(item_, &expr, &expected_sql)
 		self.Do(1391, func() { self.AssertEqual(M(expr, "sql", Kw("dialect", "oracle")), expected_sql) })
 	}
-	self.Do(1393, func() {
+	self.DoAssign(1393, func() {
 		sql = "\n        CREATE OR REPLACE PROCEDURE test_proc (\n            a NUMBER,\n            b IN NUMBER,\n            c IN OUT NUMBER,\n            d OUT NUMBER\n        ) AS\n        BEGIN\n            c := c + a + b;\n            d := 42 + c;\n        END;\n        "
-	})
-	self.Do(1406, func() {
+	}, &sql)
+	self.DoAssign(1406, func() {
 		expected_sqls = NewList("CREATE OR REPLACE PROCEDURE test_proc(a NUMBER, b IN NUMBER, c IN OUT NUMBER, d OUT NUMBER) AS BEGIN c := c + a + b; d := 42 + c; END")
-	})
+	}, &expected_sqls)
 	for _, item_ := range Iter(Call(G("zip"), Call(G("sqlglot.parse"), sql, Kw("read", "oracle")), expected_sqls)) {
 		Unpack(item_, &expr, &expected_sql)
 		self.Do(1411, func() { self.AssertEqual(M(expr, "sql", Kw("dialect", "oracle")), expected_sql) })

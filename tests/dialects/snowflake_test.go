@@ -179,7 +179,7 @@ func test_snowflake_TestSnowflake_test_set_operation_top(self *Case, a Args) Val
 func test_snowflake_TestSnowflake_test_snowflake(self *Case, a Args) Value {
 	var ast, annotated, expr, sql, name, table, first_type, second_type, func_, options, suffix, to_func, join Value
 	_ = []Value{ast, annotated, expr, sql, name, table, first_type, second_type, func_, options, suffix, to_func, join}
-	self.Do(103, func() { ast = Call(G("sqlglot.parse_one"), "BLA(x) FILTER (WHERE x = 5)") })
+	self.DoAssign(103, func() { ast = Call(G("sqlglot.parse_one"), "BLA(x) FILTER (WHERE x = 5)") }, &ast)
 	self.Do(104, func() {
 		self.AssertEqual(M(A(M(A(ast, "this"), "assert_is", A(G("sqlglot.exp"), "Anonymous")), "parent"), "sql", "snowflake"), "BLA(IFF(x = 5, x, NULL))")
 	})
@@ -188,8 +188,8 @@ func test_snowflake_TestSnowflake_test_snowflake(self *Case, a Args) Value {
 	self.L(118).ValidateIdentity("SELECT * FROM x ASOF JOIN y LIMIT MATCH_CONDITION (x.a > y.a)", "SELECT * FROM x ASOF JOIN y AS LIMIT MATCH_CONDITION (x.a > y.a)")
 	self.L(123).ValidateIdentity("SELECT session")
 	self.L(124).ValidateIdentity("x::nvarchar()", "CAST(x AS VARCHAR)")
-	self.Do(126, func() { ast = self.ParseOne("DATEADD(DAY, n, d)") })
-	self.Do(127, func() { M(ast, "set", "unit", M(A(G("sqlglot.exp"), "Literal"), "string", "MONTH")) })
+	self.DoAssign(126, func() { ast = self.ParseOne("DATEADD(DAY, n, d)") }, &ast)
+	self.Do(127, func() { Stmt(M(ast, "set", "unit", M(A(G("sqlglot.exp"), "Literal"), "string", "MONTH"))) })
 	self.Do(128, func() { self.AssertEqual(M(ast, "sql", "snowflake"), "DATEADD(MONTH, n, d)") })
 	self.L(130).ValidateIdentity("SELECT DATE_PART(EPOCH_MILLISECOND, CURRENT_TIMESTAMP()) AS a")
 	self.L(131).ValidateIdentity("SELECT GET(a, b)")
@@ -221,7 +221,7 @@ func test_snowflake_TestSnowflake_test_snowflake(self *Case, a Args) Value {
 	self.L(166).ValidateIdentity("SELECT APPROX_TOP_K(col) FROM t", "SELECT APPROX_TOP_K(col, 1) FROM t")
 	self.L(170).ValidateIdentity("SELECT APPROX_TOP_K(category, 3) FROM t")
 	self.Do(171, func() {
-		M(self.ValidateIdentity("APPROX_TOP_K(C4, 3, 5)"), "assert_is", A(G("sqlglot.exp"), "AggFunc"))
+		Stmt(M(self.ValidateIdentity("APPROX_TOP_K(C4, 3, 5)"), "assert_is", A(G("sqlglot.exp"), "AggFunc")))
 	})
 	self.L(173).ValidateIdentity("SELECT MINHASH(5, col)")
 	self.L(174).ValidateIdentity("SELECT MINHASH(5, col1, col2)")
@@ -280,12 +280,12 @@ func test_snowflake_TestSnowflake_test_snowflake(self *Case, a Args) Value {
 	self.L(270).ValidateAll("SELECT RPAD('test', 10, 'ab')", Kw("write", NewDict("snowflake", "SELECT RPAD('test', 10, 'ab')", "duckdb", "SELECT RPAD('test', 10, 'ab')")))
 	self.L(277).ValidateAll("SELECT RPAD('data', 8)", Kw("write", NewDict("snowflake", "SELECT RPAD('data', 8)", "duckdb", "SELECT RPAD('data', 8, ' ')", "postgres", "SELECT RPAD('data', 8)")))
 	self.L(285).ValidateAll("SELECT RPAD('exact', 5, '*')", Kw("write", NewDict("snowflake", "SELECT RPAD('exact', 5, '*')", "duckdb", "SELECT RPAD('exact', 5, '*')")))
-	self.Do(293, func() {
+	self.DoAssign(293, func() {
 		ast = self.ValidateIdentity("SELECT RPAD(TO_BINARY('Hi', 'UTF8'), 10, TO_BINARY('_', 'UTF8'))")
-	})
-	self.Do(296, func() {
+	}, &ast)
+	self.DoAssign(296, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), ast, Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(297, func() {
 		self.AssertEqual(M(annotated, "sql", "duckdb"), "SELECT ENCODE('Hi') || REPEAT(ENCODE('_'), GREATEST(0, 10 - OCTET_LENGTH(ENCODE('Hi'))))")
 	})
@@ -345,17 +345,17 @@ func test_snowflake_TestSnowflake_test_snowflake(self *Case, a Args) Value {
 	self.L(482).ValidateAll("SELECT RANDSTR(10, RANDOM(123))", Kw("write", NewDict("snowflake", "SELECT RANDSTR(10, RANDOM(123))", "duckdb", "SELECT (SELECT LISTAGG(SUBSTRING('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 1 + CAST(FLOOR(random_value * 62) AS INT), 1), '') FROM (SELECT (ABS(HASH(i + 123)) % 1000) / 1000.0 AS random_value FROM RANGE(10) AS t(i)))")))
 	self.L(489).ValidateAll("SELECT RANDSTR(10, RANDOM())", Kw("write", NewDict("snowflake", "SELECT RANDSTR(10, RANDOM())", "duckdb", "SELECT (SELECT LISTAGG(SUBSTRING('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 1 + CAST(FLOOR(random_value * 62) AS INT), 1), '') FROM (SELECT (ABS(HASH(i + CAST(-9.223372036854776E+18 + RANDOM() * (9.223372036854776e+18 - -9.223372036854776E+18) AS BIGINT))) % 1000) / 1000.0 AS random_value FROM RANGE(10) AS t(i)))")))
 	self.L(497).ValidateAll("SELECT BOOLNOT(0)", Kw("write", NewDict("snowflake", "SELECT BOOLNOT(0)", "duckdb", "SELECT NOT (ROUND(0, 0))")))
-	self.Do(505, func() { expr = self.ValidateIdentity("RIGHT('GAJGSKD', 2)") })
-	self.Do(506, func() {
+	self.DoAssign(505, func() { expr = self.ValidateIdentity("RIGHT('GAJGSKD', 2)") }, &expr)
+	self.DoAssign(506, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(507, func() {
 		self.AssertEqual(M(annotated, "sql", "duckdb"), "CASE WHEN 2 < 0 THEN '' ELSE RIGHT('GAJGSKD', 2) END")
 	})
-	self.Do(511, func() { expr = self.ValidateIdentity("RIGHT(TO_BINARY('SNOWIKOPN', 'utf-8'), ABS(-3))") })
-	self.Do(512, func() {
+	self.DoAssign(511, func() { expr = self.ValidateIdentity("RIGHT(TO_BINARY('SNOWIKOPN', 'utf-8'), ABS(-3))") }, &expr)
+	self.DoAssign(512, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(513, func() {
 		self.AssertEqual(M(annotated, "sql", "duckdb"), "CASE WHEN ABS(-3) < 0 THEN UNHEX('') ELSE UNHEX(RIGHT(HEX(ENCODE('SNOWIKOPN')), ABS(-3) * 2)) END")
 	})
@@ -375,7 +375,7 @@ func test_snowflake_TestSnowflake_test_snowflake(self *Case, a Args) Value {
 	self.L(545).ValidateIdentity("STRTOK_TO_ARRAY('a b c')", "STRTOK_TO_ARRAY('a b c', ' ')")
 	self.L(546).ValidateIdentity("STRTOK_TO_ARRAY('a.b.c', '.')")
 	self.Do(547, func() {
-		M(A(A(Item(A(self.ValidateIdentity("SELECT value FROM TABLE(SPLIT_TO_TABLE('a.b.c', '.'))"), "args"), "from_"), "this"), "this"), "assert_is", A(G("sqlglot.exp"), "SplitToTable"))
+		Stmt(M(A(A(Item(A(self.ValidateIdentity("SELECT value FROM TABLE(SPLIT_TO_TABLE('a.b.c', '.'))"), "args"), "from_"), "this"), "this"), "assert_is", A(G("sqlglot.exp"), "SplitToTable")))
 	})
 	self.L(550).ValidateIdentity("SELECT value FROM t, LATERAL SPLIT_TO_TABLE(t.a, '.')")
 	self.L(551).ValidateIdentity("GET(a, b)")
@@ -388,7 +388,7 @@ func test_snowflake_TestSnowflake_test_snowflake(self *Case, a Args) Value {
 	self.L(558).ValidateIdentity("SELECT VECTOR_L2_DISTANCE(a, b)")
 	self.L(559).ValidateIdentity("SELECT CONNECT_BY_ROOT test AS test_column_alias")
 	self.Do(560, func() {
-		M(Item(A(self.ValidateIdentity("SELECT number"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "Column"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT number"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "Column")))
 	})
 	self.L(561).ValidateIdentity("INTERVAL '4 years, 5 months, 3 hours'")
 	self.L(562).ValidateIdentity(`SELECT INTERVAL '1\' SECOND; SELECT 1; --'`)
@@ -411,7 +411,7 @@ func test_snowflake_TestSnowflake_test_snowflake(self *Case, a Args) Value {
 	self.L(593).ValidateIdentity("SELECT CAST(obj AS OBJECT(x CHAR) RENAME FIELDS)")
 	self.L(594).ValidateIdentity("SELECT CAST(obj AS OBJECT(x CHAR, y VARCHAR) ADD FIELDS)")
 	self.Do(595, func() {
-		M(Item(A(self.ValidateIdentity("SELECT TO_TIMESTAMP(123.4)"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "Anonymous"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT TO_TIMESTAMP(123.4)"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "Anonymous")))
 	})
 	self.L(596).ValidateIdentity("SELECT TO_TIMESTAMP(x) FROM t")
 	self.L(597).ValidateIdentity("SELECT TO_TIMESTAMP_NTZ(x) FROM t")
@@ -422,29 +422,29 @@ func test_snowflake_TestSnowflake_test_snowflake(self *Case, a Args) Value {
 	self.L(602).ValidateIdentity("TO_DECIMAL(expr, fmt, precision, scale)", "TO_NUMBER(expr, fmt, precision, scale)")
 	self.L(605).ValidateIdentity("TO_NUMBER(expr, 38, 0)", "TO_NUMBER(expr)")
 	self.L(606).ValidateIdentity("TO_NUMBER(expr, 38)", "TO_NUMBER(expr)")
-	self.Do(608, func() { ast = self.ValidateIdentity("TO_NUMBER('12.3456')") })
-	self.Do(609, func() { M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "ToNumber")) })
-	self.Do(610, func() { M(self, "assertIsNone", M(A(ast, "args"), "get", "format")) })
+	self.DoAssign(608, func() { ast = self.ValidateIdentity("TO_NUMBER('12.3456')") }, &ast)
+	self.Do(609, func() { Stmt(M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "ToNumber"))) })
+	self.Do(610, func() { Stmt(M(self, "assertIsNone", M(A(ast, "args"), "get", "format"))) })
 	self.Do(611, func() { self.AssertEqual(A(M(A(ast, "args"), "get", "precision"), "name"), "38") })
 	self.Do(612, func() { self.AssertEqual(A(M(A(ast, "args"), "get", "scale"), "name"), "0") })
-	self.Do(614, func() { ast = self.ValidateIdentity("TO_NUMBER('12.3456', 10, 1)") })
-	self.Do(615, func() { M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "ToNumber")) })
-	self.Do(616, func() { M(self, "assertIsNone", M(A(ast, "args"), "get", "format")) })
+	self.DoAssign(614, func() { ast = self.ValidateIdentity("TO_NUMBER('12.3456', 10, 1)") }, &ast)
+	self.Do(615, func() { Stmt(M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "ToNumber"))) })
+	self.Do(616, func() { Stmt(M(self, "assertIsNone", M(A(ast, "args"), "get", "format"))) })
 	self.Do(617, func() { self.AssertEqual(A(M(A(ast, "args"), "get", "precision"), "name"), "10") })
 	self.Do(618, func() { self.AssertEqual(A(M(A(ast, "args"), "get", "scale"), "name"), "1") })
-	self.Do(620, func() { ast = self.ValidateIdentity("TO_NUMBER('12.3456', '99.99')") })
-	self.Do(621, func() { M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "ToNumber")) })
+	self.DoAssign(620, func() { ast = self.ValidateIdentity("TO_NUMBER('12.3456', '99.99')") }, &ast)
+	self.Do(621, func() { Stmt(M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "ToNumber"))) })
 	self.Do(622, func() { self.AssertEqual(A(M(A(ast, "args"), "get", "format"), "name"), "99.99") })
 	self.Do(623, func() { self.AssertEqual(A(M(A(ast, "args"), "get", "precision"), "name"), "38") })
 	self.Do(624, func() { self.AssertEqual(A(M(A(ast, "args"), "get", "scale"), "name"), "0") })
-	self.Do(626, func() { ast = self.ValidateIdentity("TO_NUMBER('12.3456', '99.99', 10, 1)") })
-	self.Do(627, func() { M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "ToNumber")) })
+	self.DoAssign(626, func() { ast = self.ValidateIdentity("TO_NUMBER('12.3456', '99.99', 10, 1)") }, &ast)
+	self.Do(627, func() { Stmt(M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "ToNumber"))) })
 	self.Do(628, func() { self.AssertEqual(A(M(A(ast, "args"), "get", "format"), "name"), "99.99") })
 	self.Do(629, func() { self.AssertEqual(A(M(A(ast, "args"), "get", "precision"), "name"), "10") })
 	self.Do(630, func() { self.AssertEqual(A(M(A(ast, "args"), "get", "scale"), "name"), "1") })
-	self.Do(632, func() { ast = self.ValidateIdentity("TO_NUMBER('12.3456', 3)") })
-	self.Do(633, func() { M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "ToNumber")) })
-	self.Do(634, func() { M(self, "assertIsNone", M(A(ast, "args"), "get", "format")) })
+	self.DoAssign(632, func() { ast = self.ValidateIdentity("TO_NUMBER('12.3456', 3)") }, &ast)
+	self.Do(633, func() { Stmt(M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "ToNumber"))) })
+	self.Do(634, func() { Stmt(M(self, "assertIsNone", M(A(ast, "args"), "get", "format"))) })
 	self.Do(635, func() { self.AssertEqual(A(M(A(ast, "args"), "get", "precision"), "name"), "3") })
 	self.Do(636, func() { self.AssertEqual(A(M(A(ast, "args"), "get", "scale"), "name"), "0") })
 	self.L(638).ValidateIdentity("TO_DECFLOAT('123.456')")
@@ -466,36 +466,36 @@ func test_snowflake_TestSnowflake_test_snowflake(self *Case, a Args) Value {
 	self.L(677).ValidateIdentity("TRY_TO_FILE('file.csv', 'relativepath/')")
 	self.L(678).ValidateIdentity("TRY_TO_NUMBER(expr, 38, 0)", "TRY_TO_NUMBER(expr)")
 	self.L(679).ValidateIdentity("TRY_TO_NUMBER(expr, 38)", "TRY_TO_NUMBER(expr)")
-	self.Do(681, func() { ast = self.ValidateIdentity("TRY_TO_NUMBER('12.3456')") })
-	self.Do(682, func() { M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "ToNumber")) })
-	self.Do(683, func() { M(self, "assertIsNone", M(A(ast, "args"), "get", "format")) })
+	self.DoAssign(681, func() { ast = self.ValidateIdentity("TRY_TO_NUMBER('12.3456')") }, &ast)
+	self.Do(682, func() { Stmt(M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "ToNumber"))) })
+	self.Do(683, func() { Stmt(M(self, "assertIsNone", M(A(ast, "args"), "get", "format"))) })
 	self.Do(684, func() { self.AssertEqual(A(M(A(ast, "args"), "get", "precision"), "name"), "38") })
 	self.Do(685, func() { self.AssertEqual(A(M(A(ast, "args"), "get", "scale"), "name"), "0") })
-	self.Do(686, func() { M(self, "assertTrue", M(A(ast, "args"), "get", "safe")) })
-	self.Do(688, func() { ast = self.ValidateIdentity("TRY_TO_NUMBER('12.3456', 10, 1)") })
-	self.Do(689, func() { M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "ToNumber")) })
-	self.Do(690, func() { M(self, "assertIsNone", M(A(ast, "args"), "get", "format")) })
+	self.Do(686, func() { Stmt(M(self, "assertTrue", M(A(ast, "args"), "get", "safe"))) })
+	self.DoAssign(688, func() { ast = self.ValidateIdentity("TRY_TO_NUMBER('12.3456', 10, 1)") }, &ast)
+	self.Do(689, func() { Stmt(M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "ToNumber"))) })
+	self.Do(690, func() { Stmt(M(self, "assertIsNone", M(A(ast, "args"), "get", "format"))) })
 	self.Do(691, func() { self.AssertEqual(A(M(A(ast, "args"), "get", "precision"), "name"), "10") })
 	self.Do(692, func() { self.AssertEqual(A(M(A(ast, "args"), "get", "scale"), "name"), "1") })
-	self.Do(693, func() { M(self, "assertTrue", M(A(ast, "args"), "get", "safe")) })
-	self.Do(695, func() { ast = self.ValidateIdentity("TRY_TO_NUMBER('12.3456', '99.99')") })
-	self.Do(696, func() { M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "ToNumber")) })
+	self.Do(693, func() { Stmt(M(self, "assertTrue", M(A(ast, "args"), "get", "safe"))) })
+	self.DoAssign(695, func() { ast = self.ValidateIdentity("TRY_TO_NUMBER('12.3456', '99.99')") }, &ast)
+	self.Do(696, func() { Stmt(M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "ToNumber"))) })
 	self.Do(697, func() { self.AssertEqual(A(M(A(ast, "args"), "get", "format"), "name"), "99.99") })
 	self.Do(698, func() { self.AssertEqual(A(M(A(ast, "args"), "get", "precision"), "name"), "38") })
 	self.Do(699, func() { self.AssertEqual(A(M(A(ast, "args"), "get", "scale"), "name"), "0") })
-	self.Do(700, func() { M(self, "assertTrue", M(A(ast, "args"), "get", "safe")) })
-	self.Do(702, func() { ast = self.ValidateIdentity("TRY_TO_NUMBER('12.3456', '99.99', 10, 1)") })
-	self.Do(703, func() { M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "ToNumber")) })
+	self.Do(700, func() { Stmt(M(self, "assertTrue", M(A(ast, "args"), "get", "safe"))) })
+	self.DoAssign(702, func() { ast = self.ValidateIdentity("TRY_TO_NUMBER('12.3456', '99.99', 10, 1)") }, &ast)
+	self.Do(703, func() { Stmt(M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "ToNumber"))) })
 	self.Do(704, func() { self.AssertEqual(A(M(A(ast, "args"), "get", "format"), "name"), "99.99") })
 	self.Do(705, func() { self.AssertEqual(A(M(A(ast, "args"), "get", "precision"), "name"), "10") })
 	self.Do(706, func() { self.AssertEqual(A(M(A(ast, "args"), "get", "scale"), "name"), "1") })
-	self.Do(707, func() { M(self, "assertTrue", M(A(ast, "args"), "get", "safe")) })
-	self.Do(709, func() { ast = self.ValidateIdentity("TRY_TO_NUMBER('12.3456', 3)") })
-	self.Do(710, func() { M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "ToNumber")) })
-	self.Do(711, func() { M(self, "assertIsNone", M(A(ast, "args"), "get", "format")) })
+	self.Do(707, func() { Stmt(M(self, "assertTrue", M(A(ast, "args"), "get", "safe"))) })
+	self.DoAssign(709, func() { ast = self.ValidateIdentity("TRY_TO_NUMBER('12.3456', 3)") }, &ast)
+	self.Do(710, func() { Stmt(M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "ToNumber"))) })
+	self.Do(711, func() { Stmt(M(self, "assertIsNone", M(A(ast, "args"), "get", "format"))) })
 	self.Do(712, func() { self.AssertEqual(A(M(A(ast, "args"), "get", "precision"), "name"), "3") })
 	self.Do(713, func() { self.AssertEqual(A(M(A(ast, "args"), "get", "scale"), "name"), "0") })
-	self.Do(714, func() { M(self, "assertTrue", M(A(ast, "args"), "get", "safe")) })
+	self.Do(714, func() { Stmt(M(self, "assertTrue", M(A(ast, "args"), "get", "safe"))) })
 	self.L(716).ValidateAll("TRY_TO_NUMBER(x)", Kw("write", NewDict("bigquery", "SAFE_CAST(x AS FLOAT64)", "presto", "TRY_CAST(x AS DOUBLE)", "tsql", "TRY_CAST(x AS FLOAT)")))
 	self.L(724).ValidateAll("TO_NUMBER(x)", Kw("write", NewDict("bigquery", "CAST(x AS FLOAT64)", "presto", "CAST(x AS DOUBLE)", "tsql", "CAST(x AS FLOAT)")))
 	self.L(733).ValidateIdentity("TO_NUMERIC('123.45')", "TO_NUMBER('123.45')")
@@ -585,8 +585,8 @@ func test_snowflake_TestSnowflake_test_snowflake(self *Case, a Args) Value {
 	self.L(892).ValidateIdentity("SELECT IDENTIFIER('speed_of_light')()")
 	for _, item_ := range Iter(NewTuple(NewTuple("SELECT * FROM IDENTIFIER(:tbl)", "tbl"), NewTuple("SELECT * FROM IDENTIFIER($tbl)", "tbl"), NewTuple("SELECT * FROM IDENTIFIER('mytable')", "mytable"))) {
 		Unpack(item_, &sql, &name)
-		self.Do(899, func() { table = M(self.ValidateIdentity(sql), "find", A(G("sqlglot.exp"), "Table")) })
-		self.Do(900, func() { M(self, "assertIsInstance", A(table, "this"), A(G("sqlglot.exp"), "DynamicIdentifier")) })
+		self.DoAssign(899, func() { table = M(self.ValidateIdentity(sql), "find", A(G("sqlglot.exp"), "Table")) }, &table)
+		self.Do(900, func() { Stmt(M(self, "assertIsInstance", A(table, "this"), A(G("sqlglot.exp"), "DynamicIdentifier"))) })
 		self.Do(901, func() { self.AssertEqual(A(table, "name"), name) })
 	}
 	self.L(902).ValidateAll("SELECT IDENTIFIER('my_func')(1, 2)", Kw("write", NewDict("snowflake", "SELECT IDENTIFIER('my_func')(1, 2)", "duckdb", G("sqlglot.UnsupportedError"))))
@@ -600,7 +600,7 @@ func test_snowflake_TestSnowflake_test_snowflake(self *Case, a Args) Value {
 	self.Do(916, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			Call(G("sqlglot.parse_one"), "OBJECT_CONSTRUCT_KEEP_NULL(t.*, 'a', 1)", Kw("dialect", "snowflake"))
+			Stmt(Call(G("sqlglot.parse_one"), "OBJECT_CONSTRUCT_KEEP_NULL(t.*, 'a', 1)", Kw("dialect", "snowflake")))
 		}, G("sqlglot.ParseError"))
 	})
 	self.L(918).ValidateIdentity("SELECT CAST('2021-01-01' AS DATE) + INTERVAL '1 DAY'")
@@ -635,12 +635,12 @@ func test_snowflake_TestSnowflake_test_snowflake(self *Case, a Args) Value {
 	self.L(967).ValidateIdentity("SELECT BOOLXOR_AGG(col) FROM tbl")
 	self.L(968).ValidateIdentity("SELECT PERCENTILE_DISC(0.9) WITHIN GROUP (ORDER BY col) OVER (PARTITION BY category)")
 	self.Do(971, func() {
-		M(A(A(Item(A(self.ValidateIdentity("SELECT DATEADD(DAY, -7, DATEADD(t.m, 1, CAST('2023-01-03' AS DATE))) FROM (SELECT 'month' AS m) AS t"), "selects"), 0), "this"), "unit"), "assert_is", A(G("sqlglot.exp"), "Column"))
+		Stmt(M(A(A(Item(A(self.ValidateIdentity("SELECT DATEADD(DAY, -7, DATEADD(t.m, 1, CAST('2023-01-03' AS DATE))) FROM (SELECT 'month' AS m) AS t"), "selects"), 0), "this"), "unit"), "assert_is", A(G("sqlglot.exp"), "Column")))
 	})
 	self.L(975).ValidateAll("SELECT STRTOK('a$b/cg', '$/.')", Kw("write", NewDict("snowflake", "SELECT STRTOK('a$b/cg', '$/.', 1)", "duckdb", `SELECT CASE WHEN '$/.' = '' AND 'a$b/cg' = '' THEN NULL WHEN '$/.' = '' AND 1 = 1 THEN 'a$b/cg' WHEN '$/.' = '' THEN NULL WHEN 1 < 0 THEN NULL WHEN 'a$b/cg' IS NULL OR '$/.' IS NULL OR 1 IS NULL THEN NULL ELSE LIST_FILTER(REGEXP_SPLIT_TO_ARRAY('a$b/cg', CASE WHEN '$/.' = '' THEN '' ELSE '[' || REGEXP_REPLACE('$/.', '([\[\]^.\-*+?(){}|$\\])', '\\\1', 'g') || ']' END), LAMBDA x : NOT x = '')[1] END`)))
 	self.L(983).ValidateAll("SELECT STRTOK('ab')", Kw("write", NewDict("snowflake", "SELECT STRTOK('ab', ' ', 1)", "duckdb", `SELECT CASE WHEN ' ' = '' AND 'ab' = '' THEN NULL WHEN ' ' = '' AND 1 = 1 THEN 'ab' WHEN ' ' = '' THEN NULL WHEN 1 < 0 THEN NULL WHEN 'ab' IS NULL OR ' ' IS NULL OR 1 IS NULL THEN NULL ELSE LIST_FILTER(REGEXP_SPLIT_TO_ARRAY('ab', CASE WHEN ' ' = '' THEN '' ELSE '[' || REGEXP_REPLACE(' ', '([\[\]^.\-*+?(){}|$\\])', '\\\1', 'g') || ']' END), LAMBDA x : NOT x = '')[1] END`)))
 	self.Do(991, func() {
-		M(A(M(A(A(Item(A(self.ValidateIdentity("SELECT FILE_URL FROM DIRECTORY(@mystage) WHERE SIZE > 100000"), "args"), "from_"), "this"), "this"), "assert_is", A(G("sqlglot.exp"), "DirectoryStage")), "this"), "assert_is", A(G("sqlglot.exp"), "Var"))
+		Stmt(M(A(M(A(A(Item(A(self.ValidateIdentity("SELECT FILE_URL FROM DIRECTORY(@mystage) WHERE SIZE > 100000"), "args"), "from_"), "this"), "this"), "assert_is", A(G("sqlglot.exp"), "DirectoryStage")), "this"), "assert_is", A(G("sqlglot.exp"), "Var")))
 	})
 	self.L(994).ValidateIdentity("SELECT AI_CLASSIFY('text', ['travel', 'cooking'], OBJECT_CONSTRUCT('output_mode', 'multi'))")
 	self.L(997).ValidateIdentity("SELECT * FROM table AT (TIMESTAMP => '2024-07-24') UNPIVOT(a FOR b IN (c)) AS pivot_table")
@@ -666,18 +666,18 @@ func test_snowflake_TestSnowflake_test_snowflake(self *Case, a Args) Value {
 	self.L(1061).ValidateIdentity("TO_GEOGRAPHY(x, y)")
 	self.L(1062).ValidateIdentity("TO_GEOMETRY(x, y)")
 	self.L(1063).ValidateIdentity("transform(x, a int -> a + a + 1)", "TRANSFORM(x, a -> CAST(a AS INT) + CAST(a AS INT) + 1)")
-	self.Do(1068, func() { ast = self.ParseOne("TRANSFORM(x, a INT -> a + a)") })
-	self.Do(1069, func() { Unpack(M(ast, "find_all", A(G("sqlglot.exp"), "DataType")), &first_type, &second_type) })
-	self.Do(1070, func() { M(self, "assertIsNot", first_type, second_type) })
+	self.DoAssign(1068, func() { ast = self.ParseOne("TRANSFORM(x, a INT -> a + a)") }, &ast)
+	self.DoAssign(1069, func() { Unpack(M(ast, "find_all", A(G("sqlglot.exp"), "DataType")), &first_type, &second_type) }, &first_type, &second_type)
+	self.Do(1070, func() { Stmt(M(self, "assertIsNot", first_type, second_type)) })
 	self.Do(1071, func() {
-		M(ast, "transform", Lambda(func(args ...Value) Value {
+		Stmt(M(ast, "transform", Lambda(func(args ...Value) Value {
 			var node Value = nil
 			if len(args) > 0 {
 				node = args[0]
 			}
 			_ = node
 			return IfV(IsInstance(node, A(G("sqlglot.exp"), "DataType")), func() Value { return M(A(G("sqlglot.exp"), "DataType"), "build", "BIGINT") }, func() Value { return node })
-		}), Kw("copy", false))
+		}), Kw("copy", false)))
 	})
 	self.Do(1075, func() {
 		self.AssertEqual(M(ast, "sql", "snowflake"), "TRANSFORM(x, a -> CAST(a AS BIGINT) + CAST(a AS BIGINT))")
@@ -907,10 +907,10 @@ func test_snowflake_TestSnowflake_test_snowflake(self *Case, a Args) Value {
 	self.L(2416).ValidateIdentity("SELECT UUID_STRING(), UUID_STRING('fe971b24-9572-4005-b22f-351e9c09274d', 'foo')")
 	self.L(2421).ValidateAll("UUID_STRING('fe971b24-9572-4005-b22f-351e9c09274d', 'foo')", Kw("read", NewDict("snowflake", "UUID_STRING('fe971b24-9572-4005-b22f-351e9c09274d', 'foo')")), Kw("write", NewDict("hive", "CAST(UUID() AS STRING)", "spark2", "CAST(UUID() AS STRING)", "spark", "CAST(UUID() AS STRING)", "databricks", "CAST(UUID() AS STRING)", "duckdb", "(SELECT LOWER(SUBSTRING(h, 1, 8) || '-' || SUBSTRING(h, 9, 4) || '-' || '5' || SUBSTRING(h, 14, 3) || '-' || FORMAT('{:02x}', CAST('0x' || SUBSTRING(h, 17, 2) AS INT) & 63 | 128) || SUBSTRING(h, 19, 2) || '-' || SUBSTRING(h, 21, 12)) FROM (SELECT SUBSTRING(SHA1(UNHEX(REPLACE('fe971b24-9572-4005-b22f-351e9c09274d', '-', '')) || ENCODE('foo')), 1, 32) AS h))", "presto", "CAST(UUID() AS VARCHAR)", "trino", "CAST(UUID() AS VARCHAR)", "postgres", "GEN_RANDOM_UUID()", "bigquery", "GENERATE_UUID()")))
 	self.Do(2438, func() {
-		M(self.ValidateIdentity("TRY_TO_TIMESTAMP(foo)"), "assert_is", A(G("sqlglot.exp"), "Anonymous"))
+		Stmt(M(self.ValidateIdentity("TRY_TO_TIMESTAMP(foo)"), "assert_is", A(G("sqlglot.exp"), "Anonymous")))
 	})
 	self.Do(2439, func() {
-		M(self.ValidateIdentity("TRY_TO_TIMESTAMP('12345')"), "assert_is", A(G("sqlglot.exp"), "Anonymous"))
+		Stmt(M(self.ValidateIdentity("TRY_TO_TIMESTAMP('12345')"), "assert_is", A(G("sqlglot.exp"), "Anonymous")))
 	})
 	self.L(2440).ValidateAll("SELECT TRY_TO_TIMESTAMP('2024-01-15 12:30:00.000')", Kw("write", NewDict("snowflake", "SELECT TRY_CAST('2024-01-15 12:30:00.000' AS TIMESTAMP)", "duckdb", "SELECT TRY_CAST('2024-01-15 12:30:00.000' AS TIMESTAMP)")))
 	self.L(2447).ValidateAll("SELECT TRY_TO_TIMESTAMP('invalid')", Kw("write", NewDict("snowflake", "SELECT TRY_CAST('invalid' AS TIMESTAMP)", "duckdb", "SELECT TRY_CAST('invalid' AS TIMESTAMP)")))
@@ -955,7 +955,7 @@ func test_snowflake_TestSnowflake_test_snowflake(self *Case, a Args) Value {
 	self.Do(2622, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			Call(G("sqlglot.parse_one"), "SELECT id, PRIOR name AS parent_name, name FROM tree CONNECT BY NOCYCLE PRIOR id = parent_id", Kw("dialect", "snowflake"))
+			Stmt(Call(G("sqlglot.parse_one"), "SELECT id, PRIOR name AS parent_name, name FROM tree CONNECT BY NOCYCLE PRIOR id = parent_id", Kw("dialect", "snowflake")))
 		}, G("sqlglot.ParseError"))
 	})
 	self.L(2628).ValidateAll("SELECT CAST(1 AS DOUBLE), CAST(1 AS DOUBLE)", Kw("read", NewDict("bigquery", "SELECT CAST(1 AS BIGDECIMAL), CAST(1 AS BIGNUMERIC)")), Kw("write", NewDict("snowflake", "SELECT CAST(1 AS DOUBLE), CAST(1 AS DOUBLE)")))
@@ -1014,7 +1014,7 @@ func test_snowflake_TestSnowflake_test_snowflake(self *Case, a Args) Value {
 	self.L(2998).ValidateIdentity("ALTER TABLE foo ADD col1 INT, IF NOT EXISTS col2 INT")
 	self.L(2999).ValidateIdentity("ALTER TABLE IF EXISTS foo ADD IF NOT EXISTS col1 INT")
 	self.Do(3000, func() {
-		M(self.ValidateIdentity("ALTER TABLE foo DROP COLUMN col1, col2"), "assert_is", A(G("sqlglot.exp"), "Alter"))
+		Stmt(M(self.ValidateIdentity("ALTER TABLE foo DROP COLUMN col1, col2"), "assert_is", A(G("sqlglot.exp"), "Alter")))
 	})
 	self.L(3002).ValidateAll("SELECT ADD_MONTHS('2023-01-31', 1)", Kw("write", NewDict("duckdb", "SELECT CASE WHEN LAST_DAY(CAST('2023-01-31' AS TIMESTAMP)) = CAST('2023-01-31' AS TIMESTAMP) THEN LAST_DAY(CAST('2023-01-31' AS TIMESTAMP) + INTERVAL 1 MONTH) ELSE CAST('2023-01-31' AS TIMESTAMP) + INTERVAL 1 MONTH END", "snowflake", "SELECT ADD_MONTHS('2023-01-31', 1)")))
 	self.L(3009).ValidateAll("SELECT ADD_MONTHS('2023-01-31'::date, 1)", Kw("write", NewDict("duckdb", "SELECT CAST(CASE WHEN LAST_DAY(CAST('2023-01-31' AS DATE)) = CAST('2023-01-31' AS DATE) THEN LAST_DAY(CAST('2023-01-31' AS DATE) + INTERVAL 1 MONTH) ELSE CAST('2023-01-31' AS DATE) + INTERVAL 1 MONTH END AS DATE)", "snowflake", "SELECT ADD_MONTHS(CAST('2023-01-31' AS DATE), 1)")))
@@ -1069,10 +1069,10 @@ func test_snowflake_TestSnowflake_test_snowflake(self *Case, a Args) Value {
 	self.L(3238).ValidateIdentity(`SELECT ILIKE(col, 'pattern', '\\')`, `SELECT col ILIKE 'pattern' ESCAPE '\\'`)
 	self.L(3241).ValidateIdentity("SELECT LIKE(col, 'pattern', '!')", "SELECT col LIKE 'pattern' ESCAPE '!'")
 	self.L(3244).ValidateIdentity("SELECT ILIKE(col, 'pattern', '!')", "SELECT col ILIKE 'pattern' ESCAPE '!'")
-	self.Do(3248, func() { expr = self.ValidateIdentity("SELECT BASE64_ENCODE('Hello World')") })
-	self.Do(3249, func() {
+	self.DoAssign(3248, func() { expr = self.ValidateIdentity("SELECT BASE64_ENCODE('Hello World')") }, &expr)
+	self.DoAssign(3249, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(3250, func() { self.AssertEqual(M(annotated, "sql", "duckdb"), "SELECT TO_BASE64(ENCODE('Hello World'))") })
 	self.L(3251).ValidateAll("SELECT BASE64_ENCODE(x)", Kw("write", NewDict("duckdb", "SELECT TO_BASE64(x)", "snowflake", "SELECT BASE64_ENCODE(x)")))
 	self.L(3258).ValidateAll("SELECT BASE64_ENCODE(x, 76)", Kw("write", NewDict("duckdb", `SELECT RTRIM(REGEXP_REPLACE(TO_BASE64(x), '(.{76})', '\1' || CHR(10), 'g'), CHR(10))`, "snowflake", "SELECT BASE64_ENCODE(x, 76)")))
@@ -1106,7 +1106,7 @@ func test_snowflake_TestSnowflake_test_snowflake(self *Case, a Args) Value {
 	self.L(3426).ValidateIdentity("LOCALTIMESTAMP()", "CURRENT_TIMESTAMP()")
 	self.L(3427).ValidateIdentity("LOCALTIMESTAMP(3)", "CURRENT_TIMESTAMP(3)")
 	self.Do(3428, func() {
-		M(Item(A(self.ParseOne("SELECT LOCALTIMESTAMP"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CurrentTimestamp"))
+		Stmt(M(Item(A(self.ParseOne("SELECT LOCALTIMESTAMP"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "CurrentTimestamp")))
 	})
 	self.L(3431).ValidateAll("LOCALTIMESTAMP", Kw("write", NewDict("snowflake", "CURRENT_TIMESTAMP()", "duckdb", "CURRENT_TIMESTAMP", "postgres", "CURRENT_TIMESTAMP", "spark", "CURRENT_TIMESTAMP()")))
 	self.L(3441).ValidateAll("SELECT CURRENT_TIME(4)", Kw("write", NewDict("snowflake", "SELECT CURRENT_TIME(4)", "duckdb", "SELECT LOCALTIME")))
@@ -1145,9 +1145,9 @@ func test_snowflake_TestSnowflake_test_pivot_output_column_names(self *Case, a A
 	for _, item_ := range Iter(NewTuple(NewTuple("IN ('a', 'b')", NewList("ID", "'a'", "'b'")), NewTuple("IN ('a' AS a, 'b' AS b)", NewList("ID", "A", "B")))) {
 		Unpack(item_, &pivot, &expected)
 		self.SubTest(func() {
-			self.Do(3608, func() {
+			self.DoAssign(3608, func() {
 				expression = Call(G("sqlglot.optimizer.qualify.qualify"), self.ParseOne(F("SELECT * FROM t PIVOT(SUM(val) FOR cat ", FV{V: pivot}, ")")), Kw("schema", NewDict("t", NewDict("id", "int", "cat", "text", "val", "int"))), Kw("dialect", "snowflake"))
-			})
+			}, &expression)
 			self.Do(3613, func() {
 				self.AssertEqual(func() Value {
 					var s Value
@@ -1181,9 +1181,9 @@ func test_snowflake_TestSnowflake_test_list_stage(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewTuple("@%table1", "@schema1.%table1", "@db1.schema1.%table1", "@named_stage", "@schema1.named_stage", "@db1.schema1.named_stage", "@~", "@named_stage/path1", "@%table1/path1", "@~/path1", `@"my_DB"."schEMA1"."MYstage"/CaseSensitivePath`, `'@"my stage"/my path'`, "@my_repo/branches/main/")) {
 		location = item_
 		self.SubTest(func() {
-			self.Do(3673, func() {
+			self.DoAssign(3673, func() {
 				expression = M(self.ValidateIdentity(F("LIST ", FV{V: location})), "assert_is", A(G("sqlglot.exp"), "ListStage"))
-			})
+			}, &expression)
 			self.Do(3674, func() { self.AssertEqual(A(expression, "this"), M(G("sqlglot.exp"), "var", location)) })
 		}, Kw("location", location))
 	}
@@ -1196,9 +1196,9 @@ func test_snowflake_TestSnowflake_test_list_stage_pattern(self *Case, a Args) Va
 	for _, item_ := range Iter(NewTuple(NewTuple("@%table1", ".*data_0.*"), NewTuple("@named_stage/analysis/", ".*data_0.*"), NewTuple(`'@"my stage"/my path'`, ".*[.]csv"), NewTuple("@~", ""))) {
 		Unpack(item_, &location, &pattern)
 		self.SubTest(func() {
-			self.Do(3684, func() {
+			self.DoAssign(3684, func() {
 				expression = M(self.ValidateIdentity(F("LIST ", FV{V: location}, " pattern='", FV{V: pattern}, "'"), F("LIST ", FV{V: location}, " PATTERN = '", FV{V: pattern}, "'")), "assert_is", A(G("sqlglot.exp"), "ListStage"))
-			})
+			}, &expression)
 			self.Do(3688, func() { self.AssertEqual(A(expression, "this"), M(G("sqlglot.exp"), "var", location)) })
 			self.Do(3689, func() {
 				self.AssertEqual(Item(A(expression, "args"), "pattern"), M(A(G("sqlglot.exp"), "Literal"), "string", pattern))
@@ -1209,9 +1209,11 @@ func test_snowflake_TestSnowflake_test_list_stage_pattern(self *Case, a Args) Va
 }
 
 func test_snowflake_TestSnowflake_test_list_stage_alias(self *Case, a Args) Value {
-	self.Do(3692, func() { M(self.ValidateIdentity("LS @~", "LIST @~"), "assert_is", A(G("sqlglot.exp"), "ListStage")) })
+	self.Do(3692, func() {
+		Stmt(M(self.ValidateIdentity("LS @~", "LIST @~"), "assert_is", A(G("sqlglot.exp"), "ListStage")))
+	})
 	self.Do(3693, func() {
-		M(self.ValidateIdentity("ls @named_stage", "LIST @named_stage"), "assert_is", A(G("sqlglot.exp"), "ListStage"))
+		Stmt(M(self.ValidateIdentity("ls @named_stage", "LIST @named_stage"), "assert_is", A(G("sqlglot.exp"), "ListStage")))
 	})
 	return nil
 }
@@ -1225,7 +1227,7 @@ func test_snowflake_TestSnowflake_test_list_stage_invalid_pattern(self *Case, a 
 			self.Do(3702, func() {
 				self.AssertRaises(func(cm_ Value) {
 					_ = cm_
-					M(self, "parse_one", sql)
+					Stmt(M(self, "parse_one", sql))
 				}, G("sqlglot.ParseError"))
 			})
 		}, Kw("sql", sql))
@@ -1235,10 +1237,10 @@ func test_snowflake_TestSnowflake_test_list_stage_invalid_pattern(self *Case, a 
 
 func test_snowflake_TestSnowflake_test_list_stage_identifiers(self *Case, a Args) Value {
 	self.Do(3706, func() {
-		M(self.ValidateIdentity("SELECT list, ls FROM list"), "assert_is", A(G("sqlglot.exp"), "Select"))
+		Stmt(M(self.ValidateIdentity("SELECT list, ls FROM list"), "assert_is", A(G("sqlglot.exp"), "Select")))
 	})
 	self.Do(3707, func() {
-		M(self.ValidateIdentity("SELECT x AS list, y AS ls FROM t"), "assert_is", A(G("sqlglot.exp"), "Select"))
+		Stmt(M(self.ValidateIdentity("SELECT x AS list, y AS ls FROM t"), "assert_is", A(G("sqlglot.exp"), "Select")))
 	})
 	return nil
 }
@@ -1246,7 +1248,7 @@ func test_snowflake_TestSnowflake_test_list_stage_identifiers(self *Case, a Args
 func test_snowflake_TestSnowflake_test_staged_files(self *Case, a Args) Value {
 	var staged_file Value
 	_ = []Value{staged_file}
-	self.Do(3711, func() { staged_file = Call(G("sqlglot.parse_one"), "SELECT * FROM @foo", Kw("read", "snowflake")) })
+	self.DoAssign(3711, func() { staged_file = Call(G("sqlglot.parse_one"), "SELECT * FROM @foo", Kw("read", "snowflake")) }, &staged_file)
 	self.Do(3712, func() {
 		self.AssertEqual(M(Call(G("sqlglot.optimizer.normalize_identifiers.normalize_identifiers"), staged_file, Kw("dialect", "snowflake")), "sql", Kw("dialect", "snowflake")), M(staged_file, "sql", Kw("dialect", "snowflake")))
 	})
@@ -1302,13 +1304,13 @@ func test_snowflake_TestSnowflake_test_timestamps(self *Case, a Args) Value {
 	self.L(3857).ValidateIdentity("SELECT CAST('12:00:00' AS TIME)")
 	self.L(3858).ValidateIdentity("SELECT DATE_PART(month, a)")
 	self.Do(3860, func() {
-		M(Item(A(self.ValidateIdentity("SELECT DATE_PART(year FROM CAST('2024-04-08' AS DATE))", "SELECT DATE_PART(year, CAST('2024-04-08' AS DATE))"), "expressions"), 0), "assert_is", A(G("sqlglot.exp"), "Extract"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT DATE_PART(year FROM CAST('2024-04-08' AS DATE))", "SELECT DATE_PART(year, CAST('2024-04-08' AS DATE))"), "expressions"), 0), "assert_is", A(G("sqlglot.exp"), "Extract")))
 	})
 	self.Do(3864, func() {
-		M(Item(A(self.ValidateIdentity("SELECT DATE_PART('month' FROM CAST('2024-04-08' AS DATE))", "SELECT DATE_PART('month', CAST('2024-04-08' AS DATE))"), "expressions"), 0), "assert_is", A(G("sqlglot.exp"), "Extract"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT DATE_PART('month' FROM CAST('2024-04-08' AS DATE))", "SELECT DATE_PART('month', CAST('2024-04-08' AS DATE))"), "expressions"), 0), "assert_is", A(G("sqlglot.exp"), "Extract")))
 	})
 	self.Do(3868, func() {
-		M(Item(A(self.ValidateIdentity("SELECT DATE_PART(day FROM a)", "SELECT DATE_PART(day, a)"), "expressions"), 0), "assert_is", A(G("sqlglot.exp"), "Extract"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT DATE_PART(day FROM a)", "SELECT DATE_PART(day, a)"), "expressions"), 0), "assert_is", A(G("sqlglot.exp"), "Extract")))
 	})
 	for _, item_ := range Iter(NewTuple("TIMESTAMP", "TIMESTAMPLTZ", "TIMESTAMPNTZ")) {
 		data_type = item_
@@ -1375,7 +1377,7 @@ func test_snowflake_TestSnowflake_test_date_trunc_preserves_date(self *Case, a A
 		unit = item_
 		for _, item_ := range Iter(NewTuple("'2024-05-09'", "NULL")) {
 			value = item_
-			self.Do(4219, func() { date = F("CAST(", FV{V: value}, " AS DATE)") })
+			self.DoAssign(4219, func() { date = F("CAST(", FV{V: value}, " AS DATE)") }, &date)
 			for _, item_ := range Iter(NewTuple(F("DATE_TRUNC('", FV{V: unit}, "', ", FV{V: date}, ")"), F("TRUNC(", FV{V: date}, ", '", FV{V: unit}, "')"), F("TRUNCATE(", FV{V: date}, ", '", FV{V: unit}, "')"))) {
 				sql = item_
 				self.Do(4225, func() {
@@ -1385,9 +1387,9 @@ func test_snowflake_TestSnowflake_test_date_trunc_preserves_date(self *Case, a A
 		}
 		for _, item_ := range Iter(NewTuple(F("DATE_TRUNC('", FV{V: unit}, "', t.d)"), F("TRUNC(t.d, '", FV{V: unit}, "')"))) {
 			sql = item_
-			self.Do(4233, func() {
+			self.DoAssign(4233, func() {
 				expression = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), self.ParseOne(F("SELECT ", FV{V: sql}, " FROM t")), Kw("schema", NewDict("t", NewDict("d", "DATE"))), Kw("dialect", "snowflake"))
-			})
+			}, &expression)
 			self.Do(4238, func() {
 				self.AssertEqual(M(expression, "sql", "duckdb"), F("SELECT CAST(DATE_TRUNC('", FV{V: unit}, "', t.d) AS DATE) FROM t"))
 			})
@@ -1395,10 +1397,10 @@ func test_snowflake_TestSnowflake_test_date_trunc_preserves_date(self *Case, a A
 	}
 	for _, item_ := range Iter(NewTuple(NewTuple("DATE_TRUNC('WEEK', CURRENT_DATE)", "CAST(DATE_TRUNC('WEEK', CURRENT_DATE) AS DATE)"), NewTuple("DATE_TRUNC('MONTH', DATE_TRUNC('HOUR', CAST('2024-05-09' AS DATE)))", "CAST(DATE_TRUNC('MONTH', CAST(DATE_TRUNC('HOUR', CAST('2024-05-09' AS DATE)) AS DATE)) AS DATE)"))) {
 		Unpack(item_, &sql, &expected)
-		self.Do(4253, func() { expression = self.ParseOne(sql) })
-		self.Do(4254, func() { M(self, "assertIsNone", A(A(expression, "this"), "type")) })
+		self.DoAssign(4253, func() { expression = self.ParseOne(sql) }, &expression)
+		self.Do(4254, func() { Stmt(M(self, "assertIsNone", A(A(expression, "this"), "type"))) })
 		self.Do(4255, func() {
-			Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expression, Kw("dialect", "snowflake"))
+			Stmt(Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expression, Kw("dialect", "snowflake")))
 		})
 		self.Do(4256, func() { self.AssertEqual(M(expression, "sql", "duckdb"), expected) })
 	}
@@ -1409,23 +1411,27 @@ func test_snowflake_TestSnowflake_test_date_trunc_preserves_date(self *Case, a A
 func test_snowflake_TestSnowflake_test_to_date(self *Case, a Args) Value {
 	var i, fractional_format, duck_db_format, tz_to_format, tz_format, tz Value
 	_ = []Value{i, fractional_format, duck_db_format, tz_to_format, tz_format, tz}
-	self.Do(4263, func() { M(self.ValidateIdentity("TO_DATE('12345')"), "assert_is", A(G("sqlglot.exp"), "Anonymous")) })
-	self.Do(4265, func() { M(self.ValidateIdentity("TO_DATE(x)"), "assert_is", A(G("sqlglot.exp"), "TsOrDsToDate")) })
+	self.Do(4263, func() {
+		Stmt(M(self.ValidateIdentity("TO_DATE('12345')"), "assert_is", A(G("sqlglot.exp"), "Anonymous")))
+	})
+	self.Do(4265, func() { Stmt(M(self.ValidateIdentity("TO_DATE(x)"), "assert_is", A(G("sqlglot.exp"), "TsOrDsToDate"))) })
 	self.L(4267).ValidateAll("TO_DATE('01-01-2000', 'MM-DD-YYYY')", Kw("write", NewDict("snowflake", "TO_DATE('01-01-2000', 'mm-DD-yyyy')", "duckdb", "CAST(STRPTIME('01-01-2000', '%m-%d-%Y') AS DATE)")))
 	self.L(4275).ValidateAll("TO_DATE(x, 'MM-DD-YYYY')", Kw("write", NewDict("snowflake", "TO_DATE(x, 'mm-DD-yyyy')", "duckdb", "CAST(STRPTIME(x, '%m-%d-%Y') AS DATE)")))
 	self.L(4283).ValidateIdentity("SELECT TO_DATE('2019-02-28') + INTERVAL '1 day, 1 year'", "SELECT CAST('2019-02-28' AS DATE) + INTERVAL '1 day, 1 year'")
-	self.Do(4288, func() { M(self.ValidateIdentity("TRY_TO_DATE(x)"), "assert_is", A(G("sqlglot.exp"), "TsOrDsToDate")) })
+	self.Do(4288, func() {
+		Stmt(M(self.ValidateIdentity("TRY_TO_DATE(x)"), "assert_is", A(G("sqlglot.exp"), "TsOrDsToDate")))
+	})
 	self.L(4290).ValidateAll("TRY_TO_DATE('2024-01-31')", Kw("write", NewDict("snowflake", "TRY_CAST('2024-01-31' AS DATE)")))
 	self.L(4296).ValidateIdentity("TRY_TO_DATE('2024-01-31', 'AUTO')")
 	self.L(4298).ValidateAll("TRY_TO_DATE('01-01-2000', 'MM-DD-YYYY')", Kw("write", NewDict("snowflake", "TRY_TO_DATE('01-01-2000', 'mm-DD-yyyy')", "duckdb", "CAST(CAST(TRY_STRPTIME('01-01-2000', '%m-%d-%Y') AS TIMESTAMP) AS DATE)")))
 	for _, item_ := range Iter(Call(G("range"), 1, 10)) {
 		i = item_
-		self.Do(4307, func() { fractional_format = Add("ff", Str(i)) })
-		self.Do(4308, func() { duck_db_format = "%n" })
+		self.DoAssign(4307, func() { fractional_format = Add("ff", Str(i)) }, &fractional_format)
+		self.DoAssign(4308, func() { duck_db_format = "%n" }, &duck_db_format)
 		if Truth(Eq(i, 3)) {
-			self.Do(4310, func() { duck_db_format = "%g" })
+			self.DoAssign(4310, func() { duck_db_format = "%g" }, &duck_db_format)
 		} else if Truth(Eq(i, 6)) {
-			self.Do(4312, func() { duck_db_format = "%f" })
+			self.DoAssign(4312, func() { duck_db_format = "%f" }, &duck_db_format)
 		}
 		self.SubTest(func() {
 			self.Do(4314, func() {
@@ -1434,7 +1440,7 @@ func test_snowflake_TestSnowflake_test_to_date(self *Case, a Args) Value {
 		}, F("Testing snowflake ", FV{V: fractional_format}, " format"))
 	}
 	self.L(4322).ValidateAll("TRY_TO_DATE('2013-04-28T20:57:01.888', 'yyyy-mm-DDThh24:mi:ss.ff')", Kw("write", NewDict("snowflake", "TRY_TO_DATE('2013-04-28T20:57:01.888', 'yyyy-mm-DDThh24:mi:ss.ff9')", "duckdb", "CAST(CAST(TRY_STRPTIME('2013-04-28T20:57:01.888', '%Y-%m-%dT%H:%M:%S.%n') AS TIMESTAMP) AS DATE)")))
-	self.Do(4330, func() { tz_to_format = NewDict("tzh:tzm", "+07:00", "tzhtzm", "+0700", "tzh", "+07") })
+	self.DoAssign(4330, func() { tz_to_format = NewDict("tzh:tzm", "+07:00", "tzhtzm", "+0700", "tzh", "+07") }, &tz_to_format)
 	for _, item_ := range Iter(M(tz_to_format, "items")) {
 		Unpack(item_, &tz_format, &tz)
 		self.SubTest(func() {
@@ -1448,20 +1454,22 @@ func test_snowflake_TestSnowflake_test_to_date(self *Case, a Args) Value {
 }
 
 func test_snowflake_TestSnowflake_test_trunc(self *Case, a Args) Value {
-	self.Do(4356, func() { M(self.ValidateIdentity("TRUNC(3.14159, 2)"), "assert_is", A(G("sqlglot.exp"), "Trunc")) })
-	self.Do(4357, func() { M(self.ValidateIdentity("TRUNC(price, 0)"), "assert_is", A(G("sqlglot.exp"), "Trunc")) })
-	self.Do(4358, func() { M(self.ValidateIdentity("TRUNC(3.14159)"), "assert_is", A(G("sqlglot.exp"), "Trunc")) })
-	self.Do(4361, func() { M(self.ValidateIdentity("TRUNC(col)"), "assert_is", A(G("sqlglot.exp"), "Trunc")) })
+	self.Do(4356, func() { Stmt(M(self.ValidateIdentity("TRUNC(3.14159, 2)"), "assert_is", A(G("sqlglot.exp"), "Trunc"))) })
+	self.Do(4357, func() { Stmt(M(self.ValidateIdentity("TRUNC(price, 0)"), "assert_is", A(G("sqlglot.exp"), "Trunc"))) })
+	self.Do(4358, func() { Stmt(M(self.ValidateIdentity("TRUNC(3.14159)"), "assert_is", A(G("sqlglot.exp"), "Trunc"))) })
+	self.Do(4361, func() { Stmt(M(self.ValidateIdentity("TRUNC(col)"), "assert_is", A(G("sqlglot.exp"), "Trunc"))) })
 	self.Do(4365, func() {
-		M(self.ParseOne("TRUNC(CAST(x AS DATE), 'MONTH')"), "assert_is", A(G("sqlglot.exp"), "DateTrunc"))
+		Stmt(M(self.ParseOne("TRUNC(CAST(x AS DATE), 'MONTH')"), "assert_is", A(G("sqlglot.exp"), "DateTrunc")))
 	})
 	self.Do(4366, func() {
-		M(self.ParseOne("TRUNC(CAST(x AS TIMESTAMP), 'MONTH')"), "assert_is", A(G("sqlglot.exp"), "DateTrunc"))
+		Stmt(M(self.ParseOne("TRUNC(CAST(x AS TIMESTAMP), 'MONTH')"), "assert_is", A(G("sqlglot.exp"), "DateTrunc")))
 	})
 	self.Do(4367, func() {
-		M(self.ParseOne("TRUNC(CAST(x AS DATETIME), 'MONTH')"), "assert_is", A(G("sqlglot.exp"), "DateTrunc"))
+		Stmt(M(self.ParseOne("TRUNC(CAST(x AS DATETIME), 'MONTH')"), "assert_is", A(G("sqlglot.exp"), "DateTrunc")))
 	})
-	self.Do(4370, func() { M(self.ValidateIdentity("TRUNC(foo, bar)"), "assert_is", A(G("sqlglot.exp"), "Anonymous")) })
+	self.Do(4370, func() {
+		Stmt(M(self.ValidateIdentity("TRUNC(foo, bar)"), "assert_is", A(G("sqlglot.exp"), "Anonymous")))
+	})
 	self.L(4373).ValidateAll("TRUNC(3.14159, 2)", Kw("write", NewDict("snowflake", "TRUNC(3.14159, 2)", "oracle", "TRUNC(3.14159, 2)", "postgres", "TRUNC(3.14159, 2)", "mysql", "TRUNCATE(3.14159, 2)", "tsql", "ROUND(3.14159, 2, 1)", "bigquery", "TRUNC(3.14159, 2)", "duckdb", "TRUNC(3.14159, 2)", "presto", "TRUNCATE(3.14159, 2)", "clickhouse", "trunc(3.14159, 2)", "spark", "CAST(3.14159 AS BIGINT)")))
 	self.L(4390).ValidateAll("TRUNC(3.14159)", Kw("write", NewDict("snowflake", "TRUNC(3.14159)", "oracle", "TRUNC(3.14159)", "postgres", "TRUNC(3.14159)", "mysql", "TRUNCATE(3.14159, 0)", "tsql", "ROUND(3.14159, 0, 1)")))
 	self.L(4402).ValidateAll("TRUNC(price, 2)", Kw("read", NewDict("mysql", "TRUNCATE(price, 2)", "oracle", "TRUNC(price, 2)", "postgres", "TRUNC(price, 2)")), Kw("write", NewDict("snowflake", "TRUNC(price, 2)")))
@@ -1568,13 +1576,13 @@ func test_snowflake_TestSnowflake_test_ddl(self *Case, a Args) Value {
 	self.L(4641).ValidateIdentity("CREATE TABLE IDENTIFIER($foo) (col1 VARCHAR, col2 VARCHAR)")
 	self.L(4642).ValidateIdentity("CREATE TAG cost_center ALLOWED_VALUES 'a', 'b'")
 	self.Do(4643, func() {
-		M(A(self.ValidateIdentity("CREATE WAREHOUSE x"), "this"), "assert_is", A(G("sqlglot.exp"), "Identifier"))
+		Stmt(M(A(self.ValidateIdentity("CREATE WAREHOUSE x"), "this"), "assert_is", A(G("sqlglot.exp"), "Identifier")))
 	})
 	self.Do(4644, func() {
-		M(A(self.ValidateIdentity("CREATE STREAMLIT x"), "this"), "assert_is", A(G("sqlglot.exp"), "Identifier"))
+		Stmt(M(A(self.ValidateIdentity("CREATE STREAMLIT x"), "this"), "assert_is", A(G("sqlglot.exp"), "Identifier")))
 	})
 	self.Do(4645, func() {
-		M(A(self.ValidateIdentity("CREATE TEMPORARY STAGE stage1 FILE_FORMAT=(TYPE=PARQUET)"), "this"), "assert_is", A(G("sqlglot.exp"), "Table"))
+		Stmt(M(A(self.ValidateIdentity("CREATE TEMPORARY STAGE stage1 FILE_FORMAT=(TYPE=PARQUET)"), "this"), "assert_is", A(G("sqlglot.exp"), "Table")))
 	})
 	self.L(4648).ValidateIdentity("CREATE STAGE stage1 FILE_FORMAT='format1'", "CREATE STAGE stage1 FILE_FORMAT=(FORMAT_NAME='format1')")
 	self.L(4652).ValidateIdentity("CREATE STAGE stage1 FILE_FORMAT=(FORMAT_NAME=stage1.format1)")
@@ -1583,15 +1591,15 @@ func test_snowflake_TestSnowflake_test_ddl(self *Case, a Args) Value {
 	self.Do(4658, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			M(self, "parse_one", "CREATE STAGE stage1 FILE_FORMAT=123", Kw("dialect", "snowflake"))
+			Stmt(M(self, "parse_one", "CREATE STAGE stage1 FILE_FORMAT=123", Kw("dialect", "snowflake")))
 		}, G("sqlglot.ParseError"))
 	})
 	self.L(4660).ValidateIdentity("CREATE STAGE s1 URL='s3://bucket-123' FILE_FORMAT=(TYPE='JSON') CREDENTIALS=(aws_key_id='test' aws_secret_key='test')")
 	self.Do(4663, func() {
-		M(A(self.ValidateIdentity("CREATE OR REPLACE TAG IF NOT EXISTS cost_center COMMENT='cost_center tag'"), "this"), "assert_is", A(G("sqlglot.exp"), "Identifier"))
+		Stmt(M(A(self.ValidateIdentity("CREATE OR REPLACE TAG IF NOT EXISTS cost_center COMMENT='cost_center tag'"), "this"), "assert_is", A(G("sqlglot.exp"), "Identifier")))
 	})
 	self.Do(4666, func() {
-		M(A(self.ValidateIdentity("CREATE TEMPORARY FILE FORMAT fileformat1 TYPE=PARQUET COMPRESSION=auto"), "this"), "assert_is", A(G("sqlglot.exp"), "Table"))
+		Stmt(M(A(self.ValidateIdentity("CREATE TEMPORARY FILE FORMAT fileformat1 TYPE=PARQUET COMPRESSION=auto"), "this"), "assert_is", A(G("sqlglot.exp"), "Table")))
 	})
 	self.L(4669).ValidateIdentity("CREATE DYNAMIC TABLE product (pre_tax_profit, taxes, after_tax_profit) TARGET_LAG='20 minutes' WAREHOUSE=mywh AS SELECT revenue - cost, (revenue - cost) * tax_rate, (revenue - cost) * (1.0 - tax_rate) FROM staging_table")
 	self.L(4672).ValidateIdentity("CREATE DYNAMIC TABLE dt TARGET_LAG='1 minute' WAREHOUSE=my_wh (id) AS SELECT * FROM bla", "CREATE DYNAMIC TABLE dt (id) TARGET_LAG='1 minute' WAREHOUSE=my_wh AS SELECT * FROM bla")
@@ -1604,7 +1612,7 @@ func test_snowflake_TestSnowflake_test_ddl(self *Case, a Args) Value {
 	self.L(4695).ValidateIdentity("CREATE TABLE t (a ARRAY(INT), b ARRAY(ARRAY(INT)), c OBJECT(x INT), d MAP(VARCHAR, INT))")
 	self.L(4698).ValidateIdentity("CREATE ICEBERG TABLE my_iceberg_table (amount ARRAY(INT)) CATALOG='SNOWFLAKE' EXTERNAL_VOLUME='my_external_volume' BASE_LOCATION='my/relative/path/from/extvol'")
 	self.Do(4701, func() {
-		M(self.ValidateIdentity(`CREATE OR REPLACE FUNCTION ibis_udfs.public.object_values("obj" OBJECT) RETURNS ARRAY LANGUAGE JAVASCRIPT RETURNS NULL ON NULL INPUT AS ' return Object.values(obj) '`), "assert_is", A(G("sqlglot.exp"), "Create"))
+		Stmt(M(self.ValidateIdentity(`CREATE OR REPLACE FUNCTION ibis_udfs.public.object_values("obj" OBJECT) RETURNS ARRAY LANGUAGE JAVASCRIPT RETURNS NULL ON NULL INPUT AS ' return Object.values(obj) '`), "assert_is", A(G("sqlglot.exp"), "Create")))
 	})
 	self.L(4704).ValidateIdentity(`CREATE OR REPLACE FUNCTION ibis_udfs.public.object_values("obj" OBJECT) RETURNS ARRAY LANGUAGE JAVASCRIPT STRICT AS ' return Object.values(obj) '`)
 	self.L(4707).ValidateIdentity("CREATE OR REPLACE TABLE TEST (SOME_REF DECIMAL(38, 0) NOT NULL FOREIGN KEY REFERENCES SOME_OTHER_TABLE (ID))")
@@ -1634,7 +1642,7 @@ func test_snowflake_TestSnowflake_test_user_defined_functions(self *Case, a Args
 	self.L(4795).ValidateAll("CREATE FUNCTION a() RETURNS TABLE (b INT) AS 'SELECT 1'", Kw("write", NewDict("snowflake", "CREATE FUNCTION a() RETURNS TABLE (b INT) AS 'SELECT 1'", "bigquery", "CREATE TABLE FUNCTION a() RETURNS TABLE <b INT64> AS SELECT 1")))
 	self.L(4802).ValidateAll("CREATE FUNCTION a() RETURNS INT IMMUTABLE AS 'SELECT 1'", Kw("write", NewDict("snowflake", "CREATE FUNCTION a() RETURNS INT IMMUTABLE AS 'SELECT 1'")))
 	self.Do(4808, func() {
-		M(self.ValidateIdentity("CREATE FUNCTION a(x DOUBLE) RETURNS DOUBLE LANGUAGE SQL CALLED ON NULL INPUT AS ' x * 2 '"), "assert_is", A(G("sqlglot.exp"), "Create"))
+		Stmt(M(self.ValidateIdentity("CREATE FUNCTION a(x DOUBLE) RETURNS DOUBLE LANGUAGE SQL CALLED ON NULL INPUT AS ' x * 2 '"), "assert_is", A(G("sqlglot.exp"), "Create")))
 	})
 	self.L(4811).ValidateIdentity(`CREATE OR REPLACE FUNCTION repro_fn() RETURNS INT LANGUAGE PYTHON HANDLER = 'fn' RUNTIME_VERSION='3.11' PACKAGES=() AS '\ndef fn():\n    return 1\n'`)
 	return nil
@@ -1646,9 +1654,9 @@ func test_snowflake_TestSnowflake_test_unreserved_keywords_as_identifiers(self *
 	for _, item_ := range Iter(NewTuple("returning", "glob", "using", "lateral", "exclude")) {
 		name = item_
 		self.SubTest(func() {
-			self.Do(4818, func() { expression = self.ValidateIdentity(F("SELECT ", FV{V: name}, " FROM t")) })
+			self.DoAssign(4818, func() { expression = self.ValidateIdentity(F("SELECT ", FV{V: name}, " FROM t")) }, &expression)
 			self.Do(4819, func() {
-				M(self, "assertIsInstance", Item(A(expression, "expressions"), 0), A(G("sqlglot.exp"), "Column"))
+				Stmt(M(self, "assertIsInstance", Item(A(expression, "expressions"), 0), A(G("sqlglot.exp"), "Column")))
 			})
 			self.Do(4820, func() { self.AssertEqual(A(Item(A(expression, "expressions"), 0), "name"), name) })
 			self.Do(4821, func() { self.ValidateIdentity(F("SELECT 1 AS ", FV{V: name})) })
@@ -1671,8 +1679,8 @@ func test_snowflake_TestSnowflake_test_unreserved_keywords_as_identifiers(self *
 	for _, item_ := range Iter(NewTuple("pivot", "unpivot")) {
 		name = item_
 		self.SubTest(func() {
-			self.Do(4835, func() { expression = self.ValidateIdentity(F("DESCRIBE TABLE ", FV{V: name})) })
-			self.Do(4836, func() { M(self, "assertIsInstance", A(expression, "this"), A(G("sqlglot.exp"), "Table")) })
+			self.DoAssign(4835, func() { expression = self.ValidateIdentity(F("DESCRIBE TABLE ", FV{V: name})) }, &expression)
+			self.Do(4836, func() { Stmt(M(self, "assertIsInstance", A(expression, "this"), A(G("sqlglot.exp"), "Table"))) })
 			self.Do(4837, func() { self.AssertEqual(A(A(expression, "this"), "name"), name) })
 		}, Kw("describe", name))
 	}
@@ -1685,7 +1693,9 @@ func test_snowflake_TestSnowflake_test_rollback_as_identifier(self *Case, a Args
 	self.L(4844).ValidateIdentity("SELECT ROLLBACK(3)")
 	self.L(4845).ValidateIdentity("SELECT 1 rollback", "SELECT 1 AS rollback")
 	self.L(4846).ValidateIdentity("SELECT rollback.x FROM (SELECT 1 AS x) rollback", "SELECT rollback.x FROM (SELECT 1 AS x) AS rollback")
-	self.Do(4850, func() { M(self, "assertIsInstance", self.ParseOne("ROLLBACK WORK"), A(G("sqlglot.exp"), "Rollback")) })
+	self.Do(4850, func() {
+		Stmt(M(self, "assertIsInstance", self.ParseOne("ROLLBACK WORK"), A(G("sqlglot.exp"), "Rollback")))
+	})
 	return nil
 }
 
@@ -1749,7 +1759,7 @@ func test_snowflake_TestSnowflake_test_join_marker(self *Case, a Args) Value {
 func test_snowflake_TestSnowflake_test_values(self *Case, a Args) Value {
 	var select_ Value
 	_ = []Value{select_}
-	self.Do(5107, func() { select_ = M(M(G("sqlglot.exp"), "select", "*"), "from_", "values (map(['a'], [1]))") })
+	self.DoAssign(5107, func() { select_ = M(M(G("sqlglot.exp"), "select", "*"), "from_", "values (map(['a'], [1]))") }, &select_)
 	self.Do(5108, func() {
 		self.AssertEqual(M(select_, "sql", "snowflake"), "SELECT * FROM (SELECT OBJECT_CONSTRUCT('a', 1))")
 	})
@@ -1772,15 +1782,15 @@ func test_snowflake_TestSnowflake_test_describe(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewTuple(NewTuple("DYNAMIC TABLE", "db.schema.t1", A(G("sqlglot.exp"), "DynamicProperty")), NewTuple("MATERIALIZED VIEW", "my_view", A(G("sqlglot.exp"), "MaterializedProperty")), NewTuple("EXTERNAL VOLUME", "vol1", A(G("sqlglot.exp"), "ExternalProperty")), NewTuple("COMPUTE POOL", "pool1", A(G("sqlglot.exp"), "ComputeProperty")), NewTuple("MASKING POLICY", "db.schema.pol1", A(G("sqlglot.exp"), "MaskingProperty")), NewTuple("ROW ACCESS POLICY", "pol1", A(G("sqlglot.exp"), "RowAccessProperty")), NewTuple("API INTEGRATION", "int1", A(G("sqlglot.exp"), "ApiProperty")), NewTuple("APPLICATION PACKAGE", "pkg1", A(G("sqlglot.exp"), "ApplicationProperty")), NewTuple("SECURITY INTEGRATION", "int1", A(G("sqlglot.exp"), "SecurityIntegrationProperty")), NewTuple("NETWORK RULE", "rule1", A(G("sqlglot.exp"), "NetworkProperty")), NewTuple("ICEBERG TABLE", "db.schema.t1", A(G("sqlglot.exp"), "IcebergProperty")), NewTuple("HYBRID TABLE", "t1", A(G("sqlglot.exp"), "HybridProperty")), NewTuple("CATALOG INTEGRATION", "int1", A(G("sqlglot.exp"), "CatalogProperty")), NewTuple("DATABASE ROLE", "role1", A(G("sqlglot.exp"), "DatabaseProperty")))) {
 		Unpack(item_, &kind, &object_name, &prop_type)
 		self.SubTest(func() {
-			self.Do(5189, func() { ast = self.ValidateIdentity(F("DESCRIBE ", FV{V: kind}, " ", FV{V: object_name})) })
+			self.DoAssign(5189, func() { ast = self.ValidateIdentity(F("DESCRIBE ", FV{V: kind}, " ", FV{V: object_name})) }, &ast)
 			self.Do(5190, func() { self.AssertEqual(Item(A(ast, "args"), "kind"), Item(M(kind, "split"), -1)) })
-			self.Do(5191, func() { M(self, "assertIsInstance", M(ast, "find", prop_type), prop_type) })
+			self.Do(5191, func() { Stmt(M(self, "assertIsInstance", M(ast, "find", prop_type), prop_type)) })
 			self.Do(5192, func() {
 				self.ValidateIdentity(F("DESC ", FV{V: kind}, " ", FV{V: object_name}), F("DESCRIBE ", FV{V: kind}, " ", FV{V: object_name}))
 			})
 		}, Kw("kind", kind))
 	}
-	self.Do(5200, func() {
+	self.DoAssign(5200, func() {
 		tokens = func() Value {
 			var t_ Value
 			_ = []Value{t_}
@@ -1791,7 +1801,7 @@ func test_snowflake_TestSnowflake_test_describe(self *Case, a Args) Value {
 			}
 			return out
 		}()
-	})
+	}, &tokens)
 	self.Do(5201, func() {
 		tokens = BitOp(tokens, func() Value {
 			var k Value
@@ -1812,7 +1822,7 @@ func test_snowflake_TestSnowflake_test_describe(self *Case, a Args) Value {
 			self.Do(5207, func() { self.ValidateIdentity(F("SELECT 1 AS ", FV{V: token})) })
 		}, Kw("token", token))
 	}
-	self.Do(5209, func() {
+	self.DoAssign(5209, func() {
 		cols = M(", ", "join", func() Value {
 			var t_ Value
 			_ = []Value{t_}
@@ -1823,7 +1833,7 @@ func test_snowflake_TestSnowflake_test_describe(self *Case, a Args) Value {
 			}
 			return &List{V: out}
 		}())
-	})
+	}, &cols)
 	self.Do(5210, func() { self.ValidateIdentity(F("CREATE TABLE t (", FV{V: cols}, ")")) })
 	self.L(5212).ValidateAll("ENDSWITH('abc', 'c')", Kw("read", NewDict("bigquery", "ENDS_WITH('abc', 'c')", "clickhouse", "endsWith('abc', 'c')", "databricks", "ENDSWITH('abc', 'c')", "duckdb", "ENDS_WITH('abc', 'c')", "presto", "ENDS_WITH('abc', 'c')", "spark", "ENDSWITH('abc', 'c')")), Kw("write", NewDict("bigquery", "ENDS_WITH('abc', 'c')", "clickhouse", "endsWith('abc', 'c')", "databricks", "ENDSWITH('abc', 'c')", "duckdb", "ENDS_WITH('abc', 'c')", "presto", "ENDS_WITH('abc', 'c')", "snowflake", "ENDSWITH('abc', 'c')", "spark", "ENDSWITH('abc', 'c')")))
 	return nil
@@ -1834,8 +1844,8 @@ func test_snowflake_TestSnowflake_test_parse_like_any(self *Case, a Args) Value 
 	_ = []Value{keyword, ast}
 	for _, item_ := range Iter(NewTuple("LIKE", "ILIKE")) {
 		keyword = item_
-		self.Do(5235, func() { ast = self.ValidateIdentity(F("a ", FV{V: keyword}, " ANY FUN('foo')")) })
-		self.Do(5237, func() { M(ast, "sql") })
+		self.DoAssign(5235, func() { ast = self.ValidateIdentity(F("a ", FV{V: keyword}, " ANY FUN('foo')")) }, &ast)
+		self.Do(5237, func() { Stmt(M(ast, "sql")) })
 	}
 	return nil
 }
@@ -1866,32 +1876,32 @@ func test_snowflake_TestSnowflake_test_regexp_functions(self *Case, a Args) Valu
 	self.L(5364).ValidateIdentity("SELECT SEARCH(line, 'king', ANALYZER => 'UNICODE_ANALYZER')")
 	self.L(5365).ValidateIdentity("SELECT SEARCH(character, 'king queen', SEARCH_MODE => 'AND')")
 	self.L(5366).ValidateIdentity("SELECT SEARCH(line, 'king', ANALYZER => 'UNICODE_ANALYZER', SEARCH_MODE => 'OR')")
-	self.Do(5371, func() { ast = self.ValidateIdentity("SELECT SEARCH(line, 'king')") })
-	self.Do(5372, func() { search_ast = M(ast, "find", A(G("sqlglot.exp"), "Search")) })
+	self.DoAssign(5371, func() { ast = self.ValidateIdentity("SELECT SEARCH(line, 'king')") }, &ast)
+	self.DoAssign(5372, func() { search_ast = M(ast, "find", A(G("sqlglot.exp"), "Search")) }, &search_ast)
 	self.Do(5373, func() { self.AssertEqual(Call(G("list"), A(search_ast, "args")), NewList("this", "expression")) })
-	self.Do(5374, func() { M(self, "assertIsNone", M(A(search_ast, "args"), "get", "analyzer")) })
-	self.Do(5375, func() { M(self, "assertIsNone", M(A(search_ast, "args"), "get", "search_mode")) })
-	self.Do(5377, func() { ast = self.ValidateIdentity("SELECT SEARCH(line, 'king', ANALYZER => 'UNICODE_ANALYZER')") })
-	self.Do(5378, func() { search_ast = M(ast, "find", A(G("sqlglot.exp"), "Search")) })
-	self.Do(5379, func() { M(self, "assertIsNotNone", M(A(search_ast, "args"), "get", "analyzer")) })
-	self.Do(5380, func() { M(self, "assertIsNone", M(A(search_ast, "args"), "get", "search_mode")) })
-	self.Do(5382, func() { ast = self.ValidateIdentity("SELECT SEARCH(character, 'king queen', SEARCH_MODE => 'AND')") })
-	self.Do(5383, func() { search_ast = M(ast, "find", A(G("sqlglot.exp"), "Search")) })
-	self.Do(5384, func() { M(self, "assertIsNone", M(A(search_ast, "args"), "get", "analyzer")) })
-	self.Do(5385, func() { M(self, "assertIsNotNone", M(A(search_ast, "args"), "get", "search_mode")) })
-	self.Do(5388, func() {
+	self.Do(5374, func() { Stmt(M(self, "assertIsNone", M(A(search_ast, "args"), "get", "analyzer"))) })
+	self.Do(5375, func() { Stmt(M(self, "assertIsNone", M(A(search_ast, "args"), "get", "search_mode"))) })
+	self.DoAssign(5377, func() { ast = self.ValidateIdentity("SELECT SEARCH(line, 'king', ANALYZER => 'UNICODE_ANALYZER')") }, &ast)
+	self.DoAssign(5378, func() { search_ast = M(ast, "find", A(G("sqlglot.exp"), "Search")) }, &search_ast)
+	self.Do(5379, func() { Stmt(M(self, "assertIsNotNone", M(A(search_ast, "args"), "get", "analyzer"))) })
+	self.Do(5380, func() { Stmt(M(self, "assertIsNone", M(A(search_ast, "args"), "get", "search_mode"))) })
+	self.DoAssign(5382, func() { ast = self.ValidateIdentity("SELECT SEARCH(character, 'king queen', SEARCH_MODE => 'AND')") }, &ast)
+	self.DoAssign(5383, func() { search_ast = M(ast, "find", A(G("sqlglot.exp"), "Search")) }, &search_ast)
+	self.Do(5384, func() { Stmt(M(self, "assertIsNone", M(A(search_ast, "args"), "get", "analyzer"))) })
+	self.Do(5385, func() { Stmt(M(self, "assertIsNotNone", M(A(search_ast, "args"), "get", "search_mode"))) })
+	self.DoAssign(5388, func() {
 		ast = self.ValidateIdentity("SELECT SEARCH(line, 'king', SEARCH_MODE => 'AND', ANALYZER => 'PATTERN_ANALYZER')", "SELECT SEARCH(line, 'king', ANALYZER => 'PATTERN_ANALYZER', SEARCH_MODE => 'AND')")
-	})
-	self.Do(5392, func() { search_ast = M(ast, "find", A(G("sqlglot.exp"), "Search")) })
+	}, &ast)
+	self.DoAssign(5392, func() { search_ast = M(ast, "find", A(G("sqlglot.exp"), "Search")) }, &search_ast)
 	self.Do(5393, func() {
 		self.AssertEqual(Call(G("list"), A(search_ast, "args")), NewList("this", "expression", "search_mode", "analyzer"))
 	})
-	self.Do(5394, func() { analyzer = M(A(search_ast, "args"), "get", "analyzer") })
-	self.Do(5395, func() { M(self, "assertIsNotNone", analyzer) })
-	self.Do(5396, func() { search_mode = M(A(search_ast, "args"), "get", "search_mode") })
-	self.Do(5397, func() { M(self, "assertIsNotNone", search_mode) })
+	self.DoAssign(5394, func() { analyzer = M(A(search_ast, "args"), "get", "analyzer") }, &analyzer)
+	self.Do(5395, func() { Stmt(M(self, "assertIsNotNone", analyzer)) })
+	self.DoAssign(5396, func() { search_mode = M(A(search_ast, "args"), "get", "search_mode") }, &search_mode)
+	self.Do(5397, func() { Stmt(M(self, "assertIsNotNone", search_mode)) })
 	self.Do(5399, func() {
-		M(Item(A(self.ValidateIdentity("SELECT SEARCH_IP(col, '192.168.0.0')"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "SearchIp"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT SEARCH_IP(col, '192.168.0.0')"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "SearchIp")))
 	})
 	self.L(5403).ValidateIdentity("SELECT REGEXP_COUNT('hello world', 'l ')")
 	self.L(5404).ValidateIdentity("SELECT REGEXP_COUNT('hello world', 'l', 1)")
@@ -1966,7 +1976,7 @@ func test_snowflake_TestSnowflake_test_show_databases(self *Case, a Args) Value 
 	_ = []Value{ast}
 	self.L(5643).ValidateIdentity("SHOW TERSE DATABASES")
 	self.L(5644).ValidateIdentity("SHOW TERSE DATABASES HISTORY LIKE 'foo' STARTS WITH 'bla' LIMIT 5 FROM 'bob' WITH PRIVILEGES USAGE, MODIFY")
-	self.Do(5648, func() { ast = Call(G("sqlglot.parse_one"), "SHOW DATABASES IN ACCOUNT", Kw("read", "snowflake")) })
+	self.DoAssign(5648, func() { ast = Call(G("sqlglot.parse_one"), "SHOW DATABASES IN ACCOUNT", Kw("read", "snowflake")) }, &ast)
 	self.Do(5649, func() { self.AssertEqual(A(ast, "this"), "DATABASES") })
 	self.Do(5650, func() { self.AssertEqual(M(A(ast, "args"), "get", "scope_kind"), "ACCOUNT") })
 	return nil
@@ -1978,7 +1988,7 @@ func test_snowflake_TestSnowflake_test_show_file_formats(self *Case, a Args) Val
 	self.L(5653).ValidateIdentity("SHOW FILE FORMATS")
 	self.L(5654).ValidateIdentity("SHOW FILE FORMATS LIKE 'foo' IN DATABASE db1")
 	self.L(5655).ValidateIdentity("SHOW FILE FORMATS LIKE 'foo' IN SCHEMA db1.schema1")
-	self.Do(5657, func() { ast = Call(G("sqlglot.parse_one"), "SHOW FILE FORMATS IN ACCOUNT", Kw("read", "snowflake")) })
+	self.DoAssign(5657, func() { ast = Call(G("sqlglot.parse_one"), "SHOW FILE FORMATS IN ACCOUNT", Kw("read", "snowflake")) }, &ast)
 	self.Do(5658, func() { self.AssertEqual(A(ast, "this"), "FILE FORMATS") })
 	self.Do(5659, func() { self.AssertEqual(M(A(ast, "args"), "get", "scope_kind"), "ACCOUNT") })
 	return nil
@@ -1989,7 +1999,7 @@ func test_snowflake_TestSnowflake_test_show_functions(self *Case, a Args) Value 
 	_ = []Value{ast}
 	self.L(5662).ValidateIdentity("SHOW FUNCTIONS")
 	self.L(5663).ValidateIdentity("SHOW FUNCTIONS LIKE 'foo' IN CLASS bla")
-	self.Do(5665, func() { ast = Call(G("sqlglot.parse_one"), "SHOW FUNCTIONS IN ACCOUNT", Kw("read", "snowflake")) })
+	self.DoAssign(5665, func() { ast = Call(G("sqlglot.parse_one"), "SHOW FUNCTIONS IN ACCOUNT", Kw("read", "snowflake")) }, &ast)
 	self.Do(5666, func() { self.AssertEqual(A(ast, "this"), "FUNCTIONS") })
 	self.Do(5667, func() { self.AssertEqual(M(A(ast, "args"), "get", "scope_kind"), "ACCOUNT") })
 	return nil
@@ -2001,7 +2011,7 @@ func test_snowflake_TestSnowflake_test_show_procedures(self *Case, a Args) Value
 	self.L(5670).ValidateIdentity("SHOW PROCEDURES")
 	self.L(5671).ValidateIdentity("SHOW PROCEDURES LIKE 'foo' IN APPLICATION app")
 	self.L(5672).ValidateIdentity("SHOW PROCEDURES LIKE 'foo' IN APPLICATION PACKAGE pkg")
-	self.Do(5674, func() { ast = Call(G("sqlglot.parse_one"), "SHOW PROCEDURES IN ACCOUNT", Kw("read", "snowflake")) })
+	self.DoAssign(5674, func() { ast = Call(G("sqlglot.parse_one"), "SHOW PROCEDURES IN ACCOUNT", Kw("read", "snowflake")) }, &ast)
 	self.Do(5675, func() { self.AssertEqual(A(ast, "this"), "PROCEDURES") })
 	self.Do(5676, func() { self.AssertEqual(M(A(ast, "args"), "get", "scope_kind"), "ACCOUNT") })
 	return nil
@@ -2013,7 +2023,7 @@ func test_snowflake_TestSnowflake_test_show_stages(self *Case, a Args) Value {
 	self.L(5679).ValidateIdentity("SHOW STAGES")
 	self.L(5680).ValidateIdentity("SHOW STAGES LIKE 'foo' IN DATABASE db1")
 	self.L(5681).ValidateIdentity("SHOW STAGES LIKE 'foo' IN SCHEMA db1.schema1")
-	self.Do(5683, func() { ast = Call(G("sqlglot.parse_one"), "SHOW STAGES IN ACCOUNT", Kw("read", "snowflake")) })
+	self.DoAssign(5683, func() { ast = Call(G("sqlglot.parse_one"), "SHOW STAGES IN ACCOUNT", Kw("read", "snowflake")) }, &ast)
 	self.Do(5684, func() { self.AssertEqual(A(ast, "this"), "STAGES") })
 	self.Do(5685, func() { self.AssertEqual(M(A(ast, "args"), "get", "scope_kind"), "ACCOUNT") })
 	return nil
@@ -2024,7 +2034,7 @@ func test_snowflake_TestSnowflake_test_show_warehouses(self *Case, a Args) Value
 	_ = []Value{ast}
 	self.L(5688).ValidateIdentity("SHOW WAREHOUSES")
 	self.L(5689).ValidateIdentity("SHOW WAREHOUSES LIKE 'foo' WITH PRIVILEGES USAGE, MODIFY")
-	self.Do(5691, func() { ast = Call(G("sqlglot.parse_one"), "SHOW WAREHOUSES", Kw("read", "snowflake")) })
+	self.DoAssign(5691, func() { ast = Call(G("sqlglot.parse_one"), "SHOW WAREHOUSES", Kw("read", "snowflake")) }, &ast)
 	self.Do(5692, func() { self.AssertEqual(A(ast, "this"), "WAREHOUSES") })
 	return nil
 }
@@ -2033,7 +2043,7 @@ func test_snowflake_TestSnowflake_test_show_schemas(self *Case, a Args) Value {
 	var ast Value
 	_ = []Value{ast}
 	self.L(5695).ValidateIdentity("show terse schemas in database db1 starts with 'a' limit 10 from 'b'", "SHOW TERSE SCHEMAS IN DATABASE db1 STARTS WITH 'a' LIMIT 10 FROM 'b'")
-	self.Do(5700, func() { ast = Call(G("sqlglot.parse_one"), "SHOW SCHEMAS IN DATABASE db1", Kw("read", "snowflake")) })
+	self.DoAssign(5700, func() { ast = Call(G("sqlglot.parse_one"), "SHOW SCHEMAS IN DATABASE db1", Kw("read", "snowflake")) }, &ast)
 	self.Do(5701, func() { self.AssertEqual(M(A(ast, "args"), "get", "scope_kind"), "DATABASE") })
 	self.Do(5702, func() {
 		self.AssertEqual(M(M(ast, "find", A(G("sqlglot.exp"), "Table")), "sql", Kw("dialect", "snowflake")), "db1")
@@ -2046,7 +2056,7 @@ func test_snowflake_TestSnowflake_test_show_objects(self *Case, a Args) Value {
 	_ = []Value{ast}
 	self.L(5705).ValidateIdentity("show terse objects in schema db1.schema1 starts with 'a' limit 10 from 'b'", "SHOW TERSE OBJECTS IN SCHEMA db1.schema1 STARTS WITH 'a' LIMIT 10 FROM 'b'")
 	self.L(5709).ValidateIdentity("show terse objects in db1.schema1 starts with 'a' limit 10 from 'b'", "SHOW TERSE OBJECTS IN SCHEMA db1.schema1 STARTS WITH 'a' LIMIT 10 FROM 'b'")
-	self.Do(5714, func() { ast = Call(G("sqlglot.parse_one"), "SHOW OBJECTS IN db1.schema1", Kw("read", "snowflake")) })
+	self.DoAssign(5714, func() { ast = Call(G("sqlglot.parse_one"), "SHOW OBJECTS IN db1.schema1", Kw("read", "snowflake")) }, &ast)
 	self.Do(5715, func() { self.AssertEqual(M(A(ast, "args"), "get", "scope_kind"), "SCHEMA") })
 	self.Do(5716, func() {
 		self.AssertEqual(M(M(ast, "find", A(G("sqlglot.exp"), "Table")), "sql", Kw("dialect", "snowflake")), "db1.schema1")
@@ -2062,9 +2072,9 @@ func test_snowflake_TestSnowflake_test_show_columns(self *Case, a Args) Value {
 	self.L(5721).ValidateIdentity("SHOW COLUMNS LIKE '_foo%' IN TABLE dt_test")
 	self.L(5722).ValidateIdentity("SHOW COLUMNS IN VIEW")
 	self.L(5723).ValidateIdentity("SHOW COLUMNS LIKE '_foo%' IN VIEW dt_test")
-	self.Do(5725, func() {
+	self.DoAssign(5725, func() {
 		ast = Call(G("sqlglot.parse_one"), "SHOW COLUMNS LIKE '_testing%' IN dt_test", Kw("read", "snowflake"))
-	})
+	}, &ast)
 	self.Do(5726, func() {
 		self.AssertEqual(M(M(ast, "find", A(G("sqlglot.exp"), "Table")), "sql", Kw("dialect", "snowflake")), "dt_test")
 	})
@@ -2083,41 +2093,41 @@ func test_snowflake_TestSnowflake_test_show_tables(self *Case, a Args) Value {
 	self.L(5742).ValidateIdentity("show terse tables in db1.schema1 starts with 'a' limit 10 from 'b'", "SHOW TERSE TABLES IN SCHEMA db1.schema1 STARTS WITH 'a' LIMIT 10 FROM 'b'")
 	self.L(5746).ValidateIdentity("SHOW ICEBERG TABLES IN db1.schema1", "SHOW ICEBERG TABLES IN SCHEMA db1.schema1")
 	self.L(5750).ValidateIdentity("SHOW TERSE ICEBERG TABLES IN db1.schema1", "SHOW TERSE ICEBERG TABLES IN SCHEMA db1.schema1")
-	self.Do(5755, func() { ast = Call(G("sqlglot.parse_one"), "SHOW TABLES IN db1.schema1", Kw("read", "snowflake")) })
+	self.DoAssign(5755, func() { ast = Call(G("sqlglot.parse_one"), "SHOW TABLES IN db1.schema1", Kw("read", "snowflake")) }, &ast)
 	self.Do(5756, func() {
 		self.AssertEqual(M(M(ast, "find", A(G("sqlglot.exp"), "Table")), "sql", Kw("dialect", "snowflake")), "db1.schema1")
 	})
-	self.Do(5757, func() { M(self, "assertFalse", Item(A(ast, "args"), "iceberg")) })
-	self.Do(5759, func() {
+	self.Do(5757, func() { Stmt(M(self, "assertFalse", Item(A(ast, "args"), "iceberg"))) })
+	self.DoAssign(5759, func() {
 		ast = Call(G("sqlglot.parse_one"), "SHOW ICEBERG TABLES IN db1.schema1", Kw("read", "snowflake"))
-	})
+	}, &ast)
 	self.Do(5760, func() {
 		self.AssertEqual(M(M(ast, "find", A(G("sqlglot.exp"), "Table")), "sql", Kw("dialect", "snowflake")), "db1.schema1")
 	})
-	self.Do(5761, func() { M(self, "assertTrue", Item(A(ast, "args"), "iceberg")) })
-	self.Do(5763, func() {
+	self.Do(5761, func() { Stmt(M(self, "assertTrue", Item(A(ast, "args"), "iceberg"))) })
+	self.DoAssign(5763, func() {
 		ast = Call(G("sqlglot.parse_one"), "SHOW TERSE ICEBERG TABLES IN db1.schema1", Kw("read", "snowflake"))
-	})
+	}, &ast)
 	self.Do(5764, func() {
 		self.AssertEqual(M(M(ast, "find", A(G("sqlglot.exp"), "Table")), "sql", Kw("dialect", "snowflake")), "db1.schema1")
 	})
-	self.Do(5765, func() { M(self, "assertTrue", Item(A(ast, "args"), "terse")) })
-	self.Do(5766, func() { M(self, "assertTrue", Item(A(ast, "args"), "iceberg")) })
+	self.Do(5765, func() { Stmt(M(self, "assertTrue", Item(A(ast, "args"), "terse"))) })
+	self.Do(5766, func() { Stmt(M(self, "assertTrue", Item(A(ast, "args"), "iceberg"))) })
 	return nil
 }
 
 func test_snowflake_TestSnowflake_test_alter_iceberg_table(self *Case, a Args) Value {
 	var ast Value
 	_ = []Value{ast}
-	self.Do(5769, func() { ast = self.ValidateIdentity("ALTER ICEBERG TABLE t RENAME TO x") })
-	self.Do(5770, func() { M(self, "assertTrue", Item(A(ast, "args"), "iceberg")) })
+	self.DoAssign(5769, func() { ast = self.ValidateIdentity("ALTER ICEBERG TABLE t RENAME TO x") }, &ast)
+	self.Do(5770, func() { Stmt(M(self, "assertTrue", Item(A(ast, "args"), "iceberg"))) })
 	self.PatchLogMethod(func(m_ Value) {
 		_ = m_
-		self.Do(5773, func() {
+		self.DoAssign(5773, func() {
 			ast = Call(G("sqlglot.parse_one"), "ALTER ICEBERG VIEW v RENAME TO x", Kw("read", "snowflake"))
-		})
+		}, &ast)
 	}, "warning")
-	self.Do(5774, func() { M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "Command")) })
+	self.Do(5774, func() { Stmt(M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "Command"))) })
 	self.L(5776).ValidateAll("ALTER ICEBERG TABLE t RENAME TO x", Kw("write", NewDict("snowflake", "ALTER ICEBERG TABLE t RENAME TO x", "duckdb", "ALTER TABLE t RENAME TO x")))
 	return nil
 }
@@ -2125,11 +2135,11 @@ func test_snowflake_TestSnowflake_test_alter_iceberg_table(self *Case, a Args) V
 func test_snowflake_TestSnowflake_test_drop_iceberg_table(self *Case, a Args) Value {
 	var ast Value
 	_ = []Value{ast}
-	self.Do(5785, func() { ast = self.ValidateIdentity("DROP ICEBERG TABLE t") })
-	self.Do(5786, func() { M(self, "assertTrue", Item(A(ast, "args"), "iceberg")) })
+	self.DoAssign(5785, func() { ast = self.ValidateIdentity("DROP ICEBERG TABLE t") }, &ast)
+	self.Do(5786, func() { Stmt(M(self, "assertTrue", Item(A(ast, "args"), "iceberg"))) })
 	self.L(5787).ValidateIdentity("DROP ICEBERG TABLE IF EXISTS t")
-	self.Do(5788, func() { ast = self.ValidateIdentity("DROP ICEBERG TABLE t RESTRICT") })
-	self.Do(5789, func() { M(self, "assertTrue", Item(A(ast, "args"), "restrict")) })
+	self.DoAssign(5788, func() { ast = self.ValidateIdentity("DROP ICEBERG TABLE t RESTRICT") }, &ast)
+	self.Do(5789, func() { Stmt(M(self, "assertTrue", Item(A(ast, "args"), "restrict"))) })
 	self.L(5790).ValidateIdentity("DROP ICEBERG TABLE IF EXISTS t RESTRICT")
 	return nil
 }
@@ -2145,9 +2155,9 @@ func test_snowflake_TestSnowflake_test_show_primary_keys(self *Case, a Args) Val
 	self.L(5798).ValidateIdentity("SHOW PRIMARY KEYS IN TABLE foo")
 	self.L(5799).ValidateIdentity(`SHOW PRIMARY KEYS IN "TEST"."PUBLIC"."foo"`, `SHOW PRIMARY KEYS IN TABLE "TEST"."PUBLIC"."foo"`)
 	self.L(5803).ValidateIdentity(`SHOW TERSE PRIMARY KEYS IN "TEST"."PUBLIC"."foo"`, `SHOW PRIMARY KEYS IN TABLE "TEST"."PUBLIC"."foo"`)
-	self.Do(5808, func() {
+	self.DoAssign(5808, func() {
 		ast = Call(G("sqlglot.parse_one"), `SHOW PRIMARY KEYS IN "TEST"."PUBLIC"."foo"`, Kw("read", "snowflake"))
-	})
+	}, &ast)
 	self.Do(5809, func() {
 		self.AssertEqual(M(M(ast, "find", A(G("sqlglot.exp"), "Table")), "sql", Kw("dialect", "snowflake")), `"TEST"."PUBLIC"."foo"`)
 	})
@@ -2165,7 +2175,7 @@ func test_snowflake_TestSnowflake_test_show_views(self *Case, a Args) Value {
 	self.L(5817).ValidateIdentity("SHOW VIEWS IN DATABASE foo")
 	self.L(5818).ValidateIdentity("SHOW VIEWS IN SCHEMA foo")
 	self.L(5819).ValidateIdentity("SHOW VIEWS IN foo", "SHOW VIEWS IN SCHEMA foo")
-	self.Do(5824, func() { ast = Call(G("sqlglot.parse_one"), "SHOW VIEWS IN db1.schema1", Kw("read", "snowflake")) })
+	self.DoAssign(5824, func() { ast = Call(G("sqlglot.parse_one"), "SHOW VIEWS IN db1.schema1", Kw("read", "snowflake")) }, &ast)
 	self.Do(5825, func() {
 		self.AssertEqual(M(M(ast, "find", A(G("sqlglot.exp"), "Table")), "sql", Kw("dialect", "snowflake")), "db1.schema1")
 	})
@@ -2183,9 +2193,9 @@ func test_snowflake_TestSnowflake_test_show_unique_keys(self *Case, a Args) Valu
 	self.L(5833).ValidateIdentity("SHOW UNIQUE KEYS IN TABLE foo")
 	self.L(5834).ValidateIdentity(`SHOW UNIQUE KEYS IN "TEST"."PUBLIC"."foo"`, `SHOW UNIQUE KEYS IN SCHEMA "TEST"."PUBLIC"."foo"`)
 	self.L(5838).ValidateIdentity(`SHOW TERSE UNIQUE KEYS IN "TEST"."PUBLIC"."foo"`, `SHOW UNIQUE KEYS IN SCHEMA "TEST"."PUBLIC"."foo"`)
-	self.Do(5843, func() {
+	self.DoAssign(5843, func() {
 		ast = Call(G("sqlglot.parse_one"), `SHOW UNIQUE KEYS IN "TEST"."PUBLIC"."foo"`, Kw("read", "snowflake"))
-	})
+	}, &ast)
 	self.Do(5844, func() {
 		self.AssertEqual(M(M(ast, "find", A(G("sqlglot.exp"), "Table")), "sql", Kw("dialect", "snowflake")), `"TEST"."PUBLIC"."foo"`)
 	})
@@ -2203,9 +2213,9 @@ func test_snowflake_TestSnowflake_test_show_imported_keys(self *Case, a Args) Va
 	self.L(5852).ValidateIdentity("SHOW IMPORTED KEYS IN TABLE foo")
 	self.L(5853).ValidateIdentity(`SHOW IMPORTED KEYS IN "TEST"."PUBLIC"."foo"`, `SHOW IMPORTED KEYS IN SCHEMA "TEST"."PUBLIC"."foo"`)
 	self.L(5857).ValidateIdentity(`SHOW TERSE IMPORTED KEYS IN "TEST"."PUBLIC"."foo"`, `SHOW IMPORTED KEYS IN SCHEMA "TEST"."PUBLIC"."foo"`)
-	self.Do(5862, func() {
+	self.DoAssign(5862, func() {
 		ast = Call(G("sqlglot.parse_one"), `SHOW IMPORTED KEYS IN "TEST"."PUBLIC"."foo"`, Kw("read", "snowflake"))
-	})
+	}, &ast)
 	self.Do(5863, func() {
 		self.AssertEqual(M(M(ast, "find", A(G("sqlglot.exp"), "Table")), "sql", Kw("dialect", "snowflake")), `"TEST"."PUBLIC"."foo"`)
 	})
@@ -2223,14 +2233,14 @@ func test_snowflake_TestSnowflake_test_show_sequences(self *Case, a Args) Value 
 	self.L(5871).ValidateIdentity("SHOW SEQUENCES LIKE '_foo%' IN SCHEMA")
 	self.L(5872).ValidateIdentity("SHOW SEQUENCES LIKE '_foo%' IN SCHEMA foo")
 	self.L(5873).ValidateIdentity("SHOW SEQUENCES LIKE '_foo%' IN foo", "SHOW SEQUENCES LIKE '_foo%' IN SCHEMA foo")
-	self.Do(5878, func() { ast = Call(G("sqlglot.parse_one"), "SHOW SEQUENCES IN dt_test", Kw("read", "snowflake")) })
+	self.DoAssign(5878, func() { ast = Call(G("sqlglot.parse_one"), "SHOW SEQUENCES IN dt_test", Kw("read", "snowflake")) }, &ast)
 	self.Do(5879, func() { self.AssertEqual(M(A(ast, "args"), "get", "scope_kind"), "SCHEMA") })
 	return nil
 }
 
 func test_snowflake_TestSnowflake_test_storage_integration(self *Case, a Args) Value {
 	self.Do(5882, func() {
-		M(A(self.ValidateIdentity("CREATE STORAGE INTEGRATION s3_int\nTYPE=EXTERNAL_STAGE\nSTORAGE_PROVIDER='S3'\nSTORAGE_AWS_ROLE_ARN='arn:aws:iam::001234567890:role/myrole'\nENABLED=TRUE\nSTORAGE_ALLOWED_LOCATIONS=('s3://mybucket1/path1/', 's3://mybucket2/path2/')", Kw("pretty", true)), "this"), "assert_is", A(G("sqlglot.exp"), "Identifier"))
+		Stmt(M(A(self.ValidateIdentity("CREATE STORAGE INTEGRATION s3_int\nTYPE=EXTERNAL_STAGE\nSTORAGE_PROVIDER='S3'\nSTORAGE_AWS_ROLE_ARN='arn:aws:iam::001234567890:role/myrole'\nENABLED=TRUE\nSTORAGE_ALLOWED_LOCATIONS=('s3://mybucket1/path1/', 's3://mybucket2/path2/')", Kw("pretty", true)), "this"), "assert_is", A(G("sqlglot.exp"), "Identifier")))
 	})
 	return nil
 }
@@ -2238,7 +2248,7 @@ func test_snowflake_TestSnowflake_test_storage_integration(self *Case, a Args) V
 func test_snowflake_TestSnowflake_test_swap(self *Case, a Args) Value {
 	var ast Value
 	_ = []Value{ast}
-	self.Do(5893, func() { ast = Call(G("sqlglot.parse_one"), "ALTER TABLE a SWAP WITH b", Kw("read", "snowflake")) })
+	self.DoAssign(5893, func() { ast = Call(G("sqlglot.parse_one"), "ALTER TABLE a SWAP WITH b", Kw("read", "snowflake")) }, &ast)
 	self.Do(5894, func() { Assert(IsInstance(ast, A(G("sqlglot.exp"), "Alter"))) })
 	self.Do(5895, func() { Assert(IsInstance(Item(Item(A(ast, "args"), "actions"), 0), A(G("sqlglot.exp"), "SwapTable"))) })
 	return nil
@@ -2253,18 +2263,18 @@ func test_snowflake_TestSnowflake_test_try_cast(self *Case, a Args) Value {
 	self.L(5907).ValidateAll("TRY_CAST('val' AS VARCHAR)", Kw("read", NewDict("hive", "CAST('val' AS STRING)", "snowflake", "TRY_CAST('val' AS VARCHAR)")))
 	self.L(5914).ValidateIdentity("SELECT TRY_CAST(x AS DOUBLE)")
 	self.L(5915).ValidateIdentity("SELECT TRY_CAST(FOO() AS TEXT)", "SELECT TRY_CAST(FOO() AS VARCHAR)")
-	self.Do(5919, func() {
+	self.DoAssign(5919, func() {
 		expression = Call(G("sqlglot.parse_one"), "SELECT CAST(t.x AS STRING) FROM t", Kw("read", "hive"))
-	})
+	}, &expression)
 	for _, item_ := range Iter(NewTuple("string", "int")) {
 		value_type = item_
 		self.SubTest(func() {
-			self.Do(5925, func() {
+			self.DoAssign(5925, func() {
 				func_ = IfV(Eq(value_type, "string"), func() Value { return "TRY_CAST" }, func() Value { return "CAST" })
-			})
-			self.Do(5927, func() {
+			}, &func_)
+			self.DoAssign(5927, func() {
 				expression = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expression, Kw("schema", NewDict("t", NewDict("x", value_type))))
-			})
+			}, &expression)
 			self.Do(5928, func() {
 				self.AssertEqual(M(expression, "sql", Kw("dialect", "snowflake")), F("SELECT ", FV{V: func_}, "(t.x AS VARCHAR) FROM t"))
 			})
@@ -2297,9 +2307,9 @@ func test_snowflake_TestSnowflake_test_copy(self *Case, a Args) Value {
 	self.L(5975).ValidateIdentity("COPY INTO MY_DATABASE.MY_SCHEMA.MY_TABLE FROM @MY_DATABASE.MY_SCHEMA.MY_STAGE/my_path FILE_FORMAT = (FORMAT_NAME=MY_DATABASE.MY_SCHEMA.MY_FILE_FORMAT)")
 	self.L(5978).ValidateAll("COPY INTO 's3://example/data.csv'\n    FROM EXTRA.EXAMPLE.TABLE\n    CREDENTIALS = ()\n    FILE_FORMAT = (TYPE = CSV COMPRESSION = NONE NULL_IF = ('') FIELD_OPTIONALLY_ENCLOSED_BY = '\"')\n    HEADER = TRUE\n    OVERWRITE = TRUE\n    SINGLE = TRUE\n            ", Kw("write", NewDict("", "COPY INTO 's3://example/data.csv'\nFROM EXTRA.EXAMPLE.TABLE\nCREDENTIALS = () WITH (\n  FILE_FORMAT = (TYPE=CSV COMPRESSION=NONE NULL_IF=(\n    ''\n  ) FIELD_OPTIONALLY_ENCLOSED_BY='\"'),\n  HEADER TRUE,\n  OVERWRITE TRUE,\n  SINGLE TRUE\n)", "snowflake", "COPY INTO 's3://example/data.csv'\nFROM EXTRA.EXAMPLE.TABLE\nCREDENTIALS = ()\nFILE_FORMAT = (TYPE=CSV COMPRESSION=NONE NULL_IF=(\n  ''\n) FIELD_OPTIONALLY_ENCLOSED_BY='\"')\nHEADER = TRUE\nOVERWRITE = TRUE\nSINGLE = TRUE")), Kw("pretty", true))
 	self.L(6010).ValidateAll("COPY INTO 's3://example/data.csv'\n    FROM EXTRA.EXAMPLE.TABLE\n    STORAGE_INTEGRATION = S3_INTEGRATION\n    FILE_FORMAT = (TYPE=CSV COMPRESSION=NONE NULL_IF=('') FIELD_OPTIONALLY_ENCLOSED_BY='\"')\n    HEADER = TRUE\n    OVERWRITE = TRUE\n    SINGLE = TRUE\n            ", Kw("write", NewDict("", `COPY INTO 's3://example/data.csv' FROM EXTRA.EXAMPLE.TABLE STORAGE_INTEGRATION = S3_INTEGRATION WITH (FILE_FORMAT = (TYPE=CSV COMPRESSION=NONE NULL_IF=('') FIELD_OPTIONALLY_ENCLOSED_BY='"'), HEADER TRUE, OVERWRITE TRUE, SINGLE TRUE)`, "snowflake", `COPY INTO 's3://example/data.csv' FROM EXTRA.EXAMPLE.TABLE STORAGE_INTEGRATION = S3_INTEGRATION FILE_FORMAT = (TYPE=CSV COMPRESSION=NONE NULL_IF=('') FIELD_OPTIONALLY_ENCLOSED_BY='"') HEADER = TRUE OVERWRITE = TRUE SINGLE = TRUE`)))
-	self.Do(6025, func() {
+	self.DoAssign(6025, func() {
 		copy_ast = Call(G("sqlglot.parse_one"), `COPY INTO 's3://example/contacts.csv' FROM db.tbl STORAGE_INTEGRATION = PROD_S3_SIDETRADE_INTEGRATION FILE_FORMAT = (FORMAT_NAME=my_csv_format TYPE=CSV COMPRESSION=NONE NULL_IF=('') FIELD_OPTIONALLY_ENCLOSED_BY='"') MATCH_BY_COLUMN_NAME = CASE_SENSITIVE OVERWRITE = TRUE SINGLE = TRUE INCLUDE_METADATA = (col1 = METADATA$START_SCAN_TIME)`, Kw("read", "snowflake"))
-	})
+	}, &copy_ast)
 	self.Do(6029, func() {
 		self.AssertEqual(M(Call(G("sqlglot.optimizer.qualify_columns.quote_identifiers"), copy_ast, Kw("dialect", "snowflake")), "sql", Kw("dialect", "snowflake")), `COPY INTO 's3://example/contacts.csv' FROM "db"."tbl" STORAGE_INTEGRATION = "PROD_S3_SIDETRADE_INTEGRATION" FILE_FORMAT = (FORMAT_NAME="my_csv_format" TYPE=CSV COMPRESSION=NONE NULL_IF=('') FIELD_OPTIONALLY_ENCLOSED_BY='"') MATCH_BY_COLUMN_NAME = CASE_SENSITIVE OVERWRITE = TRUE SINGLE = TRUE INCLUDE_METADATA = ("col1" = "METADATA$START_SCAN_TIME")`)
 	})
@@ -2310,10 +2320,10 @@ func test_snowflake_TestSnowflake_test_put_to_stage(self *Case, a Args) Value {
 	var ast, properties, props_dict Value
 	_ = []Value{ast, properties, props_dict}
 	self.L(6035).ValidateIdentity(`PUT 'file:///dir/tmp.csv' @"my_DB"."schEMA1"."MYstage"`)
-	self.Do(6038, func() {
+	self.DoAssign(6038, func() {
 		ast = Call(G("sqlglot.parse_one"), "PUT 'file://my file.txt' '@s1/my folder'", Kw("read", "snowflake"))
-	})
-	self.Do(6039, func() { M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "Put")) })
+	}, &ast)
+	self.Do(6039, func() { Stmt(M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "Put"))) })
 	self.Do(6040, func() {
 		self.AssertEqual(A(ast, "this"), M(G("sqlglot.exp"), "Literal", Kw("this", "file://my file.txt"), Kw("is_string", true)))
 	})
@@ -2321,18 +2331,18 @@ func test_snowflake_TestSnowflake_test_put_to_stage(self *Case, a Args) Value {
 		self.AssertEqual(Item(A(ast, "args"), "target"), M(G("sqlglot.exp"), "Var", Kw("this", "'@s1/my folder'")))
 	})
 	self.Do(6042, func() { self.AssertEqual(M(ast, "sql", "snowflake"), "PUT 'file://my file.txt' '@s1/my folder'") })
-	self.Do(6045, func() {
+	self.DoAssign(6045, func() {
 		ast = Call(G("sqlglot.parse_one"), "PUT 'file:///tmp/my.txt' @stage1/folder PARALLEL = 1 AUTO_COMPRESS=false source_compression=gzip OVERWRITE=TRUE", Kw("read", "snowflake"))
-	})
-	self.Do(6049, func() { M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "Put")) })
+	}, &ast)
+	self.Do(6049, func() { Stmt(M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "Put"))) })
 	self.Do(6050, func() {
 		self.AssertEqual(A(ast, "this"), M(G("sqlglot.exp"), "Literal", Kw("this", "file:///tmp/my.txt"), Kw("is_string", true)))
 	})
 	self.Do(6051, func() {
 		self.AssertEqual(Item(A(ast, "args"), "target"), M(G("sqlglot.exp"), "Var", Kw("this", "@stage1/folder")))
 	})
-	self.Do(6052, func() { properties = M(A(ast, "args"), "get", "properties") })
-	self.Do(6053, func() {
+	self.DoAssign(6052, func() { properties = M(A(ast, "args"), "get", "properties") }, &properties)
+	self.DoAssign(6053, func() {
 		props_dict = func() Value {
 			var prop Value
 			_ = []Value{prop}
@@ -2343,14 +2353,14 @@ func test_snowflake_TestSnowflake_test_put_to_stage(self *Case, a Args) Value {
 			}
 			return out
 		}()
-	})
+	}, &props_dict)
 	self.Do(6054, func() {
 		self.AssertEqual(props_dict, NewDict("PARALLEL", "1", "AUTO_COMPRESS", false, "source_compression", "gzip", "OVERWRITE", true))
 	})
 	self.L(6065).ValidateIdentity("PUT 'file:///dir/tmp.csv' @s1/test")
-	self.Do(6067, func() {
+	self.DoAssign(6067, func() {
 		ast = M(self.ValidateIdentity("PUT file:///dir/tmp.csv @%table", "PUT 'file:///dir/tmp.csv' @%table"), "assert_is", A(G("sqlglot.exp"), "Put"))
-	})
+	}, &ast)
 	self.Do(6070, func() {
 		self.AssertEqual(A(ast, "this"), M(A(G("sqlglot.exp"), "Literal"), "string", "file:///dir/tmp.csv"))
 	})
@@ -2358,7 +2368,7 @@ func test_snowflake_TestSnowflake_test_put_to_stage(self *Case, a Args) Value {
 		self.AssertEqual(Item(A(ast, "args"), "target"), M(G("sqlglot.exp"), "Var", Kw("this", "@%table")))
 	})
 	self.Do(6072, func() {
-		M(self.ValidateIdentity("PUT file:///dir/tmp.csv @s1/test PARALLEL=1 AUTO_COMPRESS=FALSE source_compression=gzip OVERWRITE=TRUE", "PUT 'file:///dir/tmp.csv' @s1/test PARALLEL=1 AUTO_COMPRESS=FALSE source_compression=gzip OVERWRITE=TRUE"), "assert_is", A(G("sqlglot.exp"), "Put"))
+		Stmt(M(self.ValidateIdentity("PUT file:///dir/tmp.csv @s1/test PARALLEL=1 AUTO_COMPRESS=FALSE source_compression=gzip OVERWRITE=TRUE", "PUT 'file:///dir/tmp.csv' @s1/test PARALLEL=1 AUTO_COMPRESS=FALSE source_compression=gzip OVERWRITE=TRUE"), "assert_is", A(G("sqlglot.exp"), "Put")))
 	})
 	return nil
 }
@@ -2368,12 +2378,12 @@ func test_snowflake_TestSnowflake_test_get_from_stage(self *Case, a Args) Value 
 	_ = []Value{ast, properties, props_dict}
 	self.L(6078).ValidateIdentity(`GET @"my_DB"."schEMA1"."MYstage" 'file:///dir/tmp.csv'`)
 	self.Do(6079, func() {
-		M(self.ValidateIdentity("GET @s1/test 'file:///dir/tmp.csv'"), "assert_is", A(G("sqlglot.exp"), "Get"))
+		Stmt(M(self.ValidateIdentity("GET @s1/test 'file:///dir/tmp.csv'"), "assert_is", A(G("sqlglot.exp"), "Get")))
 	})
-	self.Do(6082, func() {
+	self.DoAssign(6082, func() {
 		ast = Call(G("sqlglot.parse_one"), "GET '@s1/my folder' 'file://my file.txt'", Kw("read", "snowflake"))
-	})
-	self.Do(6083, func() { M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "Get")) })
+	}, &ast)
+	self.Do(6083, func() { Stmt(M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "Get"))) })
 	self.Do(6084, func() {
 		self.AssertEqual(Item(A(ast, "args"), "target"), M(G("sqlglot.exp"), "Var", Kw("this", "'@s1/my folder'")))
 	})
@@ -2381,18 +2391,18 @@ func test_snowflake_TestSnowflake_test_get_from_stage(self *Case, a Args) Value 
 		self.AssertEqual(A(ast, "this"), M(G("sqlglot.exp"), "Literal", Kw("this", "file://my file.txt"), Kw("is_string", true)))
 	})
 	self.Do(6086, func() { self.AssertEqual(M(ast, "sql", "snowflake"), "GET '@s1/my folder' 'file://my file.txt'") })
-	self.Do(6089, func() {
+	self.DoAssign(6089, func() {
 		ast = Call(G("sqlglot.parse_one"), "GET @stage1/folder 'file:///tmp/my.txt' PARALLEL = 1", Kw("read", "snowflake"))
-	})
-	self.Do(6090, func() { M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "Get")) })
+	}, &ast)
+	self.Do(6090, func() { Stmt(M(self, "assertIsInstance", ast, A(G("sqlglot.exp"), "Get"))) })
 	self.Do(6091, func() {
 		self.AssertEqual(Item(A(ast, "args"), "target"), M(G("sqlglot.exp"), "Var", Kw("this", "@stage1/folder")))
 	})
 	self.Do(6092, func() {
 		self.AssertEqual(A(ast, "this"), M(G("sqlglot.exp"), "Literal", Kw("this", "file:///tmp/my.txt"), Kw("is_string", true)))
 	})
-	self.Do(6093, func() { properties = M(A(ast, "args"), "get", "properties") })
-	self.Do(6094, func() {
+	self.DoAssign(6093, func() { properties = M(A(ast, "args"), "get", "properties") }, &properties)
+	self.DoAssign(6094, func() {
 		props_dict = func() Value {
 			var prop Value
 			_ = []Value{prop}
@@ -2403,7 +2413,7 @@ func test_snowflake_TestSnowflake_test_get_from_stage(self *Case, a Args) Value 
 			}
 			return out
 		}()
-	})
+	}, &props_dict)
 	self.Do(6095, func() { self.AssertEqual(props_dict, NewDict("PARALLEL", "1")) })
 	self.L(6098).ValidateIdentity("GET @%table file:///dir/tmp.csv", Kw("check_command_warning", true))
 	self.L(6099).ValidateIdentity("GET @s1/test file:///dir/tmp.csv PARALLEL=1", Kw("check_command_warning", true))
@@ -2446,13 +2456,13 @@ func test_snowflake_TestSnowflake_test_alter_set_unset(self *Case, a Args) Value
 func test_snowflake_TestSnowflake_test_alter_session(self *Case, a Args) Value {
 	var expr Value
 	_ = []Value{expr}
-	self.Do(6204, func() {
+	self.DoAssign(6204, func() {
 		expr = self.ValidateIdentity("ALTER SESSION SET autocommit = FALSE, QUERY_TAG = 'qtag', JSON_INDENT = 1")
-	})
+	}, &expr)
 	self.Do(6207, func() {
 		self.AssertEqual(M(expr, "find", A(G("sqlglot.exp"), "AlterSession")), M(G("sqlglot.exp"), "AlterSession", Kw("expressions", NewList(M(G("sqlglot.exp"), "SetItem", Kw("this", M(G("sqlglot.exp"), "EQ", Kw("this", M(G("sqlglot.exp"), "Column", Kw("this", M(G("sqlglot.exp"), "Identifier", Kw("this", "autocommit"), Kw("quoted", false))))), Kw("expression", M(G("sqlglot.exp"), "Boolean", Kw("this", false)))))), M(G("sqlglot.exp"), "SetItem", Kw("this", M(G("sqlglot.exp"), "EQ", Kw("this", M(G("sqlglot.exp"), "Column", Kw("this", M(G("sqlglot.exp"), "Identifier", Kw("this", "QUERY_TAG"), Kw("quoted", false))))), Kw("expression", M(G("sqlglot.exp"), "Literal", Kw("this", "qtag"), Kw("is_string", true)))))), M(G("sqlglot.exp"), "SetItem", Kw("this", M(G("sqlglot.exp"), "EQ", Kw("this", M(G("sqlglot.exp"), "Column", Kw("this", M(G("sqlglot.exp"), "Identifier", Kw("this", "JSON_INDENT"), Kw("quoted", false))))), Kw("expression", M(G("sqlglot.exp"), "Literal", Kw("this", "1"), Kw("is_string", false)))))))), Kw("unset", false)))
 	})
-	self.Do(6234, func() { expr = self.ValidateIdentity("ALTER SESSION UNSET autocommit, QUERY_TAG") })
+	self.DoAssign(6234, func() { expr = self.ValidateIdentity("ALTER SESSION UNSET autocommit, QUERY_TAG") }, &expr)
 	self.Do(6235, func() {
 		self.AssertEqual(M(expr, "find", A(G("sqlglot.exp"), "AlterSession")), M(G("sqlglot.exp"), "AlterSession", Kw("expressions", NewList(M(G("sqlglot.exp"), "SetItem", Kw("this", M(G("sqlglot.exp"), "Identifier", Kw("this", "autocommit"), Kw("quoted", false)))), M(G("sqlglot.exp"), "SetItem", Kw("this", M(G("sqlglot.exp"), "Identifier", Kw("this", "QUERY_TAG"), Kw("quoted", false)))))), Kw("unset", true)))
 	})
@@ -2469,9 +2479,9 @@ func test_snowflake_TestSnowflake_test_from_changes(self *Case, a Args) Value {
 func test_snowflake_TestSnowflake_test_grant(self *Case, a Args) Value {
 	var grant_cmds, sql Value
 	_ = []Value{grant_cmds, sql}
-	self.Do(6259, func() {
+	self.DoAssign(6259, func() {
 		grant_cmds = NewList("GRANT SELECT ON FUTURE TABLES IN DATABASE d1 TO ROLE r1", "GRANT INSERT, DELETE ON FUTURE TABLES IN SCHEMA d1.s1 TO ROLE r2", "GRANT SELECT ON ALL TABLES IN SCHEMA mydb.myschema to ROLE analyst", "GRANT SELECT, INSERT ON FUTURE TABLES IN SCHEMA mydb.myschema TO ROLE role1", "GRANT CREATE MATERIALIZED VIEW ON SCHEMA mydb.myschema TO DATABASE ROLE mydb.dr1")
-	})
+	}, &grant_cmds)
 	for _, item_ := range Iter(grant_cmds) {
 		sql = item_
 		self.SubTest(func() {
@@ -2485,9 +2495,9 @@ func test_snowflake_TestSnowflake_test_grant(self *Case, a Args) Value {
 func test_snowflake_TestSnowflake_test_revoke(self *Case, a Args) Value {
 	var revoke_cmds, sql Value
 	_ = []Value{revoke_cmds, sql}
-	self.Do(6276, func() {
+	self.DoAssign(6276, func() {
 		revoke_cmds = NewList("REVOKE SELECT ON FUTURE TABLES IN DATABASE d1 FROM ROLE r1", "REVOKE INSERT, DELETE ON FUTURE TABLES IN SCHEMA d1.s1 FROM ROLE r2", "REVOKE SELECT ON ALL TABLES IN SCHEMA mydb.myschema FROM ROLE analyst", "REVOKE SELECT, INSERT ON FUTURE TABLES IN SCHEMA mydb.myschema FROM ROLE role1", "REVOKE CREATE MATERIALIZED VIEW ON SCHEMA mydb.myschema FROM DATABASE ROLE mydb.dr1")
-	})
+	}, &revoke_cmds)
 	for _, item_ := range Iter(revoke_cmds) {
 		sql = item_
 		self.SubTest(func() {
@@ -2501,9 +2511,9 @@ func test_snowflake_TestSnowflake_test_revoke(self *Case, a Args) Value {
 func test_snowflake_TestSnowflake_test_window_function_arg(self *Case, a Args) Value {
 	var query, ast, window Value
 	_ = []Value{query, ast, window}
-	self.Do(6293, func() { query = "SELECT * FROM TABLE(db.schema.FUNC(a) OVER ())" })
-	self.Do(6295, func() { ast = self.ParseOne(query) })
-	self.Do(6296, func() { window = M(ast, "find", A(G("sqlglot.exp"), "Window")) })
+	self.DoAssign(6293, func() { query = "SELECT * FROM TABLE(db.schema.FUNC(a) OVER ())" }, &query)
+	self.DoAssign(6295, func() { ast = self.ParseOne(query) }, &ast)
+	self.DoAssign(6296, func() { window = M(ast, "find", A(G("sqlglot.exp"), "Window")) }, &window)
 	self.Do(6298, func() { self.AssertEqual(M(ast, "sql", "snowflake"), query) })
 	self.Do(6299, func() { self.AssertEqual(Len(Call(G("list"), M(ast, "find_all", A(G("sqlglot.exp"), "Column")))), 1) })
 	self.Do(6300, func() { self.AssertEqual(M(A(window, "this"), "sql", "snowflake"), "db.schema.FUNC(a)") })
@@ -2523,23 +2533,23 @@ func test_snowflake_TestSnowflake_test_listagg(self *Case, a Args) Value {
 		distinct = item_
 		for _, item_ := range Iter(NewTuple("", " WITHIN GROUP (ORDER BY col)")) {
 			order = item_
-			self.Do(6315, func() { source = F("SELECT LISTAGG(", FV{V: distinct}, "col)", FV{V: order}, " FROM t") })
-			self.Do(6316, func() { duckdb_order = IfV(order, func() Value { return " ORDER BY col" }, func() Value { return "" }) })
+			self.DoAssign(6315, func() { source = F("SELECT LISTAGG(", FV{V: distinct}, "col)", FV{V: order}, " FROM t") }, &source)
+			self.DoAssign(6316, func() { duckdb_order = IfV(order, func() Value { return " ORDER BY col" }, func() Value { return "" }) }, &duckdb_order)
 			self.Do(6317, func() {
 				self.ValidateAll(source, Kw("write", NewDict("duckdb", F("SELECT LISTAGG(", FV{V: distinct}, "col, ''", FV{V: duckdb_order}, ") FROM t"), "postgres", F("SELECT STRING_AGG(", FV{V: distinct}, "col, ''", FV{V: duckdb_order}, ") FROM t"))))
 			})
-			self.Do(6324, func() { expression = self.ParseOne(source) })
+			self.DoAssign(6324, func() { expression = self.ParseOne(source) }, &expression)
 			self.Do(6325, func() {
 				self.AssertEqual(Item(A(M(expression, "find", A(G("sqlglot.exp"), "GroupConcat")), "args"), "separator"), M(A(G("sqlglot.exp"), "Literal"), "string", ""))
 			})
 			self.Do(6329, func() { self.AssertEqual(self.ParseOne(M(expression, "sql", "snowflake")), expression) })
 		}
 	}
-	self.Do(6331, func() { source = "SELECT LISTAGG(col) OVER (PARTITION BY k) FROM t" })
+	self.DoAssign(6331, func() { source = "SELECT LISTAGG(col) OVER (PARTITION BY k) FROM t" }, &source)
 	self.Do(6332, func() {
 		self.ValidateAll(source, Kw("write", NewDict("duckdb", "SELECT LISTAGG(col, '') OVER (PARTITION BY k) FROM t")))
 	})
-	self.Do(6338, func() { expression = self.ParseOne(source) })
+	self.DoAssign(6338, func() { expression = self.ParseOne(source) }, &expression)
 	self.Do(6339, func() { self.AssertEqual(self.ParseOne(M(expression, "sql", "snowflake")), expression) })
 	self.Do(6341, func() {
 		self.AssertEqual(M(Call(G("sqlglot.parse_one"), "SELECT LISTAGG(col ORDER BY col) FROM t", Kw("read", "duckdb")), "sql", "duckdb"), "SELECT LISTAGG(col, ',' ORDER BY col) FROM t")
@@ -2571,7 +2581,7 @@ func test_snowflake_TestSnowflake_test_rely_options(self *Case, a Args) Value {
 func test_snowflake_TestSnowflake_test_parameter(self *Case, a Args) Value {
 	var expr Value
 	_ = []Value{expr}
-	self.Do(6370, func() { expr = self.ValidateIdentity("SELECT :1") })
+	self.DoAssign(6370, func() { expr = self.ValidateIdentity("SELECT :1") }, &expr)
 	self.Do(6371, func() {
 		self.AssertEqual(M(expr, "find", A(G("sqlglot.exp"), "Placeholder")), M(G("sqlglot.exp"), "Placeholder", Kw("this", "1")))
 	})
@@ -2583,19 +2593,19 @@ func test_snowflake_TestSnowflake_test_parameter(self *Case, a Args) Value {
 func test_snowflake_TestSnowflake_test_max_by_min_by(self *Case, a Args) Value {
 	var max_by, min_by, node, max_by_3, min_by_3 Value
 	_ = []Value{max_by, min_by, node, max_by_3, min_by_3}
-	self.Do(6376, func() { max_by = self.ValidateIdentity("MAX_BY(DISTINCT selected_col, filtered_col)") })
-	self.Do(6377, func() { min_by = self.ValidateIdentity("MIN_BY(DISTINCT selected_col, filtered_col)") })
+	self.DoAssign(6376, func() { max_by = self.ValidateIdentity("MAX_BY(DISTINCT selected_col, filtered_col)") }, &max_by)
+	self.DoAssign(6377, func() { min_by = self.ValidateIdentity("MIN_BY(DISTINCT selected_col, filtered_col)") }, &min_by)
 	for _, item_ := range Iter(NewTuple(max_by, min_by)) {
 		node = item_
 		self.Do(6380, func() { self.AssertEqual(Len(A(A(node, "this"), "expressions")), 1) })
-		self.Do(6381, func() { M(self, "assertIsInstance", A(node, "expression"), A(G("sqlglot.exp"), "Column")) })
+		self.Do(6381, func() { Stmt(M(self, "assertIsInstance", A(node, "expression"), A(G("sqlglot.exp"), "Column"))) })
 	}
-	self.Do(6384, func() { max_by_3 = self.ValidateIdentity("MAX_BY(selected_col, filtered_col, 5)") })
-	self.Do(6385, func() { min_by_3 = self.ValidateIdentity("MIN_BY(selected_col, filtered_col, 3)") })
+	self.DoAssign(6384, func() { max_by_3 = self.ValidateIdentity("MAX_BY(selected_col, filtered_col, 5)") }, &max_by_3)
+	self.DoAssign(6385, func() { min_by_3 = self.ValidateIdentity("MIN_BY(selected_col, filtered_col, 3)") }, &min_by_3)
 	for _, item_ := range Iter(NewTuple(max_by_3, min_by_3)) {
 		node = item_
 		self.SubTest(func() {
-			self.Do(6389, func() { M(self, "assertIsNotNone", M(A(node, "args"), "get", "count")) })
+			self.Do(6389, func() { Stmt(M(self, "assertIsNotNone", M(A(node, "args"), "get", "count"))) })
 		}, F("Checking  count arg of ", FV{V: M(node, "sql", "snowflake")}))
 	}
 	self.L(6391).ValidateAll("SELECT MAX_BY(a, b) FROM t", Kw("write", NewDict("snowflake", "SELECT MAX_BY(a, b) FROM t", "duckdb", "SELECT ARG_MAX(a, b) FROM t")))
@@ -2627,7 +2637,7 @@ func test_snowflake_TestSnowflake_test_create_view_row_access_policy(self *Case,
 	self.Do(6454, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			Call(G("sqlglot.parse_one"), "CREATE VIEW v WITH ROW ACCESS POLICY p AS SELECT 1", Kw("dialect", "snowflake"))
+			Stmt(Call(G("sqlglot.parse_one"), "CREATE VIEW v WITH ROW ACCESS POLICY p AS SELECT 1", Kw("dialect", "snowflake")))
 		}, G("sqlglot.ParseError"))
 	})
 	self.L(6459).ValidateIdentity("CREATE VIEW v WITH ROW ACCESS POLICY #unknown_policy AS SELECT 1")
@@ -2643,18 +2653,18 @@ func test_snowflake_TestSnowflake_test_semantic_view(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewList(NewTuple(nil, nil, nil, nil), NewTuple(nil, nil, nil, "a.a"), NewTuple("DATE_PART('year', a.b)", nil, nil, nil), NewTuple(nil, "a.b, a.c", nil, nil), NewTuple(nil, nil, nil, "a.d, a.e"), NewTuple("a.b, a.c", "a.b, a.c", nil, nil), NewTuple("a.b", "a.b, a.c", "a.c > 5", nil), NewTuple("a.b", nil, "a.c > 5", "a.d"))) {
 		Unpack(item_, &dimensions, &metrics, &where, &facts)
 		self.SubTest(func() {
-			self.Do(6484, func() {
+			self.DoAssign(6484, func() {
 				dimensions_str = IfV(dimensions, func() Value { return F(" DIMENSIONS ", FV{V: dimensions}) }, func() Value { return "" })
-			})
-			self.Do(6485, func() {
+			}, &dimensions_str)
+			self.DoAssign(6485, func() {
 				metrics_str = IfV(metrics, func() Value { return F(" METRICS ", FV{V: metrics}) }, func() Value { return "" })
-			})
-			self.Do(6486, func() {
+			}, &metrics_str)
+			self.DoAssign(6486, func() {
 				fact_str = IfV(facts, func() Value { return F(" FACTS ", FV{V: facts}) }, func() Value { return "" })
-			})
-			self.Do(6487, func() {
+			}, &fact_str)
+			self.DoAssign(6487, func() {
 				where_str = IfV(where, func() Value { return F(" WHERE ", FV{V: where}) }, func() Value { return "" })
-			})
+			}, &where_str)
 			self.Do(6489, func() {
 				self.ValidateIdentity(F("SELECT * FROM SEMANTIC_VIEW(tbl", FV{V: metrics_str}, FV{V: dimensions_str}, FV{V: fact_str}, FV{V: where_str}, ") ORDER BY foo"))
 			})
@@ -2672,7 +2682,9 @@ func test_snowflake_TestSnowflake_test_get_extract(self *Case, a Args) Value {
 	self.L(6515).ValidateAll("SELECT GET([4, 5, 6], 1)", Kw("write", NewDict("snowflake", "SELECT GET([4, 5, 6], 1)", "duckdb", "SELECT [4, 5, 6][2]")))
 	self.L(6523).ValidateAll("SELECT GET(col::MAP(INTEGER, VARCHAR), 1)", Kw("write", NewDict("snowflake", "SELECT GET(CAST(col AS MAP(INT, VARCHAR)), 1)", "duckdb", "SELECT CAST(col AS MAP(INT, TEXT))[1]")))
 	self.L(6531).ValidateAll("SELECT GET(v, 'field')", Kw("write", NewDict("snowflake", "SELECT GET(v, 'field')", "duckdb", "SELECT v -> '$.field'")))
-	self.Do(6539, func() { M(self.ValidateIdentity("GET(foo, bar)"), "assert_is", A(G("sqlglot.exp"), "GetExtract")) })
+	self.Do(6539, func() {
+		Stmt(M(self.ValidateIdentity("GET(foo, bar)"), "assert_is", A(G("sqlglot.exp"), "GetExtract")))
+	})
 	return nil
 }
 
@@ -2685,9 +2697,9 @@ func test_snowflake_TestSnowflake_test_create_sequence(self *Case, a Args) Value
 func test_snowflake_TestSnowflake_test_bit_aggs(self *Case, a Args) Value {
 	var bit_and_funcs, bit_or_funcs, bit_xor_funcs, bit_func, name Value
 	_ = []Value{bit_and_funcs, bit_or_funcs, bit_xor_funcs, bit_func, name}
-	self.Do(6555, func() { bit_and_funcs = NewList("BITANDAGG", "BITAND_AGG", "BIT_AND_AGG", "BIT_ANDAGG") })
-	self.Do(6556, func() { bit_or_funcs = NewList("BITORAGG", "BITOR_AGG", "BIT_OR_AGG", "BIT_ORAGG") })
-	self.Do(6557, func() { bit_xor_funcs = NewList("BITXORAGG", "BITXOR_AGG", "BIT_XOR_AGG", "BIT_XORAGG") })
+	self.DoAssign(6555, func() { bit_and_funcs = NewList("BITANDAGG", "BITAND_AGG", "BIT_AND_AGG", "BIT_ANDAGG") }, &bit_and_funcs)
+	self.DoAssign(6556, func() { bit_or_funcs = NewList("BITORAGG", "BITOR_AGG", "BIT_OR_AGG", "BIT_ORAGG") }, &bit_or_funcs)
+	self.DoAssign(6557, func() { bit_xor_funcs = NewList("BITXORAGG", "BITXOR_AGG", "BIT_XOR_AGG", "BIT_XORAGG") }, &bit_xor_funcs)
 	for _, item_ := range Iter(NewTuple(bit_and_funcs, bit_or_funcs, bit_xor_funcs)) {
 		bit_func = item_
 		for _, item_ := range Iter(bit_func) {
@@ -2718,23 +2730,23 @@ func test_snowflake_TestSnowflake_test_sha1(self *Case, a Args) Value {
 	var expr, annotated Value
 	_ = []Value{expr, annotated}
 	self.L(6574).ValidateAll("SHA1(x)", Kw("write", NewDict("snowflake", "SHA1(x)", "duckdb", "SHA1(x)")))
-	self.Do(6582, func() { expr = self.ValidateIdentity("SHA1('text')") })
-	self.Do(6583, func() {
+	self.DoAssign(6582, func() { expr = self.ValidateIdentity("SHA1('text')") }, &expr)
+	self.DoAssign(6583, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(6584, func() { self.AssertEqual(M(annotated, "sql", "duckdb"), "SHA1('text')") })
 	self.Do(6585, func() { self.AssertEqual(M(annotated, "sql", "snowflake"), "SHA1('text')") })
 	self.L(6587).ValidateAll("SHA1(X'002A'::BINARY)", Kw("write", NewDict("snowflake", "SHA1(CAST(x'002A' AS BINARY))", "duckdb", "SHA1(CAST(UNHEX('002A') AS BLOB))")))
-	self.Do(6594, func() { expr = self.ValidateIdentity("SHA1(123)") })
-	self.Do(6595, func() {
+	self.DoAssign(6594, func() { expr = self.ValidateIdentity("SHA1(123)") }, &expr)
+	self.DoAssign(6595, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(6596, func() { self.AssertEqual(M(annotated, "sql", "snowflake"), "SHA1(123)") })
 	self.Do(6597, func() { self.AssertEqual(M(annotated, "sql", "duckdb"), "SHA1(CAST(123 AS TEXT))") })
-	self.Do(6599, func() { expr = self.ValidateIdentity("SHA1(DATE '2024-01-15')", "SHA1(CAST('2024-01-15' AS DATE))") })
-	self.Do(6600, func() {
+	self.DoAssign(6599, func() { expr = self.ValidateIdentity("SHA1(DATE '2024-01-15')", "SHA1(CAST('2024-01-15' AS DATE))") }, &expr)
+	self.DoAssign(6600, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(6601, func() { self.AssertEqual(M(annotated, "sql", "snowflake"), "SHA1(CAST('2024-01-15' AS DATE))") })
 	self.Do(6602, func() {
 		self.AssertEqual(M(annotated, "sql", "duckdb"), "SHA1(CAST(CAST('2024-01-15' AS DATE) AS TEXT))")
@@ -2755,15 +2767,15 @@ func test_snowflake_TestSnowflake_test_model_attribute(self *Case, a Args) Value
 func test_snowflake_TestSnowflake_test_set_item_kind_attribute(self *Case, a Args) Value {
 	var expr, set_item Value
 	_ = []Value{expr, set_item}
-	self.Do(6615, func() {
+	self.DoAssign(6615, func() {
 		expr = Call(G("sqlglot.parse_one"), "ALTER SESSION SET autocommit = FALSE", Kw("read", "snowflake"))
-	})
-	self.Do(6616, func() { set_item = M(expr, "find", A(G("sqlglot.exp"), "SetItem")) })
-	self.Do(6617, func() { M(self, "assertIsNotNone", set_item) })
-	self.Do(6618, func() { M(self, "assertIsNone", M(A(set_item, "args"), "get", "kind")) })
-	self.Do(6620, func() { expr = Call(G("sqlglot.parse_one"), "SET a = 1", Kw("read", "snowflake")) })
-	self.Do(6621, func() { set_item = M(expr, "find", A(G("sqlglot.exp"), "SetItem")) })
-	self.Do(6622, func() { M(self, "assertIsNotNone", set_item) })
+	}, &expr)
+	self.DoAssign(6616, func() { set_item = M(expr, "find", A(G("sqlglot.exp"), "SetItem")) }, &set_item)
+	self.Do(6617, func() { Stmt(M(self, "assertIsNotNone", set_item)) })
+	self.Do(6618, func() { Stmt(M(self, "assertIsNone", M(A(set_item, "args"), "get", "kind"))) })
+	self.DoAssign(6620, func() { expr = Call(G("sqlglot.parse_one"), "SET a = 1", Kw("read", "snowflake")) }, &expr)
+	self.DoAssign(6621, func() { set_item = M(expr, "find", A(G("sqlglot.exp"), "SetItem")) }, &set_item)
+	self.Do(6622, func() { Stmt(M(self, "assertIsNotNone", set_item)) })
 	self.Do(6623, func() { self.AssertEqual(M(A(set_item, "args"), "get", "kind"), "VARIABLE") })
 	return nil
 }
@@ -2788,10 +2800,10 @@ func test_snowflake_TestSnowflake_test_get_bit(self *Case, a Args) Value {
 	var expr, annotated Value
 	_ = []Value{expr, annotated}
 	self.L(6723).ValidateAll("SELECT GETBIT(11, 1)", Kw("write", NewDict("snowflake", "SELECT GETBIT(11, 1)", "databricks", "SELECT GETBIT(11, 1)", "redshift", "SELECT GETBIT(11, 1)")))
-	self.Do(6731, func() { expr = self.ValidateIdentity("GETBIT(11, 1)") })
-	self.Do(6732, func() {
+	self.DoAssign(6731, func() { expr = self.ValidateIdentity("GETBIT(11, 1)") }, &expr)
+	self.DoAssign(6732, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(6734, func() { self.AssertEqual(M(annotated, "sql", "duckdb"), "(11 >> 1) & 1") })
 	self.Do(6735, func() { self.AssertEqual(M(annotated, "sql", "postgres"), "11 >> 1 & 1") })
 	return nil
@@ -2800,50 +2812,50 @@ func test_snowflake_TestSnowflake_test_get_bit(self *Case, a Args) Value {
 func test_snowflake_TestSnowflake_test_to_binary(self *Case, a Args) Value {
 	var expr, annotated Value
 	_ = []Value{expr, annotated}
-	self.Do(6738, func() { expr = self.ValidateIdentity("TO_BINARY('48454C50', 'HEX')") })
-	self.Do(6739, func() {
+	self.DoAssign(6738, func() { expr = self.ValidateIdentity("TO_BINARY('48454C50', 'HEX')") }, &expr)
+	self.DoAssign(6739, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(6740, func() { self.AssertEqual(M(annotated, "sql", "duckdb"), "UNHEX('48454C50')") })
-	self.Do(6742, func() { expr = self.ValidateIdentity("TO_BINARY('48454C50')") })
-	self.Do(6743, func() {
+	self.DoAssign(6742, func() { expr = self.ValidateIdentity("TO_BINARY('48454C50')") }, &expr)
+	self.DoAssign(6743, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(6744, func() { self.AssertEqual(M(annotated, "sql", "duckdb"), "UNHEX('48454C50')") })
-	self.Do(6746, func() { expr = self.ValidateIdentity("TO_BINARY('TEST', 'UTF-8')") })
-	self.Do(6747, func() {
+	self.DoAssign(6746, func() { expr = self.ValidateIdentity("TO_BINARY('TEST', 'UTF-8')") }, &expr)
+	self.DoAssign(6747, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(6748, func() { self.AssertEqual(M(annotated, "sql", "duckdb"), "ENCODE('TEST')") })
-	self.Do(6750, func() { expr = self.ValidateIdentity("TO_BINARY('SEVMUA==', 'BASE64')") })
-	self.Do(6751, func() {
+	self.DoAssign(6750, func() { expr = self.ValidateIdentity("TO_BINARY('SEVMUA==', 'BASE64')") }, &expr)
+	self.DoAssign(6751, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(6752, func() { self.AssertEqual(M(annotated, "sql", "duckdb"), "FROM_BASE64('SEVMUA==')") })
-	self.Do(6754, func() { expr = self.ValidateIdentity("TRY_TO_BINARY('48454C50', 'HEX')") })
-	self.Do(6755, func() {
+	self.DoAssign(6754, func() { expr = self.ValidateIdentity("TRY_TO_BINARY('48454C50', 'HEX')") }, &expr)
+	self.DoAssign(6755, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(6756, func() { self.AssertEqual(M(annotated, "sql", "duckdb"), "TRY(UNHEX('48454C50'))") })
-	self.Do(6758, func() { expr = self.ValidateIdentity("TRY_TO_BINARY('48454C50')") })
-	self.Do(6759, func() {
+	self.DoAssign(6758, func() { expr = self.ValidateIdentity("TRY_TO_BINARY('48454C50')") }, &expr)
+	self.DoAssign(6759, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(6760, func() { self.AssertEqual(M(annotated, "sql", "duckdb"), "TRY(UNHEX('48454C50'))") })
-	self.Do(6762, func() { expr = self.ValidateIdentity("TRY_TO_BINARY('Hello', 'UTF-8')") })
-	self.Do(6763, func() {
+	self.DoAssign(6762, func() { expr = self.ValidateIdentity("TRY_TO_BINARY('Hello', 'UTF-8')") }, &expr)
+	self.DoAssign(6763, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(6764, func() { self.AssertEqual(M(annotated, "sql", "duckdb"), "TRY(ENCODE('Hello'))") })
-	self.Do(6766, func() { expr = self.ValidateIdentity("TRY_TO_BINARY('SGVsbG8=', 'BASE64')") })
-	self.Do(6767, func() {
+	self.DoAssign(6766, func() { expr = self.ValidateIdentity("TRY_TO_BINARY('SGVsbG8=', 'BASE64')") }, &expr)
+	self.DoAssign(6767, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(6768, func() { self.AssertEqual(M(annotated, "sql", "duckdb"), "TRY(FROM_BASE64('SGVsbG8='))") })
-	self.Do(6770, func() { expr = self.ValidateIdentity("TRY_TO_BINARY('Hello', 'UTF-16')") })
-	self.Do(6771, func() {
+	self.DoAssign(6770, func() { expr = self.ValidateIdentity("TRY_TO_BINARY('Hello', 'UTF-16')") }, &expr)
+	self.DoAssign(6771, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(6772, func() { self.AssertEqual(M(annotated, "sql", "duckdb"), "NULL") })
 	return nil
 }
@@ -2851,31 +2863,31 @@ func test_snowflake_TestSnowflake_test_to_binary(self *Case, a Args) Value {
 func test_snowflake_TestSnowflake_test_reverse(self *Case, a Args) Value {
 	var expr, annotated Value
 	_ = []Value{expr, annotated}
-	self.Do(6776, func() { expr = self.ValidateIdentity("REVERSE(TO_BINARY('ABC', 'UTF-8'))") })
-	self.Do(6777, func() {
+	self.DoAssign(6776, func() { expr = self.ValidateIdentity("REVERSE(TO_BINARY('ABC', 'UTF-8'))") }, &expr)
+	self.DoAssign(6777, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(6778, func() {
 		self.AssertEqual(M(annotated, "sql", "duckdb"), "CAST(REVERSE(CAST(ENCODE('ABC') AS TEXT)) AS BLOB)")
 	})
-	self.Do(6783, func() { expr = self.ValidateIdentity("REVERSE(TO_BINARY('414243', 'HEX'))") })
-	self.Do(6784, func() {
+	self.DoAssign(6783, func() { expr = self.ValidateIdentity("REVERSE(TO_BINARY('414243', 'HEX'))") }, &expr)
+	self.DoAssign(6784, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(6785, func() {
 		self.AssertEqual(M(annotated, "sql", "duckdb"), "CAST(REVERSE(CAST(UNHEX('414243') AS TEXT)) AS BLOB)")
 	})
-	self.Do(6791, func() { expr = self.ValidateIdentity("REVERSE(HEX_DECODE_BINARY('414243'))") })
-	self.Do(6792, func() {
+	self.DoAssign(6791, func() { expr = self.ValidateIdentity("REVERSE(HEX_DECODE_BINARY('414243'))") }, &expr)
+	self.DoAssign(6792, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(6793, func() {
 		self.AssertEqual(M(annotated, "sql", "duckdb"), "CAST(REVERSE(CAST(UNHEX('414243') AS TEXT)) AS BLOB)")
 	})
-	self.Do(6799, func() { expr = self.ValidateIdentity("REVERSE('ABC')") })
-	self.Do(6800, func() {
+	self.DoAssign(6799, func() { expr = self.ValidateIdentity("REVERSE('ABC')") }, &expr)
+	self.DoAssign(6800, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(6801, func() { self.AssertEqual(M(annotated, "sql", "duckdb"), "REVERSE('ABC')") })
 	return nil
 }
@@ -2883,31 +2895,31 @@ func test_snowflake_TestSnowflake_test_reverse(self *Case, a Args) Value {
 func test_snowflake_TestSnowflake_test_float_interval(self *Case, a Args) Value {
 	var expr, annotated Value
 	_ = []Value{expr, annotated}
-	self.Do(6805, func() { expr = self.ValidateIdentity("TIMEADD(HOUR, 2.5, CAST('10:30:00' AS TIME))") })
-	self.Do(6806, func() {
+	self.DoAssign(6805, func() { expr = self.ValidateIdentity("TIMEADD(HOUR, 2.5, CAST('10:30:00' AS TIME))") }, &expr)
+	self.DoAssign(6806, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(6807, func() {
 		self.AssertEqual(M(annotated, "sql", "duckdb"), "CAST('10:30:00' AS TIME) + INTERVAL (CAST(ROUND(2.5) AS INT)) HOUR")
 	})
-	self.Do(6813, func() {
+	self.DoAssign(6813, func() {
 		expr = self.ValidateIdentity("DATEADD(HOUR, CAST(3.8 AS DECIMAL(10, 2)), CAST('2024-01-01 10:00:00' AS TIMESTAMP))")
-	})
-	self.Do(6816, func() {
+	}, &expr)
+	self.DoAssign(6816, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(6817, func() {
 		self.AssertEqual(M(annotated, "sql", "duckdb"), "CAST('2024-01-01 10:00:00' AS TIMESTAMP) + INTERVAL (CAST(ROUND(CAST(3.8 AS DECIMAL(10, 2))) AS INT)) HOUR")
 	})
-	self.Do(6823, func() {
+	self.DoAssign(6823, func() {
 		expr = self.ParseOne("TIMESTAMPADD(MINUTE, 30.9, CAST('2024-01-01 10:00:00' AS TIMESTAMP))", Kw("dialect", "snowflake"))
-	})
+	}, &expr)
 	self.Do(6827, func() {
 		self.AssertEqual(M(expr, "sql", "snowflake"), "DATEADD(MINUTE, 30.9, CAST('2024-01-01 10:00:00' AS TIMESTAMP))")
 	})
-	self.Do(6830, func() {
+	self.DoAssign(6830, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(6831, func() {
 		self.AssertEqual(M(annotated, "sql", "duckdb"), "CAST('2024-01-01 10:00:00' AS TIMESTAMP) + INTERVAL (CAST(ROUND(30.9) AS INT)) MINUTE")
 	})
@@ -2917,34 +2929,34 @@ func test_snowflake_TestSnowflake_test_float_interval(self *Case, a Args) Value 
 func test_snowflake_TestSnowflake_test_transpile_bitwise_ops(self *Case, a Args) Value {
 	var expr, annotated Value
 	_ = []Value{expr, annotated}
-	self.Do(6838, func() { expr = self.ParseOne("SELECT BITOR(x'FF', x'0F')", Kw("dialect", "snowflake")) })
-	self.Do(6839, func() {
+	self.DoAssign(6838, func() { expr = self.ParseOne("SELECT BITOR(x'FF', x'0F')", Kw("dialect", "snowflake")) }, &expr)
+	self.DoAssign(6839, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(6840, func() {
 		self.AssertEqual(M(annotated, "sql", "duckdb"), "SELECT CAST(CAST(UNHEX('FF') AS BIT) | CAST(UNHEX('0F') AS BIT) AS BLOB)")
 	})
 	self.Do(6844, func() { self.AssertEqual(M(annotated, "sql", "snowflake"), "SELECT BITOR(x'FF', x'0F')") })
-	self.Do(6846, func() { expr = self.ParseOne("SELECT BITAND(x'FF', x'0F')", Kw("dialect", "snowflake")) })
-	self.Do(6847, func() {
+	self.DoAssign(6846, func() { expr = self.ParseOne("SELECT BITAND(x'FF', x'0F')", Kw("dialect", "snowflake")) }, &expr)
+	self.DoAssign(6847, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(6848, func() {
 		self.AssertEqual(M(annotated, "sql", "duckdb"), "SELECT CAST(CAST(UNHEX('FF') AS BIT) & CAST(UNHEX('0F') AS BIT) AS BLOB)")
 	})
 	self.Do(6852, func() { self.AssertEqual(M(annotated, "sql", "snowflake"), "SELECT BITAND(x'FF', x'0F')") })
-	self.Do(6854, func() { expr = self.ParseOne("SELECT BITXOR(x'FF', x'0F')", Kw("dialect", "snowflake")) })
-	self.Do(6855, func() {
+	self.DoAssign(6854, func() { expr = self.ParseOne("SELECT BITXOR(x'FF', x'0F')", Kw("dialect", "snowflake")) }, &expr)
+	self.DoAssign(6855, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(6856, func() {
 		self.AssertEqual(M(annotated, "sql", "duckdb"), "SELECT CAST(XOR(CAST(UNHEX('FF') AS BIT), CAST(UNHEX('0F') AS BIT)) AS BLOB)")
 	})
 	self.Do(6860, func() { self.AssertEqual(M(annotated, "sql", "snowflake"), "SELECT BITXOR(x'FF', x'0F')") })
-	self.Do(6862, func() { expr = self.ParseOne("SELECT BITNOT(x'FF')", Kw("dialect", "snowflake")) })
-	self.Do(6863, func() {
+	self.DoAssign(6862, func() { expr = self.ParseOne("SELECT BITNOT(x'FF')", Kw("dialect", "snowflake")) }, &expr)
+	self.DoAssign(6863, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(6864, func() {
 		self.AssertEqual(M(annotated, "sql", "duckdb"), "SELECT CAST(~CAST(UNHEX('FF') AS BIT) AS BLOB)")
 	})
@@ -3054,15 +3066,15 @@ func test_snowflake_TestSnowflake_test_update_statement(self *Case, a Args) Valu
 func test_snowflake_TestSnowflake_test_type_sensitive_bitshift_transpilation(self *Case, a Args) Value {
 	var ast Value
 	_ = []Value{ast}
-	self.Do(7159, func() {
+	self.DoAssign(7159, func() {
 		ast = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), self.ParseOne("SELECT BITSHIFTLEFT(X'FF', 4)"), Kw("dialect", "snowflake"))
-	})
+	}, &ast)
 	self.Do(7160, func() {
 		self.AssertEqual(M(ast, "sql", "duckdb"), "SELECT CAST(CAST(UNHEX('FF') AS BIT) << 4 AS BLOB)")
 	})
-	self.Do(7162, func() {
+	self.DoAssign(7162, func() {
 		ast = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), self.ParseOne("SELECT BITSHIFTRIGHT(X'FF', 4)"), Kw("dialect", "snowflake"))
-	})
+	}, &ast)
 	self.Do(7163, func() {
 		self.AssertEqual(M(ast, "sql", "duckdb"), "SELECT CAST(CAST(UNHEX('FF') AS BIT) >> 4 AS BLOB)")
 	})
@@ -3117,7 +3129,7 @@ func test_snowflake_TestSnowflake_test_directed_joins(self *Case, a Args) Value 
 			outer = item_
 			for _, item_ := range Iter(NewTuple("", "NATURAL ")) {
 				natural = item_
-				self.Do(7282, func() { prefix = Add(Add(Add(natural, join_side), outer), " DIRECTED") })
+				self.DoAssign(7282, func() { prefix = Add(Add(Add(natural, join_side), outer), " DIRECTED") }, &prefix)
 				self.SubTest(func() {
 					self.Do(7284, func() { self.ValidateIdentity(F("SELECT * FROM a ", FV{V: prefix}, " JOIN b USING (id)")) })
 				}, F("Testing ", FV{V: prefix}, " JOIN"))

@@ -93,11 +93,11 @@ func test_bigquery_TestBigQuery_test_isnull_alias(self *Case, a Args) Value {
 	_ = []Value{expression}
 	self.L(27).ValidateIdentity("SELECT 0 isnull", "SELECT 0 AS isnull")
 	self.L(28).ValidateIdentity("SELECT CASE WHEN TRUE THEN 0 ELSE 1 END isnull", "SELECT CASE WHEN TRUE THEN 0 ELSE 1 END AS isnull")
-	self.Do(32, func() {
+	self.DoAssign(32, func() {
 		expression = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), Call(G("sqlglot.optimizer.qualify.qualify"), self.ParseOne("WITH a AS (SELECT 1 AS x, 0 isnull), u AS (SELECT * EXCEPT(isnull) FROM a UNION ALL SELECT 2 AS x) SELECT u.x FROM u"), Kw("dialect", "bigquery")), Kw("dialect", "bigquery"))
-	})
+	}, &expression)
 	self.Do(43, func() {
-		M(self, "assertTrue", M(Item(A(expression, "selects"), 0), "is_type", A(A(G("sqlglot.exp"), "DType"), "INT")))
+		Stmt(M(self, "assertTrue", M(Item(A(expression, "selects"), 0), "is_type", A(A(G("sqlglot.exp"), "DType"), "INT"))))
 	})
 	return nil
 }
@@ -119,93 +119,93 @@ func test_bigquery_TestBigQuery_test_byte_strings(self *Case, a Args) Value {
 func test_bigquery_TestBigQuery_test_bigquery(self *Case, a Args) Value {
 	var expr, annotated, prefix, table, this, column, select_with_quoted_udf, col, load_data_sql, sql Value
 	_ = []Value{expr, annotated, prefix, table, this, column, select_with_quoted_udf, col, load_data_sql, sql}
-	self.Do(65, func() { expr = self.ParseOne("SELECT SHA512('foo')") })
-	self.Do(66, func() {
+	self.DoAssign(65, func() { expr = self.ParseOne("SELECT SHA512('foo')") }, &expr)
+	self.DoAssign(66, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "bigquery"))
-	})
+	}, &annotated)
 	self.Do(67, func() { self.AssertEqual(M(annotated, "sql", "presto"), "SELECT SHA512(TO_UTF8('foo'))") })
 	self.L(69).ValidateIdentity("SELECT 'foo' 'bar'", "SELECT CONCAT('foo', 'bar')")
 	self.L(73).ValidateIdentity("SELECT 'foo'/* c */'bar'", "SELECT CONCAT('foo' /* c */, 'bar')")
 	for _, item_ := range Iter(NewTuple("c.db.", "db.", "")) {
 		prefix = item_
 		self.SubTest(func() {
-			self.Do(80, func() {
+			self.DoAssign(80, func() {
 				table = self.ParseOne(F("`", FV{V: prefix}, "INFORMATION_SCHEMA.X`"), Kw("into", A(G("sqlglot.exp"), "Table")))
-			})
-			self.Do(81, func() { this = A(table, "this") })
-			self.Do(83, func() { M(self, "assertIsInstance", this, A(G("sqlglot.exp"), "Identifier")) })
-			self.Do(84, func() { M(self, "assertTrue", A(this, "quoted")) })
+			}, &table)
+			self.DoAssign(81, func() { this = A(table, "this") }, &this)
+			self.Do(83, func() { Stmt(M(self, "assertIsInstance", this, A(G("sqlglot.exp"), "Identifier"))) })
+			self.Do(84, func() { Stmt(M(self, "assertTrue", A(this, "quoted"))) })
 			self.Do(85, func() { self.AssertEqual(A(this, "name"), "INFORMATION_SCHEMA.X") })
 		}, F("Parsing ", FV{V: prefix}, "INFORMATION_SCHEMA.X into a Table"))
 	}
-	self.Do(87, func() { table = self.ParseOne("x-0._y.z", Kw("into", A(G("sqlglot.exp"), "Table"))) })
+	self.DoAssign(87, func() { table = self.ParseOne("x-0._y.z", Kw("into", A(G("sqlglot.exp"), "Table"))) }, &table)
 	self.Do(88, func() { self.AssertEqual(A(table, "catalog"), "x-0") })
 	self.Do(89, func() { self.AssertEqual(A(table, "db"), "_y") })
 	self.Do(90, func() { self.AssertEqual(A(table, "name"), "z") })
-	self.Do(92, func() { table = self.ParseOne("x-0._y", Kw("into", A(G("sqlglot.exp"), "Table"))) })
+	self.DoAssign(92, func() { table = self.ParseOne("x-0._y", Kw("into", A(G("sqlglot.exp"), "Table"))) }, &table)
 	self.Do(93, func() { self.AssertEqual(A(table, "db"), "x-0") })
 	self.Do(94, func() { self.AssertEqual(A(table, "name"), "_y") })
-	self.Do(99, func() {
+	self.DoAssign(99, func() {
 		table = self.ParseOne("`domain.com:project-id.region-us.INFORMATION_SCHEMA.JOBS`", Kw("into", A(G("sqlglot.exp"), "Table")))
-	})
+	}, &table)
 	self.Do(102, func() { self.AssertEqual(A(table, "catalog"), "domain.com:project-id") })
 	self.Do(103, func() { self.AssertEqual(A(table, "db"), "region-us") })
 	self.Do(104, func() { self.AssertEqual(A(table, "name"), "INFORMATION_SCHEMA.JOBS") })
-	self.Do(106, func() {
+	self.DoAssign(106, func() {
 		table = self.ParseOne("`domain.com:project-id.mydataset.mytable`", Kw("into", A(G("sqlglot.exp"), "Table")))
-	})
+	}, &table)
 	self.Do(107, func() { self.AssertEqual(A(table, "catalog"), "domain.com:project-id") })
 	self.Do(108, func() { self.AssertEqual(A(table, "db"), "mydataset") })
 	self.Do(109, func() { self.AssertEqual(A(table, "name"), "mytable") })
-	self.Do(114, func() { table = self.ParseOne("`domain.com:project-id`", Kw("into", A(G("sqlglot.exp"), "Table"))) })
+	self.DoAssign(114, func() { table = self.ParseOne("`domain.com:project-id`", Kw("into", A(G("sqlglot.exp"), "Table"))) }, &table)
 	self.Do(115, func() { self.AssertEqual(A(table, "name"), "domain.com:project-id") })
-	self.Do(116, func() { M(self, "assertIsNone", M(A(table, "args"), "get", "catalog")) })
-	self.Do(117, func() { M(self, "assertIsNone", M(A(table, "args"), "get", "db")) })
-	self.Do(121, func() { table = self.ParseOne("`proj:weird.ds.tbl`", Kw("into", A(G("sqlglot.exp"), "Table"))) })
+	self.Do(116, func() { Stmt(M(self, "assertIsNone", M(A(table, "args"), "get", "catalog"))) })
+	self.Do(117, func() { Stmt(M(self, "assertIsNone", M(A(table, "args"), "get", "db"))) })
+	self.DoAssign(121, func() { table = self.ParseOne("`proj:weird.ds.tbl`", Kw("into", A(G("sqlglot.exp"), "Table"))) }, &table)
 	self.Do(122, func() { self.AssertEqual(A(table, "catalog"), "proj:weird") })
 	self.Do(123, func() { self.AssertEqual(A(table, "db"), "ds") })
 	self.Do(124, func() { self.AssertEqual(A(table, "name"), "tbl") })
-	self.Do(127, func() {
+	self.DoAssign(127, func() {
 		table = self.ParseOne("`a.b.com:project-id.mydataset.mytable`", Kw("into", A(G("sqlglot.exp"), "Table")))
-	})
+	}, &table)
 	self.Do(128, func() { self.AssertEqual(A(table, "catalog"), "a.b.com:project-id") })
 	self.Do(129, func() { self.AssertEqual(A(table, "db"), "mydataset") })
 	self.Do(130, func() { self.AssertEqual(A(table, "name"), "mytable") })
-	self.Do(132, func() {
+	self.DoAssign(132, func() {
 		table = self.ParseOne("`a.b.com:project-id.region-us.INFORMATION_SCHEMA.JOBS`", Kw("into", A(G("sqlglot.exp"), "Table")))
-	})
+	}, &table)
 	self.Do(135, func() { self.AssertEqual(A(table, "catalog"), "a.b.com:project-id") })
 	self.Do(136, func() { self.AssertEqual(A(table, "db"), "region-us") })
 	self.Do(137, func() { self.AssertEqual(A(table, "name"), "INFORMATION_SCHEMA.JOBS") })
-	self.Do(139, func() { table = self.ParseOne("`a.b.com:project-id`", Kw("into", A(G("sqlglot.exp"), "Table"))) })
+	self.DoAssign(139, func() { table = self.ParseOne("`a.b.com:project-id`", Kw("into", A(G("sqlglot.exp"), "Table"))) }, &table)
 	self.Do(140, func() { self.AssertEqual(A(table, "name"), "a.b.com:project-id") })
-	self.Do(141, func() { M(self, "assertIsNone", M(A(table, "args"), "get", "catalog")) })
-	self.Do(142, func() { M(self, "assertIsNone", M(A(table, "args"), "get", "db")) })
+	self.Do(141, func() { Stmt(M(self, "assertIsNone", M(A(table, "args"), "get", "catalog"))) })
+	self.Do(142, func() { Stmt(M(self, "assertIsNone", M(A(table, "args"), "get", "db"))) })
 	self.L(144).ValidateIdentity("SELECT * FROM `domain.com:project-id.mydataset.mytable`")
 	self.L(145).ValidateIdentity("SELECT * FROM `domain.com:project-id.region-us.INFORMATION_SCHEMA`.JOBS", "SELECT * FROM `domain.com:project-id.region-us.INFORMATION_SCHEMA.JOBS` AS JOBS")
 	self.L(149).ValidateIdentity("SELECT * FROM `domain.com:project-id.region-us.INFORMATION_SCHEMA.JOBS`", "SELECT * FROM `domain.com:project-id.region-us.INFORMATION_SCHEMA.JOBS` AS `domain.com:project-id.region-us.INFORMATION_SCHEMA.JOBS`")
 	self.L(153).ValidateIdentity("SELECT * FROM `a.b.com:project-id.mydataset.mytable`")
 	self.L(154).ValidateIdentity("SELECT * FROM `a.b.com:project-id.region-us.INFORMATION_SCHEMA.JOBS`", "SELECT * FROM `a.b.com:project-id.region-us.INFORMATION_SCHEMA.JOBS` AS `a.b.com:project-id.region-us.INFORMATION_SCHEMA.JOBS`")
 	self.Do(159, func() {
-		M(self.ValidateIdentity("SAFE.SOME_RANDOM_FUNC(a, b, c)"), "assert_is", A(G("sqlglot.exp"), "SafeFunc"))
+		Stmt(M(self.ValidateIdentity("SAFE.SOME_RANDOM_FUNC(a, b, c)"), "assert_is", A(G("sqlglot.exp"), "SafeFunc")))
 	})
 	self.Do(160, func() {
-		M(A(M(self.ValidateIdentity("SAFE.SUBSTR('foo', 0, -2)"), "assert_is", A(G("sqlglot.exp"), "SafeFunc")), "this"), "assert_is", A(G("sqlglot.exp"), "Substring"))
+		Stmt(M(A(M(self.ValidateIdentity("SAFE.SUBSTR('foo', 0, -2)"), "assert_is", A(G("sqlglot.exp"), "SafeFunc")), "this"), "assert_is", A(G("sqlglot.exp"), "Substring")))
 	})
 	self.Do(163, func() {
-		M(A(M(self.ValidateIdentity("SAFE.TIMESTAMP(foo, zone)"), "assert_is", A(G("sqlglot.exp"), "SafeFunc")), "this"), "assert_is", A(G("sqlglot.exp"), "Timestamp"))
+		Stmt(M(A(M(self.ValidateIdentity("SAFE.TIMESTAMP(foo, zone)"), "assert_is", A(G("sqlglot.exp"), "SafeFunc")), "this"), "assert_is", A(G("sqlglot.exp"), "Timestamp")))
 	})
 	self.Do(166, func() {
-		M(A(M(self.ValidateIdentity("SAFE.PARSE_DATE('%Y-%m-%d', '2024-01-15')", "SAFE.PARSE_DATE('%F', '2024-01-15')"), "assert_is", A(G("sqlglot.exp"), "SafeFunc")), "this"), "assert_is", A(G("sqlglot.exp"), "StrToDate"))
+		Stmt(M(A(M(self.ValidateIdentity("SAFE.PARSE_DATE('%Y-%m-%d', '2024-01-15')", "SAFE.PARSE_DATE('%F', '2024-01-15')"), "assert_is", A(G("sqlglot.exp"), "SafeFunc")), "this"), "assert_is", A(G("sqlglot.exp"), "StrToDate")))
 	})
 	self.Do(170, func() {
-		M(A(M(self.ValidateIdentity("SAFE.PARSE_DATETIME('%Y-%m-%d %H:%M:%S', '2024-01-15 10:30:00')", "SAFE.PARSE_DATETIME('%F %T', '2024-01-15 10:30:00')"), "assert_is", A(G("sqlglot.exp"), "SafeFunc")), "this"), "assert_is", A(G("sqlglot.exp"), "ParseDatetime"))
+		Stmt(M(A(M(self.ValidateIdentity("SAFE.PARSE_DATETIME('%Y-%m-%d %H:%M:%S', '2024-01-15 10:30:00')", "SAFE.PARSE_DATETIME('%F %T', '2024-01-15 10:30:00')"), "assert_is", A(G("sqlglot.exp"), "SafeFunc")), "this"), "assert_is", A(G("sqlglot.exp"), "ParseDatetime")))
 	})
 	self.Do(174, func() {
-		M(A(M(self.ValidateIdentity("SAFE.PARSE_TIMESTAMP('%Y-%m-%d %H:%M:%S', '2024-01-15 10:30:00')", "SAFE.PARSE_TIMESTAMP('%F %T', '2024-01-15 10:30:00')"), "assert_is", A(G("sqlglot.exp"), "SafeFunc")), "this"), "assert_is", A(G("sqlglot.exp"), "StrToTime"))
+		Stmt(M(A(M(self.ValidateIdentity("SAFE.PARSE_TIMESTAMP('%Y-%m-%d %H:%M:%S', '2024-01-15 10:30:00')", "SAFE.PARSE_TIMESTAMP('%F %T', '2024-01-15 10:30:00')"), "assert_is", A(G("sqlglot.exp"), "SafeFunc")), "this"), "assert_is", A(G("sqlglot.exp"), "StrToTime")))
 	})
 	self.Do(179, func() {
-		M(self.ValidateIdentity("TIMESTAMP(foo, zone)"), "assert_is", A(G("sqlglot.exp"), "Timestamp"))
+		Stmt(M(self.ValidateIdentity("TIMESTAMP(foo, zone)"), "assert_is", A(G("sqlglot.exp"), "Timestamp")))
 	})
 	self.L(180).ValidateIdentity("SELECT * FROM x-0.y")
 	self.Do(181, func() {
@@ -223,21 +223,21 @@ func test_bigquery_TestBigQuery_test_bigquery(self *Case, a Args) Value {
 	self.Do(185, func() {
 		self.AssertEqual(M(M(G("sqlglot.exp"), "to_table", "`x`.`y`", Kw("dialect", "bigquery")), "sql", "bigquery"), "`x`.`y`")
 	})
-	self.Do(187, func() { column = Item(A(self.ValidateIdentity("SELECT `db.t`.`c` FROM `db.t`"), "selects"), 0) })
+	self.DoAssign(187, func() { column = Item(A(self.ValidateIdentity("SELECT `db.t`.`c` FROM `db.t`"), "selects"), 0) }, &column)
 	self.Do(188, func() { self.AssertEqual(Len(A(column, "parts")), 3) })
-	self.Do(190, func() { column = Item(A(self.ValidateIdentity("SELECT `p.d.t`.`c`.`f` FROM `p.d.t`"), "selects"), 0) })
-	self.Do(191, func() { M(A(column, "this"), "assert_is", A(G("sqlglot.exp"), "Dot")) })
-	self.Do(193, func() { select_with_quoted_udf = self.ValidateIdentity("SELECT `p.d.UdF`(data) FROM `p.d.t`") })
+	self.DoAssign(190, func() { column = Item(A(self.ValidateIdentity("SELECT `p.d.t`.`c`.`f` FROM `p.d.t`"), "selects"), 0) }, &column)
+	self.Do(191, func() { Stmt(M(A(column, "this"), "assert_is", A(G("sqlglot.exp"), "Dot"))) })
+	self.DoAssign(193, func() { select_with_quoted_udf = self.ValidateIdentity("SELECT `p.d.UdF`(data) FROM `p.d.t`") }, &select_with_quoted_udf)
 	self.Do(194, func() { self.AssertEqual(A(Item(A(select_with_quoted_udf, "selects"), 0), "name"), "p.d.UdF") })
 	self.L(196).ValidateIdentity("SELECT EXP(1)")
 	self.Do(197, func() {
-		M(A(M(self.ValidateIdentity("NET.HOST('http://example.com')"), "assert_is", A(G("sqlglot.exp"), "NetFunc")), "this"), "assert_is", A(G("sqlglot.exp"), "Host"))
+		Stmt(M(A(M(self.ValidateIdentity("NET.HOST('http://example.com')"), "assert_is", A(G("sqlglot.exp"), "NetFunc")), "this"), "assert_is", A(G("sqlglot.exp"), "Host")))
 	})
 	self.Do(200, func() {
-		M(A(M(self.ValidateIdentity("NET.REG_DOMAIN('http://example.com')"), "assert_is", A(G("sqlglot.exp"), "NetFunc")), "this"), "assert_is", A(G("sqlglot.exp"), "RegDomain"))
+		Stmt(M(A(M(self.ValidateIdentity("NET.REG_DOMAIN('http://example.com')"), "assert_is", A(G("sqlglot.exp"), "NetFunc")), "this"), "assert_is", A(G("sqlglot.exp"), "RegDomain")))
 	})
 	self.Do(203, func() {
-		M(A(self.ValidateIdentity("DATE_TRUNC(x, @foo)"), "unit"), "assert_is", A(G("sqlglot.exp"), "Parameter"))
+		Stmt(M(A(self.ValidateIdentity("DATE_TRUNC(x, @foo)"), "unit"), "assert_is", A(G("sqlglot.exp"), "Parameter")))
 	})
 	self.L(204).ValidateIdentity("ARRAY_CONCAT_AGG(x ORDER BY ARRAY_LENGTH(x) LIMIT 2)")
 	self.L(205).ValidateIdentity("ARRAY_CONCAT_AGG(x LIMIT 2)")
@@ -254,8 +254,8 @@ func test_bigquery_TestBigQuery_test_bigquery(self *Case, a Args) Value {
 	self.L(216).ValidateIdentity("SELECT STRING(data.144) FROM t", "SELECT STRING(data.`144`) FROM t")
 	self.L(217).ValidateIdentity("SELECT STRING(data.1e10) FROM t", "SELECT STRING(data.`1e10`) FROM t")
 	self.L(220).ValidateIdentity("SELECT t.144 A_FLAG FROM t", "SELECT t.`144` AS A_FLAG FROM t")
-	self.Do(222, func() { col = Item(A(self.ParseOne("SELECT data.144A_FLAG FROM t"), "selects"), 0) })
-	self.Do(223, func() { M(self, "assertIsInstance", col, A(G("sqlglot.exp"), "Column")) })
+	self.DoAssign(222, func() { col = Item(A(self.ParseOne("SELECT data.144A_FLAG FROM t"), "selects"), 0) }, &col)
+	self.Do(223, func() { Stmt(M(self, "assertIsInstance", col, A(G("sqlglot.exp"), "Column"))) })
 	self.Do(224, func() {
 		self.AssertEqual(A(col, "parts"), NewList(M(G("sqlglot.exp"), "to_identifier", "data"), M(G("sqlglot.exp"), "to_identifier", "144A_FLAG", Kw("quoted", true))))
 	})
@@ -343,7 +343,7 @@ func test_bigquery_TestBigQuery_test_bigquery(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewTuple("LOAD DATA OVERWRITE mydataset.table1 FROM FILES(FORMAT='AVRO', uris=['gs://bucket/path/file.avro'])", "LOAD DATA INTO TABLE mydataset.table1 FROM FILES(FORMAT='AVRO', uris=['gs://bucket/path/file.avro'])", "LOAD DATA INTO TEMP TABLE mydataset.table1 FROM FILES(FORMAT='AVRO', uris=['gs://bucket/path/file.avro'])")) {
 		load_data_sql = item_
 		self.SubTest(func() {
-			self.Do(372, func() { M(self.ValidateIdentity(load_data_sql), "assert_is", A(G("sqlglot.exp"), "LoadData")) })
+			self.Do(372, func() { Stmt(M(self.ValidateIdentity(load_data_sql), "assert_is", A(G("sqlglot.exp"), "LoadData"))) })
 		}, Kw("load_data_sql", load_data_sql))
 	}
 	self.L(373).ValidateIdentity("CAST(x AS BIGNUMERIC)")
@@ -363,7 +363,7 @@ func test_bigquery_TestBigQuery_test_bigquery(self *Case, a Args) Value {
 	self.L(387).ValidateIdentity("CAST(x AS RECORD)", "CAST(x AS STRUCT)")
 	self.L(388).ValidateIdentity("SELECT * FROM x WHERE x.y >= (SELECT MAX(a) FROM b-c) - 20")
 	self.Do(389, func() {
-		M(A(Item(A(self.ValidateIdentity(`WITH t AS (SELECT '{"x-y": "z"}' AS c) SELECT JSON_EXTRACT(c, '$.x-y') FROM t`), "selects"), 0), "expression"), "assert_is", A(G("sqlglot.exp"), "JSONPath"))
+		Stmt(M(A(Item(A(self.ValidateIdentity(`WITH t AS (SELECT '{"x-y": "z"}' AS c) SELECT JSON_EXTRACT(c, '$.x-y') FROM t`), "selects"), 0), "expression"), "assert_is", A(G("sqlglot.exp"), "JSONPath")))
 	})
 	self.L(392).ValidateIdentity("SELECT FORMAT_TIMESTAMP('%F %T', CURRENT_TIMESTAMP(), 'Europe/Berlin') AS ts")
 	self.L(395).ValidateIdentity("SELECT cars, apples FROM some_table PIVOT(SUM(total_counts) FOR products IN ('general.cars' AS cars, 'food.apples' AS apples))")
@@ -455,19 +455,19 @@ func test_bigquery_TestBigQuery_test_bigquery(self *Case, a Args) Value {
 	self.L(973).ValidateAll("NULL", Kw("read", NewDict("duckdb", "NULL = a", "postgres", "a = NULL")))
 	self.L(980).ValidateAll(`SELECT '\n'`, Kw("read", NewDict("bigquery", "SELECT '''\n'''")), Kw("write", NewDict("bigquery", `SELECT '\n'`, "postgres", "SELECT '\n'")))
 	self.L(990).ValidateAll("TRIM(item, '*')", Kw("read", NewDict("snowflake", "TRIM(item, '*')", "spark", "TRIM('*', item)")), Kw("write", NewDict("bigquery", "TRIM(item, '*')", "snowflake", "TRIM(item, '*')", "spark", "TRIM('*' FROM item)")))
-	self.Do(1002, func() {
+	self.DoAssign(1002, func() {
 		expr = self.ParseOne("SELECT TRIM(CAST('***apple***' AS BYTES), CAST('*' AS BYTES)) AS result")
-	})
-	self.Do(1005, func() {
+	}, &expr)
+	self.DoAssign(1005, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "bigquery"))
-	})
+	}, &annotated)
 	self.Do(1006, func() {
 		self.AssertEqual(M(annotated, "sql", "duckdb"), "SELECT CAST(TRIM(CAST(CAST('***apple***' AS BLOB) AS TEXT), CAST(CAST('*' AS BLOB) AS TEXT)) AS BLOB) AS result")
 	})
-	self.Do(1010, func() { expr = self.ParseOne("SELECT TRIM('***apple***', '*') AS result") })
-	self.Do(1011, func() {
+	self.DoAssign(1010, func() { expr = self.ParseOne("SELECT TRIM('***apple***', '*') AS result") }, &expr)
+	self.DoAssign(1011, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "bigquery"))
-	})
+	}, &annotated)
 	self.Do(1012, func() { self.AssertEqual(M(annotated, "sql", "duckdb"), "SELECT TRIM('***apple***', '*') AS result") })
 	self.L(1013).ValidateAll("CREATE OR REPLACE TABLE `a.b.c` COPY `a.b.d`", Kw("write", NewDict("bigquery", "CREATE OR REPLACE TABLE `a.b.c` COPY `a.b.d`", "snowflake", `CREATE OR REPLACE TABLE "a"."b"."c" CLONE "a"."b"."d"`)))
 	self.Do(1020, func() {
@@ -490,34 +490,34 @@ func test_bigquery_TestBigQuery_test_bigquery(self *Case, a Args) Value {
 	self.L(1108).ValidateAll(`SELECT TIMESTAMP_SUB(TIMESTAMP "2008-12-25 15:30:00+00", INTERVAL col MINUTE)`, Kw("write", NewDict("bigquery", "SELECT TIMESTAMP_SUB(CAST('2008-12-25 15:30:00+00' AS TIMESTAMP), INTERVAL col MINUTE)", "snowflake", "SELECT TIMESTAMPADD(MINUTE, col * -1, CAST('2008-12-25 15:30:00+00' AS TIMESTAMPTZ))")))
 	self.L(1115).ValidateAll("SELECT TIME_ADD(CAST('09:05:03' AS TIME), INTERVAL 2 HOUR)", Kw("write", NewDict("bigquery", "SELECT TIME_ADD(CAST('09:05:03' AS TIME), INTERVAL '2' HOUR)", "duckdb", "SELECT CAST('09:05:03' AS TIME) + INTERVAL '2' HOUR")))
 	self.L(1122).ValidateAll("SELECT TIME_SUB(CAST('09:05:03' AS TIME), INTERVAL 2 HOUR)", Kw("write", NewDict("bigquery", "SELECT TIME_SUB(CAST('09:05:03' AS TIME), INTERVAL '2' HOUR)", "duckdb", "SELECT CAST('09:05:03' AS TIME) - INTERVAL '2' HOUR")))
-	self.Do(1130, func() { expr = self.ParseOne("LOWER(CAST('HELLO' AS BYTES))") })
-	self.Do(1131, func() {
+	self.DoAssign(1130, func() { expr = self.ParseOne("LOWER(CAST('HELLO' AS BYTES))") }, &expr)
+	self.DoAssign(1131, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "bigquery"))
-	})
+	}, &annotated)
 	self.Do(1132, func() {
 		self.AssertEqual(M(annotated, "sql", "duckdb"), "CAST(LOWER(CAST(CAST('HELLO' AS BLOB) AS TEXT)) AS BLOB)")
 	})
-	self.Do(1136, func() { sql = "LOWER('HELLO')" })
-	self.Do(1137, func() { expr = self.ParseOne(sql) })
-	self.Do(1138, func() {
+	self.DoAssign(1136, func() { sql = "LOWER('HELLO')" }, &sql)
+	self.DoAssign(1137, func() { expr = self.ParseOne(sql) }, &expr)
+	self.DoAssign(1138, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "bigquery"))
-	})
+	}, &annotated)
 	self.Do(1139, func() { self.AssertEqual(M(annotated, "sql", "duckdb"), "LOWER('HELLO')") })
 	self.L(1141).ValidateAll("LOWER(TO_HEX(x))", Kw("write", NewDict("", "LOWER(HEX(x))", "bigquery", "TO_HEX(x)", "clickhouse", "LOWER(HEX(x))", "duckdb", "LOWER(HEX(x))", "hive", "LOWER(HEX(x))", "mysql", "LOWER(HEX(x))", "spark", "LOWER(HEX(x))", "sqlite", "LOWER(HEX(x))", "presto", "LOWER(TO_HEX(x))", "trino", "LOWER(TO_HEX(x))")))
 	self.L(1156).ValidateAll("TO_HEX(x)", Kw("read", NewDict("", "LOWER(HEX(x))", "clickhouse", "LOWER(HEX(x))", "duckdb", "LOWER(HEX(x))", "hive", "LOWER(HEX(x))", "mysql", "LOWER(HEX(x))", "spark", "LOWER(HEX(x))", "sqlite", "LOWER(HEX(x))", "presto", "LOWER(TO_HEX(x))", "trino", "LOWER(TO_HEX(x))")), Kw("write", NewDict("", "LOWER(HEX(x))", "bigquery", "TO_HEX(x)", "clickhouse", "LOWER(HEX(x))", "duckdb", "LOWER(HEX(x))", "hive", "LOWER(HEX(x))", "mysql", "LOWER(HEX(x))", "presto", "LOWER(TO_HEX(x))", "spark", "LOWER(HEX(x))", "sqlite", "LOWER(HEX(x))", "trino", "LOWER(TO_HEX(x))")))
-	self.Do(1183, func() { sql = "UPPER(CAST('hello' AS BYTES))" })
-	self.Do(1184, func() { expr = self.ParseOne("UPPER(CAST('hello' AS BYTES))") })
-	self.Do(1185, func() {
+	self.DoAssign(1183, func() { sql = "UPPER(CAST('hello' AS BYTES))" }, &sql)
+	self.DoAssign(1184, func() { expr = self.ParseOne("UPPER(CAST('hello' AS BYTES))") }, &expr)
+	self.DoAssign(1185, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "bigquery"))
-	})
+	}, &annotated)
 	self.Do(1186, func() {
 		self.AssertEqual(M(annotated, "sql", "duckdb"), "CAST(UPPER(CAST(CAST('hello' AS BLOB) AS TEXT)) AS BLOB)")
 	})
-	self.Do(1190, func() { sql = "UPPER('hello')" })
-	self.Do(1191, func() { expr = self.ParseOne(sql) })
-	self.Do(1192, func() {
+	self.DoAssign(1190, func() { sql = "UPPER('hello')" }, &sql)
+	self.DoAssign(1191, func() { expr = self.ParseOne(sql) }, &expr)
+	self.DoAssign(1192, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "bigquery"))
-	})
+	}, &annotated)
 	self.Do(1193, func() { self.AssertEqual(M(annotated, "sql", "duckdb"), "UPPER('hello')") })
 	self.L(1195).ValidateAll("UPPER(TO_HEX(x))", Kw("read", NewDict("", "HEX(x)", "clickhouse", "HEX(x)", "duckdb", "HEX(x)", "hive", "HEX(x)", "mysql", "HEX(x)", "presto", "TO_HEX(x)", "spark", "HEX(x)", "sqlite", "HEX(x)", "trino", "TO_HEX(x)")), Kw("write", NewDict("", "HEX(x)", "bigquery", "UPPER(TO_HEX(x))", "clickhouse", "HEX(x)", "duckdb", "HEX(x)", "hive", "HEX(x)", "mysql", "HEX(x)", "presto", "TO_HEX(x)", "spark", "HEX(x)", "sqlite", "HEX(x)", "trino", "TO_HEX(x)")))
 	self.L(1221).ValidateAll("MD5(x)", Kw("read", NewDict("clickhouse", "MD5(x)", "presto", "MD5(x)", "trino", "MD5(x)")), Kw("write", NewDict("", "MD5_DIGEST(x)", "bigquery", "MD5(x)", "clickhouse", "MD5(x)", "hive", "UNHEX(MD5(x))", "presto", "MD5(x)", "spark", "UNHEX(MD5(x))", "trino", "MD5(x)")))
@@ -549,17 +549,17 @@ func test_bigquery_TestBigQuery_test_bigquery(self *Case, a Args) Value {
 	self.L(1457).ValidateAll("\"\"\"a\n\"\"\"", Kw("write", NewDict("bigquery", `'a\n'`, "duckdb", "'a\n'")))
 	self.L(1464).ValidateAll("CAST(a AS INT64)", Kw("write", NewDict("bigquery", "CAST(a AS INT64)", "duckdb", "CAST(a AS BIGINT)", "presto", "CAST(a AS BIGINT)", "hive", "CAST(a AS BIGINT)", "spark", "CAST(a AS BIGINT)")))
 	self.L(1474).ValidateAll("CAST(a AS BYTES)", Kw("write", NewDict("bigquery", "CAST(a AS BYTES)", "duckdb", "CAST(a AS BLOB)", "presto", "CAST(a AS VARBINARY)", "hive", "CAST(a AS BINARY)", "spark", "CAST(a AS BINARY)")))
-	self.Do(1486, func() { expr = self.ParseOne("STARTS_WITH(CAST('foo' AS BYTES), CAST('f' AS BYTES))") })
-	self.Do(1487, func() {
+	self.DoAssign(1486, func() { expr = self.ParseOne("STARTS_WITH(CAST('foo' AS BYTES), CAST('f' AS BYTES))") }, &expr)
+	self.DoAssign(1487, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "bigquery"))
-	})
+	}, &annotated)
 	self.Do(1488, func() {
 		self.AssertEqual(M(annotated, "sql", "duckdb"), "STARTS_WITH(CAST(CAST('foo' AS BLOB) AS TEXT), CAST(CAST('f' AS BLOB) AS TEXT))")
 	})
-	self.Do(1493, func() { expr = self.ParseOne("STARTS_WITH(CAST('foo' AS BYTES), b'f')") })
-	self.Do(1494, func() {
+	self.DoAssign(1493, func() { expr = self.ParseOne("STARTS_WITH(CAST('foo' AS BYTES), b'f')") }, &expr)
+	self.DoAssign(1494, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "bigquery"))
-	})
+	}, &annotated)
 	self.Do(1495, func() {
 		self.AssertEqual(M(annotated, "sql", "duckdb"), "STARTS_WITH(CAST(CAST('foo' AS BLOB) AS TEXT), CAST(CAST('f' AS BLOB) AS TEXT))")
 	})
@@ -695,19 +695,19 @@ func test_bigquery_TestBigQuery_test_bigquery(self *Case, a Args) Value {
 	self.L(2260).ValidateAll("SELECT b'a'", Kw("write", NewDict("bigquery", "SELECT b'a'", "duckdb", "SELECT CAST('a' AS BLOB)", "postgres", "SELECT DECODE('61', 'hex')")))
 	self.L(2268).ValidateAll("SELECT GENERATE_UUID()", Kw("write", NewDict("bigquery", "SELECT GENERATE_UUID()", "duckdb", "SELECT CAST(UUID() AS TEXT)", "spark2", "SELECT CAST(UUID() AS STRING)", "spark", "SELECT CAST(UUID() AS STRING)", "presto", "SELECT CAST(UUID() AS VARCHAR)", "trino", "SELECT CAST(UUID() AS VARCHAR)", "snowflake", "SELECT UUID_STRING()")))
 	self.L(2281).ValidateAll("SELECT REPLACE('apple pie', 'pie', 'cobbler') AS result", Kw("write", NewDict("bigquery", "SELECT REPLACE('apple pie', 'pie', 'cobbler') AS result", "duckdb", "SELECT REPLACE('apple pie', 'pie', 'cobbler') AS result")))
-	self.Do(2288, func() {
+	self.DoAssign(2288, func() {
 		expr = self.ParseOne("SELECT REPLACE(CAST('apple pie' AS BYTES), CAST('pie' AS BYTES), CAST('cobbler' AS BYTES)) AS result")
-	})
-	self.Do(2291, func() {
+	}, &expr)
+	self.DoAssign(2291, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "bigquery"))
-	})
+	}, &annotated)
 	self.Do(2292, func() {
 		self.AssertEqual(M(annotated, "sql", "duckdb"), "SELECT CAST(REPLACE(CAST(CAST('apple pie' AS BLOB) AS TEXT), CAST(CAST('pie' AS BLOB) AS TEXT), CAST(CAST('cobbler' AS BLOB) AS TEXT)) AS BLOB) AS result")
 	})
-	self.Do(2296, func() { expr = self.ParseOne("REPLACE('apple pie', 'pie', 'cobbler')") })
-	self.Do(2297, func() {
+	self.DoAssign(2296, func() { expr = self.ParseOne("REPLACE('apple pie', 'pie', 'cobbler')") }, &expr)
+	self.DoAssign(2297, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expr, Kw("dialect", "bigquery"))
-	})
+	}, &annotated)
 	self.Do(2298, func() { self.AssertEqual(M(annotated, "sql", "duckdb"), "REPLACE('apple pie', 'pie', 'cobbler')") })
 	self.L(2300).ValidateAll("TIMESTAMP_TRUNC(TIMESTAMP '2024-03-15 14:35:47.123456', DAY, 'America/New_York')", Kw("write", NewDict("bigquery", "TIMESTAMP_TRUNC(CAST('2024-03-15 14:35:47.123456' AS TIMESTAMP), DAY, 'America/New_York')", "duckdb", "DATE_TRUNC('DAY', CAST('2024-03-15 14:35:47.123456' AS TIMESTAMPTZ) AT TIME ZONE 'America/New_York') AT TIME ZONE 'America/New_York'")))
 	self.L(2307).ValidateAll("TIMESTAMP_TRUNC(TIMESTAMP '2024-03-15 14:35:00', MINUTE, 'America/New_York')", Kw("write", NewDict("bigquery", "TIMESTAMP_TRUNC(CAST('2024-03-15 14:35:00' AS TIMESTAMP), MINUTE, 'America/New_York')", "duckdb", "DATE_TRUNC('MINUTE', CAST('2024-03-15 14:35:00' AS TIMESTAMPTZ))")))
@@ -726,43 +726,43 @@ func test_bigquery_TestBigQuery_test_errors(self *Case, a Args) Value {
 	self.Do(2374, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			M(self, "parse_one", "SELECT 'foo''bar'")
+			Stmt(M(self, "parse_one", "SELECT 'foo''bar'"))
 		}, G("sqlglot.ParseError"))
 	})
 	self.Do(2377, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			M(self, "parse_one", "SELECT * FROM a - b.c.d2")
+			Stmt(M(self, "parse_one", "SELECT * FROM a - b.c.d2"))
 		}, G("sqlglot.ParseError"))
 	})
 	self.Do(2380, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			Call(G("sqlglot.transpile"), `'\'`, Kw("read", "bigquery"))
+			Stmt(Call(G("sqlglot.transpile"), `'\'`, Kw("read", "bigquery")))
 		}, G("sqlglot.TokenError"))
 	})
 	self.Do(2384, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			Call(G("sqlglot.transpile"), "SELECT * FROM a INTERSECT ALL SELECT * FROM b", Kw("write", "bigquery"), Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE")))
+			Stmt(Call(G("sqlglot.transpile"), "SELECT * FROM a INTERSECT ALL SELECT * FROM b", Kw("write", "bigquery"), Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE"))))
 		}, G("sqlglot.UnsupportedError"))
 	})
 	self.Do(2391, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			Call(G("sqlglot.transpile"), "SELECT * FROM a EXCEPT ALL SELECT * FROM b", Kw("write", "bigquery"), Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE")))
+			Stmt(Call(G("sqlglot.transpile"), "SELECT * FROM a EXCEPT ALL SELECT * FROM b", Kw("write", "bigquery"), Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE"))))
 		}, G("sqlglot.UnsupportedError"))
 	})
 	self.Do(2398, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			Call(G("sqlglot.transpile"), "SELECT * FROM UNNEST(x) AS x(y)", Kw("read", "bigquery"))
+			Stmt(Call(G("sqlglot.transpile"), "SELECT * FROM UNNEST(x) AS x(y)", Kw("read", "bigquery")))
 		}, G("sqlglot.ParseError"))
 	})
 	self.Do(2401, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			Call(G("sqlglot.transpile"), "DATE_ADD(x, day)", Kw("read", "bigquery"))
+			Stmt(Call(G("sqlglot.transpile"), "DATE_ADD(x, day)", Kw("read", "bigquery")))
 		}, G("sqlglot.ParseError"))
 	})
 	return nil
@@ -774,16 +774,16 @@ func test_bigquery_TestBigQuery_test_warnings(self *Case, a Args) Value {
 	self.Do(2405, func() {
 		self.AssertLogs(func(cm_ Value) {
 			cm = cm_
-			M(self, "validate_identity", "WITH cte(c) AS (SELECT * FROM t) SELECT * FROM cte", "WITH cte AS (SELECT * FROM t) SELECT * FROM cte")
-			M(self, "assertIn", "Can't push down CTE column names for star queries.", Item(A(cm, "output"), 0))
-			M(self, "assertIn", "Named columns are not supported in table alias.", Item(A(cm, "output"), 1))
+			Stmt(M(self, "validate_identity", "WITH cte(c) AS (SELECT * FROM t) SELECT * FROM cte", "WITH cte AS (SELECT * FROM t) SELECT * FROM cte"))
+			Stmt(M(self, "assertIn", "Can't push down CTE column names for star queries.", Item(A(cm, "output"), 0)))
+			Stmt(M(self, "assertIn", "Named columns are not supported in table alias.", Item(A(cm, "output"), 1)))
 		}, G("sqlglot.helper.logger"))
 	})
 	self.Do(2414, func() {
 		self.AssertLogs(func(cm_ Value) {
 			cm = cm_
-			M(self, "validate_identity", "SELECT * FROM t AS t(c1, c2)", "SELECT * FROM t AS t")
-			M(self, "assertIn", "Named columns are not supported in table alias.", Item(A(cm, "output"), 0))
+			Stmt(M(self, "validate_identity", "SELECT * FROM t AS t(c1, c2)", "SELECT * FROM t AS t"))
+			Stmt(M(self, "assertIn", "Named columns are not supported in table alias.", Item(A(cm, "output"), 0)))
 		}, G("sqlglot.helper.logger"))
 	})
 	self.Do(2422, func() {
@@ -792,9 +792,9 @@ func test_bigquery_TestBigQuery_test_warnings(self *Case, a Args) Value {
 			statements = Call(G("sqlglot.parse"), "\n            BEGIN\n              DECLARE 1;\n              IF from_date IS NULL THEN SET x = 1;\n              END IF;\n            END\n            ", Kw("read", "bigquery"))
 			for _, item_ := range Iter(Call(G("zip"), statements, NewTuple("BEGIN DECLARE 1", "IF from_date IS NULL THEN SET x = 1", "END IF", "END"))) {
 				Unpack(item_, &actual, &expected)
-				M(self, "assertEqual", M(actual, "sql", Kw("dialect", "bigquery")), expected)
+				Stmt(M(self, "assertEqual", M(actual, "sql", Kw("dialect", "bigquery")), expected))
 			}
-			M(self, "assertIn", "unsupported syntax", Item(A(cm, "output"), 0))
+			Stmt(M(self, "assertIn", "unsupported syntax", Item(A(cm, "output"), 0)))
 		}, G("sqlglot.helper.logger"))
 	})
 	self.Do(2442, func() {
@@ -804,9 +804,9 @@ func test_bigquery_TestBigQuery_test_warnings(self *Case, a Args) Value {
 			expected_statements = NewTuple("BEGIN CALL `project_id.dataset_id.stored_procedure_id`()", "EXCEPTION WHEN ERROR THEN INSERT INTO `project_id.dataset_id.table_id` SELECT @@error.message, CURRENT_TIMESTAMP()", "END")
 			for _, item_ := range Iter(Call(G("zip"), statements, expected_statements)) {
 				Unpack(item_, &actual, &expected)
-				M(self, "assertEqual", M(actual, "sql", Kw("dialect", "bigquery")), expected)
+				Stmt(M(self, "assertEqual", M(actual, "sql", Kw("dialect", "bigquery")), expected))
 			}
-			M(self, "assertIn", "unsupported syntax", Item(A(cm, "output"), 0))
+			Stmt(M(self, "assertIn", "unsupported syntax", Item(A(cm, "output"), 0)))
 		}, G("sqlglot.helper.logger"))
 	})
 	self.Do(2463, func() {
@@ -816,30 +816,30 @@ func test_bigquery_TestBigQuery_test_warnings(self *Case, a Args) Value {
 			expected_statements = NewTuple("BEGIN DECLARE MY_VAR INT64 DEFAULT 1", "SET MY_VAR = (SELECT 0)", "IF MY_VAR = 1 THEN SELECT 'TRUE'", "ELSEIF MY_VAR = 0 THEN SELECT 'FALSE'", "ELSE SELECT 'NULL'", "END IF", "END")
 			for _, item_ := range Iter(Call(G("zip"), statements, expected_statements)) {
 				Unpack(item_, &actual, &expected)
-				M(self, "assertEqual", M(actual, "sql", Kw("dialect", "bigquery")), expected)
+				Stmt(M(self, "assertEqual", M(actual, "sql", Kw("dialect", "bigquery")), expected))
 			}
 		}, G("sqlglot.helper.logger"))
 	})
 	self.Do(2492, func() {
 		self.AssertLogs(func(cm_ Value) {
 			cm = cm_
-			M(self, "validate_identity", "SELECT * FROM t AS t(c1, c2)", "SELECT * FROM t AS t")
-			M(self, "assertIn", "Named columns are not supported in table alias.", Item(A(cm, "output"), 0))
+			Stmt(M(self, "validate_identity", "SELECT * FROM t AS t(c1, c2)", "SELECT * FROM t AS t"))
+			Stmt(M(self, "assertIn", "Named columns are not supported in table alias.", Item(A(cm, "output"), 0)))
 		}, G("sqlglot.helper.logger"))
 	})
 	self.Do(2500, func() {
 		self.AssertLogs(func(cm_ Value) {
 			_ = cm_
-			M(self, "validate_all", "SELECT a[1], b[OFFSET(1)], c[ORDINAL(1)], d[SAFE_OFFSET(1)], e[SAFE_ORDINAL(1)]", Kw("write", NewDict("duckdb", "SELECT a[2], b[2], c[1], d[2], e[1]", "bigquery", "SELECT a[1], b[OFFSET(1)], c[ORDINAL(1)], d[SAFE_OFFSET(1)], e[SAFE_ORDINAL(1)]", "presto", "SELECT a[2], b[2], c[1], ELEMENT_AT(d, 2), ELEMENT_AT(e, 1)")))
-			M(self, "validate_all", "a[0]", Kw("read", NewDict("bigquery", "a[0]", "duckdb", "a[1]", "presto", "a[1]")))
-			M(self, "validate_identity", "WITH foo AS (SELECT [1, 2, 3] AS array_col) SELECT array_col[offset] FROM foo CROSS JOIN UNNEST(array_col) WITH OFFSET AS offset")
+			Stmt(M(self, "validate_all", "SELECT a[1], b[OFFSET(1)], c[ORDINAL(1)], d[SAFE_OFFSET(1)], e[SAFE_ORDINAL(1)]", Kw("write", NewDict("duckdb", "SELECT a[2], b[2], c[1], d[2], e[1]", "bigquery", "SELECT a[1], b[OFFSET(1)], c[ORDINAL(1)], d[SAFE_OFFSET(1)], e[SAFE_ORDINAL(1)]", "presto", "SELECT a[2], b[2], c[1], ELEMENT_AT(d, 2), ELEMENT_AT(e, 1)"))))
+			Stmt(M(self, "validate_all", "a[0]", Kw("read", NewDict("bigquery", "a[0]", "duckdb", "a[1]", "presto", "a[1]"))))
+			Stmt(M(self, "validate_identity", "WITH foo AS (SELECT [1, 2, 3] AS array_col) SELECT array_col[offset] FROM foo CROSS JOIN UNNEST(array_col) WITH OFFSET AS offset"))
 		}, G("sqlglot.helper.logger"))
 	})
 	self.Do(2521, func() {
 		self.AssertLogs(func(cm_ Value) {
 			cm = cm_
 			for_in_stmts = Call(G("sqlglot.parse"), "FOR record IN (SELECT word FROM shakespeare) DO SELECT record.word; END FOR;", Kw("read", "bigquery"))
-			M(self, "assertEqual", func() Value {
+			Stmt(M(self, "assertEqual", func() Value {
 				var s Value
 				_ = []Value{s}
 				var out []Value
@@ -848,15 +848,15 @@ func test_bigquery_TestBigQuery_test_warnings(self *Case, a Args) Value {
 					out = append(out, M(s, "sql", Kw("dialect", "bigquery")))
 				}
 				return &List{V: out}
-			}(), NewList("FOR record IN (SELECT word FROM shakespeare) DO SELECT record.word", "END FOR"))
-			M(self, "assertIn", "'END FOR'", Item(A(cm, "output"), 0))
+			}(), NewList("FOR record IN (SELECT word FROM shakespeare) DO SELECT record.word", "END FOR")))
+			Stmt(M(self, "assertIn", "'END FOR'", Item(A(cm, "output"), 0)))
 		}, G("sqlglot.parser.logger"))
 	})
 	self.Do(2532, func() {
 		self.AssertLogs(func(cm_ Value) {
 			cm = cm_
 			for_in_stmts = Call(G("sqlglot.parse"), `FOR record IN (SELECT word FROM shakespeare) DO BEGIN SET x = "SELECT 1"; EXECUTE IMMEDIATE x; END; END FOR;`, Kw("read", "bigquery"))
-			M(self, "assertEqual", func() Value {
+			Stmt(M(self, "assertEqual", func() Value {
 				var s Value
 				_ = []Value{s}
 				var out []Value
@@ -865,10 +865,10 @@ func test_bigquery_TestBigQuery_test_warnings(self *Case, a Args) Value {
 					out = append(out, M(s, "sql", Kw("dialect", "bigquery")))
 				}
 				return &List{V: out}
-			}(), NewList(`FOR record IN (SELECT word FROM shakespeare) DO BEGIN SET x = "SELECT 1"`, "EXECUTE IMMEDIATE x", "END", "END FOR"))
-			M(self, "assertIn", "FOR record", Item(A(cm, "output"), 0))
-			M(self, "assertIn", "EXECUTE IMMEDIATE", Item(A(cm, "output"), 1))
-			M(self, "assertIn", "END FOR", Item(A(cm, "output"), 2))
+			}(), NewList(`FOR record IN (SELECT word FROM shakespeare) DO BEGIN SET x = "SELECT 1"`, "EXECUTE IMMEDIATE x", "END", "END FOR")))
+			Stmt(M(self, "assertIn", "FOR record", Item(A(cm, "output"), 0)))
+			Stmt(M(self, "assertIn", "EXECUTE IMMEDIATE", Item(A(cm, "output"), 1)))
+			Stmt(M(self, "assertIn", "END FOR", Item(A(cm, "output"), 2)))
 		}, G("sqlglot.parser.logger"))
 	})
 	return nil
@@ -877,7 +877,7 @@ func test_bigquery_TestBigQuery_test_warnings(self *Case, a Args) Value {
 func test_bigquery_TestBigQuery_test_user_defined_functions(self *Case, a Args) Value {
 	self.L(2551).ValidateIdentity("CREATE TEMPORARY FUNCTION a(x FLOAT64, y FLOAT64) RETURNS FLOAT64 NOT DETERMINISTIC LANGUAGE js AS 'return x*y;'")
 	self.Do(2554, func() {
-		M(self, "assertIsInstance", Item(A(self.ValidateIdentity("SELECT NOT deterministic FROM t"), "selects"), 0), A(G("sqlglot.exp"), "Not"))
+		Stmt(M(self, "assertIsInstance", Item(A(self.ValidateIdentity("SELECT NOT deterministic FROM t"), "selects"), 0), A(G("sqlglot.exp"), "Not")))
 	})
 	self.L(2557).ValidateIdentity("CREATE TEMPORARY FUNCTION udf(x ANY TYPE) AS (x)")
 	self.L(2558).ValidateIdentity("CREATE TEMPORARY FUNCTION a(x FLOAT64, y FLOAT64) AS ((x + 4) / y)")
@@ -915,9 +915,9 @@ func test_bigquery_TestBigQuery_test_models(self *Case, a Args) Value {
 func test_bigquery_TestBigQuery_test_ml_functions(self *Case, a Args) Value {
 	var ast, name Value
 	_ = []Value{ast, name}
-	self.Do(2646, func() {
+	self.DoAssign(2646, func() {
 		ast = self.ValidateIdentity("SELECT * FROM ML.PREDICT(MODEL mydataset.mymodel, (SELECT label, column1, column2 FROM mydataset.mytable))")
-	})
+	}, &ast)
 	self.Do(2649, func() { Assert(M(ast, "find", A(G("sqlglot.exp"), "Predict"))) })
 	self.L(2651).ValidateIdentity("SELECT label, predicted_label1, predicted_label AS predicted_label2 FROM ML.PREDICT(MODEL mydataset.mymodel2, (SELECT * EXCEPT (predicted_label), predicted_label AS predicted_label1 FROM ML.PREDICT(MODEL mydataset.mymodel1, TABLE mydataset.mytable)))")
 	self.L(2654).ValidateIdentity("SELECT * FROM ML.PREDICT(MODEL mydataset.mymodel, (SELECT custom_label, column1, column2 FROM mydataset.mytable), STRUCT(0.55 AS threshold))")
@@ -925,24 +925,26 @@ func test_bigquery_TestBigQuery_test_ml_functions(self *Case, a Args) Value {
 	self.L(2658).ValidateIdentity("SELECT * FROM ML.PREDICT(MODEL `my_project`.my_dataset.my_model, (SELECT * FROM input_data))")
 	self.L(2661).ValidateIdentity("SELECT * FROM ML.PREDICT(MODEL my_dataset.vision_model, (SELECT uri, ML.RESIZE_IMAGE(ML.DECODE_IMAGE(data), 480, 480, FALSE) AS input FROM my_dataset.object_table))")
 	self.L(2664).ValidateIdentity("SELECT * FROM ML.PREDICT(MODEL my_dataset.vision_model, (SELECT uri, ML.CONVERT_COLOR_SPACE(ML.RESIZE_IMAGE(ML.DECODE_IMAGE(data), 224, 280, TRUE), 'YIQ') AS input FROM my_dataset.object_table WHERE content_type = 'image/jpeg'))")
-	self.Do(2667, func() { ast = self.ValidateIdentity("SELECT * FROM ML.FEATURES_AT_TIME((SELECT 1), num_rows => 1)") })
+	self.DoAssign(2667, func() { ast = self.ValidateIdentity("SELECT * FROM ML.FEATURES_AT_TIME((SELECT 1), num_rows => 1)") }, &ast)
 	self.Do(2668, func() { Assert(M(ast, "find", A(G("sqlglot.exp"), "FeaturesAtTime"))) })
 	self.L(2669).ValidateIdentity("SELECT * FROM ML.FEATURES_AT_TIME(TABLE mydataset.feature_table, time => '2022-06-11 10:00:00+00', num_rows => 1, ignore_feature_nulls => TRUE)")
-	self.Do(2673, func() {
+	self.DoAssign(2673, func() {
 		ast = self.ValidateIdentity(`SELECT * FROM VECTOR_SEARCH(TABLE mydataset.base_table, 'column_to_search', TABLE mydataset.query_table, 'query_column_to_search', top_k => 2, distance_type => 'cosine', options => '{"fraction_lists_to_search":0.15}')`)
-	})
+	}, &ast)
 	self.Do(2676, func() { Assert(M(ast, "find", A(G("sqlglot.exp"), "VectorSearch"))) })
 	self.L(2677).ValidateIdentity(`SELECT * FROM VECTOR_SEARCH(TABLE mydataset.base_table, 'column_to_search', TABLE mydataset.query_table, query_column_to_search => 'query_column_to_search', top_k => 2, distance_type => 'cosine', options => '{"fraction_lists_to_search":0.15}')`)
 	self.L(2680).ValidateIdentity("SELECT * FROM VECTOR_SEARCH((SELECT * FROM mydataset.base_table), 'column_to_search', (SELECT * FROM mydataset.query_table), 'query_column_to_search')")
 	self.L(2683).ValidateIdentity("SELECT * FROM VECTOR_SEARCH(TABLE mydataset.base_table, 'column_to_search', TABLE mydataset.query_table)")
 	self.L(2686).ValidateIdentity("SELECT * FROM ML.TRANSLATE(MODEL `mydataset.mytranslatemodel`, TABLE `mydataset.mybqtable`, STRUCT('translate_text' AS translate_mode, 'zh-CN' AS target_language_code))")
 	self.Do(2689, func() {
-		M(M(self.ValidateIdentity("SELECT * FROM ML.TRANSLATE(MODEL `mydataset.mymodel`, (SELECT comment AS text_content FROM mydataset.mytable), STRUCT('translate_text' AS translate_mode, 'en' AS target_language_code))"), "find", A(G("sqlglot.exp"), "MLTranslate")), "assert_is", A(G("sqlglot.exp"), "MLTranslate"))
+		Stmt(M(M(self.ValidateIdentity("SELECT * FROM ML.TRANSLATE(MODEL `mydataset.mymodel`, (SELECT comment AS text_content FROM mydataset.mytable), STRUCT('translate_text' AS translate_mode, 'en' AS target_language_code))"), "find", A(G("sqlglot.exp"), "MLTranslate")), "assert_is", A(G("sqlglot.exp"), "MLTranslate")))
 	})
-	self.Do(2692, func() { M(self.ValidateIdentity("TRANSLATE(x, y, z)"), "assert_is", A(G("sqlglot.exp"), "Translate")) })
-	self.Do(2694, func() {
+	self.Do(2692, func() {
+		Stmt(M(self.ValidateIdentity("TRANSLATE(x, y, z)"), "assert_is", A(G("sqlglot.exp"), "Translate")))
+	})
+	self.DoAssign(2694, func() {
 		ast = self.ValidateIdentity("SELECT * FROM ML.FORECAST(MODEL `mydataset.mymodel`, STRUCT(2 AS horizon))")
-	})
+	}, &ast)
 	self.Do(2697, func() { Assert(M(ast, "find", A(G("sqlglot.exp"), "MLForecast"))) })
 	self.L(2698).ValidateIdentity("SELECT * FROM ML.FORECAST(MODEL `mydataset.mymodel`, TABLE `mydataset.mybqtable`, STRUCT(2 AS horizon, 4 AS confidence_level))")
 	self.L(2701).ValidateIdentity("SELECT * FROM ML.FORECAST(MODEL `mydataset.mymodel`, (SELECT * FROM mydataset.query_table), STRUCT())")
@@ -951,9 +953,9 @@ func test_bigquery_TestBigQuery_test_ml_functions(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewTuple("GENERATE_EMBEDDING", "GENERATE_TEXT_EMBEDDING")) {
 		name = item_
 		self.SubTest(func() {
-			self.Do(2714, func() {
+			self.DoAssign(2714, func() {
 				ast = self.ValidateIdentity(F("SELECT * FROM ML.", FV{V: name}, "(MODEL mydataset.mymodel, (SELECT label, column1, column2 FROM mydataset.mytable))"))
-			})
+			}, &ast)
 			self.Do(2717, func() {
 				self.ValidateIdentity(F("SELECT * FROM ML.", FV{V: name}, "(MODEL mydataset.mymodel, TABLE mydataset.mytable, STRUCT(TRUE AS flatten_json_output))"))
 			})
@@ -964,17 +966,17 @@ func test_bigquery_TestBigQuery_test_ml_functions(self *Case, a Args) Value {
 	self.L(2726).ValidateIdentity("SELECT * FROM AI.GENERATE_TEXT(MODEL `mydataset.gemini_model`, TABLE `mydataset.prompt_table`, STRUCT(0.15 AS temperature))")
 	self.L(2729).ValidateIdentity("SELECT * FROM AI.GENERATE_TABLE(MODEL `mydataset.gemini_model`, (SELECT 'Q' AS prompt), STRUCT('name STRING' AS output_schema))")
 	self.L(2732).ValidateIdentity("SELECT AI.GENERATE_BOOL(MODEL `mydataset.gemini_model`, 'Is sky blue?')")
-	self.Do(2736, func() { ast = self.ValidateIdentity("SELECT AI.EMBED('hello')") })
+	self.DoAssign(2736, func() { ast = self.ValidateIdentity("SELECT AI.EMBED('hello')") }, &ast)
 	self.Do(2737, func() { Assert(IsInstance(Item(A(ast, "expressions"), 0), A(G("sqlglot.exp"), "Dot"))) })
 	self.Do(2738, func() {
 		Assert(IsInstance(A(Item(A(ast, "expressions"), 0), "expression"), A(G("sqlglot.exp"), "AIEmbed")))
 	})
-	self.Do(2740, func() { ast = self.ValidateIdentity("SELECT AI.SIMILARITY('a', 'b')") })
+	self.DoAssign(2740, func() { ast = self.ValidateIdentity("SELECT AI.SIMILARITY('a', 'b')") }, &ast)
 	self.Do(2741, func() { Assert(IsInstance(Item(A(ast, "expressions"), 0), A(G("sqlglot.exp"), "Dot"))) })
 	self.Do(2742, func() {
 		Assert(IsInstance(A(Item(A(ast, "expressions"), 0), "expression"), A(G("sqlglot.exp"), "AISimilarity")))
 	})
-	self.Do(2744, func() { ast = self.ValidateIdentity("SELECT AI.GENERATE('Write a haiku')") })
+	self.DoAssign(2744, func() { ast = self.ValidateIdentity("SELECT AI.GENERATE('Write a haiku')") }, &ast)
 	self.Do(2745, func() { Assert(IsInstance(Item(A(ast, "expressions"), 0), A(G("sqlglot.exp"), "Dot"))) })
 	self.Do(2746, func() {
 		Assert(IsInstance(A(Item(A(ast, "expressions"), 0), "expression"), A(G("sqlglot.exp"), "AIGenerate")))
@@ -1003,7 +1005,7 @@ func test_bigquery_TestBigQuery_test_pushdown_cte_column_names(self *Case, a Arg
 	self.Do(2778, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			Call(G("sqlglot.transpile"), "WITH cte(foo) AS (SELECT * FROM tbl) SELECT foo FROM cte", Kw("read", "spark"), Kw("write", "bigquery"), Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE")))
+			Stmt(Call(G("sqlglot.transpile"), "WITH cte(foo) AS (SELECT * FROM tbl) SELECT foo FROM cte", Kw("read", "spark"), Kw("write", "bigquery"), Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE"))))
 		}, G("sqlglot.UnsupportedError"))
 	})
 	self.L(2786).ValidateAll("WITH cte AS (SELECT 1 AS foo) SELECT foo FROM cte", Kw("read", NewDict("spark", "WITH cte(foo) AS (SELECT 1) SELECT foo FROM cte")))
@@ -1042,7 +1044,7 @@ func test_bigquery_TestBigQuery_test_json_object(self *Case, a Args) Value {
 	self.Do(2852, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			Call(G("sqlglot.transpile"), "SELECT JSON_OBJECT('a', 1, 'b') AS json_data", Kw("read", "bigquery"))
+			Stmt(Call(G("sqlglot.transpile"), "SELECT JSON_OBJECT('a', 1, 'b') AS json_data", Kw("read", "bigquery")))
 		}, G("sqlglot.ParseError"))
 	})
 	return nil
@@ -1175,7 +1177,7 @@ func test_bigquery_TestBigQuery_test_json_extract(self *Case, a Args) Value {
 			self.Do(3101, func() {
 				self.ValidateAll(F("SELECT ", FV{V: func_}, "('5')"), Kw("write", NewDict("bigquery", F("SELECT ", FV{V: func_}, "('5', '$')"), "duckdb", "SELECT JSON_VALUE('5', '$') ->> '$'")))
 			})
-			self.Do(3109, func() { sql = F("SELECT ", FV{V: func_}, `('{"name": "Jakob", "age": "6"}', '$.age')`) })
+			self.DoAssign(3109, func() { sql = F("SELECT ", FV{V: func_}, `('{"name": "Jakob", "age": "6"}', '$.age')`) }, &sql)
 			self.Do(3110, func() {
 				self.ValidateAll(sql, Kw("write", NewDict("bigquery", sql, "duckdb", `SELECT JSON_VALUE('{"name": "Jakob", "age": "6"}', '$.age') ->> '$'`, "snowflake", `SELECT JSON_EXTRACT_PATH_TEXT('{"name": "Jakob", "age": "6"}', 'age')`)))
 			})
@@ -1208,7 +1210,7 @@ func test_bigquery_TestBigQuery_test_json_extract_array(self *Case, a Args) Valu
 	for _, item_ := range Iter(NewTuple("JSON_QUERY_ARRAY", "JSON_EXTRACT_ARRAY")) {
 		func_ = item_
 		self.SubTest(func() {
-			self.Do(3145, func() { sql = F("SELECT ", FV{V: func_}, `('{"fruits": [1, "oranges"]}', '$.fruits')`) })
+			self.DoAssign(3145, func() { sql = F("SELECT ", FV{V: func_}, `('{"fruits": [1, "oranges"]}', '$.fruits')`) }, &sql)
 			self.Do(3146, func() {
 				self.ValidateAll(sql, Kw("write", NewDict("bigquery", sql, "duckdb", `SELECT CAST('{"fruits": [1, "oranges"]}' -> '$.fruits' AS JSON[])`, "snowflake", `SELECT TRANSFORM(GET_PATH(PARSE_JSON('{"fruits": [1, "oranges"]}'), 'fruits'), x -> PARSE_JSON(TO_JSON(x)))`)))
 			})
@@ -1227,7 +1229,7 @@ func test_bigquery_TestBigQuery_test_unix_seconds(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewTuple("bigquery", "spark", "databricks")) {
 		dialect = item_
 		self.Do(3176, func() {
-			M(Call(G("sqlglot.parse_one"), "UNIX_SECONDS(col)", Kw("dialect", dialect)), "assert_is", A(G("sqlglot.exp"), "UnixSeconds"))
+			Stmt(M(Call(G("sqlglot.parse_one"), "UNIX_SECONDS(col)", Kw("dialect", dialect)), "assert_is", A(G("sqlglot.exp"), "UnixSeconds")))
 		})
 	}
 	return nil
@@ -1295,12 +1297,12 @@ func test_bigquery_TestBigQuery_test_string_agg(self *Case, a Args) Value {
 func test_bigquery_TestBigQuery_test_annotate_timestamps(self *Case, a Args) Value {
 	var sql, annotated, select_ Value
 	_ = []Value{sql, annotated, select_}
-	self.Do(3394, func() {
+	self.DoAssign(3394, func() {
 		sql = "\n        SELECT\n          CURRENT_TIMESTAMP() AS curr_ts,\n          TIMESTAMP_SECONDS(2) AS ts_seconds,\n          PARSE_TIMESTAMP('%c', 'Thu Dec 25 07:30:00 2008', 'UTC') AS parsed_ts,\n          TIMESTAMP_ADD(TIMESTAMP \"2008-12-25 15:30:00+00\", INTERVAL 10 MINUTE) AS ts_add,\n          TIMESTAMP_SUB(TIMESTAMP \"2008-12-25 15:30:00+00\", INTERVAL 10 MINUTE) AS ts_sub,\n        "
-	})
-	self.Do(3403, func() {
+	}, &sql)
+	self.DoAssign(3403, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), self.ParseOne(sql), Kw("dialect", "bigquery"))
-	})
+	}, &annotated)
 	for _, item_ := range Iter(A(annotated, "selects")) {
 		select_ = item_
 		self.Do(3406, func() { self.AssertEqual(M(A(select_, "type"), "sql", "bigquery"), "TIMESTAMP") })
@@ -1326,14 +1328,14 @@ func test_bigquery_TestBigQuery_test_set_operations(self *Case, a Args) Value {
 			}
 		}
 	}
-	self.Do(3423, func() {
+	self.DoAssign(3423, func() {
 		union = self.ValidateIdentity("(SELECT 1 AS foo) FULL OUTER UNION ALL BY NAME (SELECT 2 AS foo, 3 AS bar)")
-	})
+	}, &union)
 	self.Do(3426, func() { self.AssertEqual(A(union, "side"), "FULL") })
 	self.Do(3427, func() { self.AssertEqual(A(union, "kind"), "OUTER") })
 	self.L(3429).ValidateIdentity("(SELECT 1 AS foo) FULL UNION ALL BY NAME (SELECT 2 AS foo)")
-	self.Do(3431, func() { union = self.ValidateIdentity("(SELECT 1) AS x UNION ALL (SELECT 2)") })
-	self.Do(3432, func() { M(self, "assertIsInstance", A(union, "this"), A(G("sqlglot.exp"), "Subquery")) })
+	self.DoAssign(3431, func() { union = self.ValidateIdentity("(SELECT 1) AS x UNION ALL (SELECT 2)") }, &union)
+	self.Do(3432, func() { Stmt(M(self, "assertIsInstance", A(union, "this"), A(G("sqlglot.exp"), "Subquery"))) })
 	self.L(3434).ValidateIdentity("SELECT 1 AS x UNION ALL CORRESPONDING SELECT 2 AS x", "SELECT 1 AS x INNER UNION ALL BY NAME SELECT 2 AS x")
 	self.L(3439).ValidateIdentity("SELECT 1 AS x UNION ALL CORRESPONDING BY (foo, bar) SELECT 2 AS x", "SELECT 1 AS x INNER UNION ALL BY NAME ON (foo, bar) SELECT 2 AS x")
 	self.L(3444).ValidateIdentity("SELECT 1 AS x LEFT UNION ALL CORRESPONDING SELECT 2 AS x", "SELECT 1 AS x LEFT UNION ALL BY NAME SELECT 2 AS x")
@@ -1360,9 +1362,9 @@ func test_bigquery_TestBigQuery_test_with_offset(self *Case, a Args) Value {
 func test_bigquery_TestBigQuery_test_identifier_meta(self *Case, a Args) Value {
 	var ast, identifier, information_schema_sql, meta Value
 	_ = []Value{ast, identifier, information_schema_sql, meta}
-	self.Do(3473, func() {
+	self.DoAssign(3473, func() {
 		ast = Call(G("sqlglot.parse_one"), "SELECT a, b FROM test_schema.test_table_a UNION ALL SELECT c, d FROM test_catalog.test_schema.test_table_b", Kw("dialect", "bigquery"))
-	})
+	}, &ast)
 	for _, item_ := range Iter(M(ast, "find_all", A(G("sqlglot.exp"), "Identifier"))) {
 		identifier = item_
 		self.Do(3478, func() { self.AssertEqual(Call(G("set"), A(identifier, "meta")), NewSet("line", "col", "start", "end")) })
@@ -1382,9 +1384,9 @@ func test_bigquery_TestBigQuery_test_identifier_meta(self *Case, a Args) Value {
 	self.Do(3496, func() {
 		self.AssertEqual(A(Item(A(A(Item(A(A(ast, "expression"), "args"), "from_"), "this"), "args"), "catalog"), "meta"), NewDict("line", 1, "col", 81, "start", 69, "end", 80))
 	})
-	self.Do(3501, func() { information_schema_sql = "SELECT a, b FROM region.INFORMATION_SCHEMA.COLUMNS" })
-	self.Do(3502, func() { ast = Call(G("sqlglot.parse_one"), information_schema_sql, Kw("dialect", "bigquery")) })
-	self.Do(3503, func() { meta = A(A(A(Item(A(ast, "args"), "from_"), "this"), "this"), "meta") })
+	self.DoAssign(3501, func() { information_schema_sql = "SELECT a, b FROM region.INFORMATION_SCHEMA.COLUMNS" }, &information_schema_sql)
+	self.DoAssign(3502, func() { ast = Call(G("sqlglot.parse_one"), information_schema_sql, Kw("dialect", "bigquery")) }, &ast)
+	self.DoAssign(3503, func() { meta = A(A(A(Item(A(ast, "args"), "from_"), "this"), "this"), "meta") }, &meta)
 	self.Do(3504, func() { self.AssertEqual(meta, NewDict("line", 1, "col", 50, "start", 24, "end", 49)) })
 	self.Do(3505, func() {
 		Assert(Eq(Slice(information_schema_sql, Item(meta, "start"), Add(Item(meta, "end"), 1), nil), "INFORMATION_SCHEMA.COLUMNS"))
@@ -1395,19 +1397,19 @@ func test_bigquery_TestBigQuery_test_identifier_meta(self *Case, a Args) Value {
 func test_bigquery_TestBigQuery_test_quoted_identifier_meta(self *Case, a Args) Value {
 	var sql, ast, db_meta, table_meta, information_schema_sql Value
 	_ = []Value{sql, ast, db_meta, table_meta, information_schema_sql}
-	self.Do(3510, func() { sql = "SELECT `a` FROM `test_schema`.`test_table_a`" })
-	self.Do(3511, func() { ast = Call(G("sqlglot.parse_one"), sql, Kw("dialect", "bigquery")) })
-	self.Do(3512, func() { db_meta = A(Item(A(A(Item(A(ast, "args"), "from_"), "this"), "args"), "db"), "meta") })
+	self.DoAssign(3510, func() { sql = "SELECT `a` FROM `test_schema`.`test_table_a`" }, &sql)
+	self.DoAssign(3511, func() { ast = Call(G("sqlglot.parse_one"), sql, Kw("dialect", "bigquery")) }, &ast)
+	self.DoAssign(3512, func() { db_meta = A(Item(A(A(Item(A(ast, "args"), "from_"), "this"), "args"), "db"), "meta") }, &db_meta)
 	self.Do(3513, func() {
 		self.AssertEqual(Slice(sql, Item(db_meta, "start"), Add(Item(db_meta, "end"), 1), nil), "`test_schema`")
 	})
-	self.Do(3514, func() { table_meta = A(A(A(Item(A(ast, "args"), "from_"), "this"), "this"), "meta") })
+	self.DoAssign(3514, func() { table_meta = A(A(A(Item(A(ast, "args"), "from_"), "this"), "this"), "meta") }, &table_meta)
 	self.Do(3515, func() {
 		self.AssertEqual(Slice(sql, Item(table_meta, "start"), Add(Item(table_meta, "end"), 1), nil), "`test_table_a`")
 	})
-	self.Do(3517, func() { information_schema_sql = "SELECT a, b FROM `region.INFORMATION_SCHEMA.COLUMNS`" })
-	self.Do(3518, func() { ast = Call(G("sqlglot.parse_one"), information_schema_sql, Kw("dialect", "bigquery")) })
-	self.Do(3519, func() { table_meta = A(A(A(Item(A(ast, "args"), "from_"), "this"), "this"), "meta") })
+	self.DoAssign(3517, func() { information_schema_sql = "SELECT a, b FROM `region.INFORMATION_SCHEMA.COLUMNS`" }, &information_schema_sql)
+	self.DoAssign(3518, func() { ast = Call(G("sqlglot.parse_one"), information_schema_sql, Kw("dialect", "bigquery")) }, &ast)
+	self.DoAssign(3519, func() { table_meta = A(A(A(Item(A(ast, "args"), "from_"), "this"), "this"), "meta") }, &table_meta)
 	self.Do(3520, func() {
 		Assert(Eq(Slice(information_schema_sql, Item(table_meta, "start"), Add(Item(table_meta, "end"), 1), nil), "`region.INFORMATION_SCHEMA.COLUMNS`"))
 	})
@@ -1417,17 +1419,17 @@ func test_bigquery_TestBigQuery_test_quoted_identifier_meta(self *Case, a Args) 
 func test_bigquery_TestBigQuery_test_override_normalization_strategy(self *Case, a Args) Value {
 	var sql, ast, qualified Value
 	_ = []Value{sql, ast, qualified}
-	self.Do(3526, func() { sql = "SELECT * FROM p.d.t" })
-	self.Do(3527, func() { ast = self.ParseOne(sql) })
-	self.Do(3528, func() {
+	self.DoAssign(3526, func() { sql = "SELECT * FROM p.d.t" }, &sql)
+	self.DoAssign(3527, func() { ast = self.ParseOne(sql) }, &ast)
+	self.DoAssign(3528, func() {
 		qualified = Call(G("sqlglot.optimizer.qualify.qualify"), M(ast, "copy"), Kw("dialect", "bigquery,normalization_strategy=uppercase"))
-	})
+	}, &qualified)
 	self.Do(3529, func() { self.AssertEqual(M(qualified, "sql", "bigquery"), "SELECT * FROM `P`.`D`.`T` AS `T`") })
 	self.Do(3534, func() {
 		err1 := Try(func() {
 			SetA(G("sqlglot.dialects.BigQuery"), "NORMALIZATION_STRATEGY", A(G("sqlglot.dialects.dialect.NormalizationStrategy"), "UPPERCASE"))
 			qualified = Call(G("sqlglot.optimizer.qualify.qualify"), M(ast, "copy"), Kw("dialect", "bigquery,normalization_strategy=uppercase"))
-			M(self, "assertEqual", M(qualified, "sql", "bigquery"), "SELECT * FROM `P`.`D`.`T` AS `T`")
+			Stmt(M(self, "assertEqual", M(qualified, "sql", "bigquery"), "SELECT * FROM `P`.`D`.`T` AS `T`"))
 		})
 		_ = err1
 		self.Do(3540, func() {
@@ -1507,10 +1509,10 @@ func test_bigquery_TestBigQuery_test_select_as_struct(self *Case, a Args) Value 
 func test_bigquery_TestBigQuery_test_avoid_generating_nested_comment(self *Case, a Args) Value {
 	var sql, expected Value
 	_ = []Value{sql, expected}
-	self.Do(3646, func() {
+	self.DoAssign(3646, func() {
 		sql = "\n        select\n            id,\n            foo,\n            -- bar, /* the thing */\n        from facts\n        "
-	})
-	self.Do(3653, func() { expected = "SELECT\n  id,\n  foo\n/* bar, / * the thing * / */\nFROM facts" })
+	}, &sql)
+	self.DoAssign(3653, func() { expected = "SELECT\n  id,\n  foo\n/* bar, / * the thing * / */\nFROM facts" }, &expected)
 	self.Do(3654, func() { self.AssertEqual(M(self.ParseOne(sql), "sql", "bigquery", Kw("pretty", true)), expected) })
 	return nil
 }
@@ -1585,9 +1587,9 @@ func test_bigquery_TestBigQuery_test_week(self *Case, a Args) Value {
 	self.L(3877).ValidateAll("SELECT TIMESTAMP_TRUNC(TIMESTAMP '2008-11-10 14:30:00+00', WEEK, 'America/New_York')", Kw("write", NewDict("bigquery", "SELECT TIMESTAMP_TRUNC(CAST('2008-11-10 14:30:00+00' AS TIMESTAMP), WEEK, 'America/New_York')", "duckdb", "SELECT (DATE_TRUNC('WEEK', CAST('2008-11-10 14:30:00+00' AS TIMESTAMPTZ) AT TIME ZONE 'America/New_York' + INTERVAL '1' DAY) + INTERVAL '-1' DAY) AT TIME ZONE 'America/New_York'")))
 	self.L(3884).ValidateAll("SELECT TIMESTAMP_TRUNC(TIMESTAMP '2008-11-10 14:30:00+00', WEEK(SUNDAY), 'America/New_York')", Kw("write", NewDict("bigquery", "SELECT TIMESTAMP_TRUNC(CAST('2008-11-10 14:30:00+00' AS TIMESTAMP), WEEK, 'America/New_York')", "duckdb", "SELECT (DATE_TRUNC('WEEK', CAST('2008-11-10 14:30:00+00' AS TIMESTAMPTZ) AT TIME ZONE 'America/New_York' + INTERVAL '1' DAY) + INTERVAL '-1' DAY) AT TIME ZONE 'America/New_York'")))
 	self.L(3891).ValidateIdentity("EXTRACT(WEEK(THURSDAY) FROM DATE '2013-12-25')", "EXTRACT(WEEK(THURSDAY) FROM CAST('2013-12-25' AS DATE))")
-	self.Do(3896, func() {
+	self.DoAssign(3896, func() {
 		week_trunc = NewDict("MONDAY", NewTuple("WEEK(MONDAY)", "DATE_TRUNC('WEEK', date)"), "TUESDAY", NewTuple("WEEK(TUESDAY)", "CAST(DATE_TRUNC('WEEK', date + INTERVAL '-1' DAY) + INTERVAL '1' DAY AS DATE)"), "WEDNESDAY", NewTuple("WEEK(WEDNESDAY)", "CAST(DATE_TRUNC('WEEK', date + INTERVAL '-2' DAY) + INTERVAL '2' DAY AS DATE)"), "THURSDAY", NewTuple("WEEK(THURSDAY)", "CAST(DATE_TRUNC('WEEK', date + INTERVAL '-3' DAY) + INTERVAL '3' DAY AS DATE)"), "FRIDAY", NewTuple("WEEK(FRIDAY)", "CAST(DATE_TRUNC('WEEK', date + INTERVAL '-4' DAY) + INTERVAL '4' DAY AS DATE)"), "SATURDAY", NewTuple("WEEK(SATURDAY)", "CAST(DATE_TRUNC('WEEK', date + INTERVAL '-5' DAY) + INTERVAL '5' DAY AS DATE)"), "SUNDAY", NewTuple("WEEK", "CAST(DATE_TRUNC('WEEK', date + INTERVAL '1' DAY) + INTERVAL '-1' DAY AS DATE)"))
-	})
+	}, &week_trunc)
 	self.Do(3923, func() {
 		NP("%s", `nested unpacking: for day, (bq_unit, duckdb_sql) in week_trunc.items(): with self.subTest( f"Testing transpilation of DATE_TRUNC from Bigquery to Duckdb for unit: {day}" ): self.validate_all( f"SELECT DATE_TRUNC(date, `)
 	})
@@ -1668,22 +1670,22 @@ func test_bigquery_TestBigQuery_test_concat(self *Case, a Args) Value {
 func test_bigquery_TestBigQuery_test_pseudocolumns(self *Case, a Args) Value {
 	var schema, ast, qualified Value
 	_ = []Value{schema, ast, qualified}
-	self.Do(4189, func() { schema = NewDict("t", NewDict("col", "INT", "a", "TIMESTAMP", "b", "TIMESTAMP")) })
-	self.Do(4197, func() { ast = self.ValidateIdentity("SELECT col FROM t WHERE _PARTITIONTIME BETWEEN a AND b") })
-	self.Do(4198, func() { M(self, "assertIsNone", M(ast, "find", A(G("sqlglot.exp"), "Pseudocolumn"))) })
-	self.Do(4200, func() {
+	self.DoAssign(4189, func() { schema = NewDict("t", NewDict("col", "INT", "a", "TIMESTAMP", "b", "TIMESTAMP")) }, &schema)
+	self.DoAssign(4197, func() { ast = self.ValidateIdentity("SELECT col FROM t WHERE _PARTITIONTIME BETWEEN a AND b") }, &ast)
+	self.Do(4198, func() { Stmt(M(self, "assertIsNone", M(ast, "find", A(G("sqlglot.exp"), "Pseudocolumn")))) })
+	self.DoAssign(4200, func() {
 		qualified = Call(G("sqlglot.optimizer.qualify.qualify"), ast, Kw("schema", schema), Kw("dialect", "bigquery"))
-	})
-	self.Do(4201, func() { M(self, "assertIsNotNone", M(qualified, "find", A(G("sqlglot.exp"), "Pseudocolumn"))) })
+	}, &qualified)
+	self.Do(4201, func() { Stmt(M(self, "assertIsNotNone", M(qualified, "find", A(G("sqlglot.exp"), "Pseudocolumn")))) })
 	self.Do(4202, func() {
 		self.AssertEqual(M(qualified, "sql", Kw("dialect", "bigquery")), "SELECT `t`.`col` AS `col` FROM `t` AS `t` WHERE `_partitiontime` BETWEEN `t`.`a` AND `t`.`b`")
 	})
-	self.Do(4207, func() { ast = self.ValidateIdentity("SELECT _DBT_MAX_PARTITION FROM t") })
-	self.Do(4208, func() { M(self, "assertIsNone", M(ast, "find", A(G("sqlglot.exp"), "Pseudocolumn"))) })
-	self.Do(4210, func() {
+	self.DoAssign(4207, func() { ast = self.ValidateIdentity("SELECT _DBT_MAX_PARTITION FROM t") }, &ast)
+	self.Do(4208, func() { Stmt(M(self, "assertIsNone", M(ast, "find", A(G("sqlglot.exp"), "Pseudocolumn")))) })
+	self.DoAssign(4210, func() {
 		qualified = Call(G("sqlglot.optimizer.qualify.qualify"), ast, Kw("schema", schema), Kw("dialect", "bigquery"))
-	})
-	self.Do(4211, func() { M(self, "assertIsNotNone", M(qualified, "find", A(G("sqlglot.exp"), "Pseudocolumn"))) })
+	}, &qualified)
+	self.Do(4211, func() { Stmt(M(self, "assertIsNotNone", M(qualified, "find", A(G("sqlglot.exp"), "Pseudocolumn")))) })
 	return nil
 }
 
@@ -1723,7 +1725,7 @@ func test_bigquery_TestBigQuery_test_approx_quantile_window(self *Case, a Args) 
 			self.Do(4278, func() {
 				self.AssertRaisesRegex(func(cm_ Value) {
 					_ = cm_
-					M(Call(G("sqlglot.parse_one"), sql, Kw("read", "trino")), "sql", "bigquery", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE")))
+					Stmt(M(Call(G("sqlglot.parse_one"), sql, Kw("read", "trino")), "sql", "bigquery", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE"))))
 				}, G("sqlglot.UnsupportedError"), "APPROX_QUANTILES does not support window functions")
 			})
 		}, Kw("sql", sql))
@@ -1741,11 +1743,11 @@ func test_bigquery_TestBigQuery_test_approx_quantiles_to_duckdb(self *Case, a Ar
 	self.L(4304).ValidateAll("APPROX_QUANTILES(x, 4)", Kw("write", NewDict("duckdb", "APPROX_QUANTILE(x, [0, 0.25, 0.5, 0.75, 1])")))
 	self.L(4308).ValidateAll("APPROX_QUANTILES(DISTINCT x, 2)", Kw("write", NewDict("duckdb", "APPROX_QUANTILE(DISTINCT x, [0, 0.5, 1])")))
 	self.SubTest(func() {
-		self.Do(4314, func() { result = M(self.ParseOne("APPROX_QUANTILES(x, 100)"), "sql", "duckdb") })
+		self.DoAssign(4314, func() { result = M(self.ParseOne("APPROX_QUANTILES(x, 100)"), "sql", "duckdb") }, &result)
 		self.Do(4315, func() { self.AssertEqual(M(result, "count", "APPROX_QUANTILE("), 1) })
-		self.Do(4316, func() { M(self, "assertIn", "0.01", result) })
-		self.Do(4317, func() { M(self, "assertIn", "0.99", result) })
-		self.Do(4318, func() { M(self, "assertRegex", result, `APPROX_QUANTILE\(x, \[.*\]\)`) })
+		self.Do(4316, func() { Stmt(M(self, "assertIn", "0.01", result)) })
+		self.Do(4317, func() { Stmt(M(self, "assertIn", "0.99", result)) })
+		self.Do(4318, func() { Stmt(M(self, "assertRegex", result, `APPROX_QUANTILE\(x, \[.*\]\)`)) })
 	}, "APPROX_QUANTILES 100 buckets")
 	for _, item_ := range Iter(NewTuple("x + y", "CASE WHEN x > 0 THEN x ELSE 0 END", "ABS(x)")) {
 		expr = item_
@@ -1759,7 +1761,7 @@ func test_bigquery_TestBigQuery_test_approx_quantiles_to_duckdb(self *Case, a Ar
 		self.Do(4328, func() {
 			self.AssertRaises(func(cm_ Value) {
 				_ = cm_
-				M(M(self, "parse_one", "APPROX_QUANTILES(x, bucket_count)"), "sql", "duckdb", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE")))
+				Stmt(M(M(self, "parse_one", "APPROX_QUANTILES(x, bucket_count)"), "sql", "duckdb", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE"))))
 			}, G("sqlglot.UnsupportedError"))
 		})
 	}, "non-literal bucket count")
@@ -1770,7 +1772,7 @@ func test_bigquery_TestBigQuery_test_approx_quantiles_to_duckdb(self *Case, a Ar
 				self.Do(4336, func() {
 					self.AssertRaises(func(cm_ Value) {
 						_ = cm_
-						M(M(self, "parse_one", F("APPROX_QUANTILES(x, ", FV{V: value}, ")")), "sql", "duckdb", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE")))
+						Stmt(M(M(self, "parse_one", F("APPROX_QUANTILES(x, ", FV{V: value}, ")")), "sql", "duckdb", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE"))))
 					}, G("sqlglot.UnsupportedError"))
 				})
 			}, Kw("value", value))
@@ -1780,7 +1782,7 @@ func test_bigquery_TestBigQuery_test_approx_quantiles_to_duckdb(self *Case, a Ar
 		self.Do(4342, func() {
 			self.AssertRaises(func(cm_ Value) {
 				_ = cm_
-				M(M(self, "parse_one", "APPROX_QUANTILES(x, NULL)"), "sql", "duckdb", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE")))
+				Stmt(M(M(self, "parse_one", "APPROX_QUANTILES(x, NULL)"), "sql", "duckdb", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE"))))
 			}, G("sqlglot.UnsupportedError"))
 		})
 	}, "NULL bucket count")
@@ -1788,7 +1790,7 @@ func test_bigquery_TestBigQuery_test_approx_quantiles_to_duckdb(self *Case, a Ar
 		self.Do(4348, func() {
 			self.AssertRaises(func(cm_ Value) {
 				_ = cm_
-				M(M(self, "parse_one", "APPROX_QUANTILES(x)"), "sql", "duckdb", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE")))
+				Stmt(M(M(self, "parse_one", "APPROX_QUANTILES(x)"), "sql", "duckdb", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE"))))
 			}, G("sqlglot.UnsupportedError"))
 		})
 	}, "missing bucket count")
@@ -1796,7 +1798,7 @@ func test_bigquery_TestBigQuery_test_approx_quantiles_to_duckdb(self *Case, a Ar
 		self.Do(4354, func() {
 			self.AssertRaises(func(cm_ Value) {
 				_ = cm_
-				M(M(self, "parse_one", "APPROX_QUANTILES(DISTINCT x)"), "sql", "duckdb", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE")))
+				Stmt(M(M(self, "parse_one", "APPROX_QUANTILES(DISTINCT x)"), "sql", "duckdb", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE"))))
 			}, G("sqlglot.UnsupportedError"))
 		})
 	}, "missing bucket count with DISTINCT")
@@ -1804,14 +1806,14 @@ func test_bigquery_TestBigQuery_test_approx_quantiles_to_duckdb(self *Case, a Ar
 		self.PatchLogMethod(func(m_ Value) {
 			mock_warning = m_
 			self.L(4364).ValidateAll("APPROX_QUANTILES(x, 2 IGNORE NULLS)", Kw("write", NewDict("duckdb", "APPROX_QUANTILE(x, [0, 0.5, 1])")))
-			self.Do(4368, func() { M(mock_warning, "assert_not_called") })
+			self.Do(4368, func() { Stmt(M(mock_warning, "assert_not_called")) })
 		}, "warning")
 	}, "APPROX_QUANTILES IGNORE NULLS")
 	self.SubTest(func() {
 		self.Do(4371, func() {
 			self.AssertRaises(func(cm_ Value) {
 				_ = cm_
-				M(M(self, "parse_one", "APPROX_QUANTILES(x, 2 RESPECT NULLS)"), "sql", "duckdb", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE")))
+				Stmt(M(M(self, "parse_one", "APPROX_QUANTILES(x, 2 RESPECT NULLS)"), "sql", "duckdb", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE"))))
 			}, G("sqlglot.UnsupportedError"))
 		})
 	}, "APPROX_QUANTILES RESPECT NULLS")

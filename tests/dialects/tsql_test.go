@@ -126,9 +126,9 @@ func test_tsql_TestTSQL_test_set_operation_unordered_pagination(self *Case, a Ar
 		for _, item_ := range Iter(NewTuple("", " LIMIT 2")) {
 			limit = item_
 			self.SubTest(func() {
-				self.Do(46, func() {
+				self.DoAssign(46, func() {
 					sql = F("SELECT * FROM (SELECT a FROM x ", FV{V: op}, " SELECT a FROM y) AS _l_0 ORDER BY (SELECT NULL) OFFSET 1 ROWS")
-				})
+				}, &sql)
 				if Truth(limit) {
 					self.Do(48, func() { sql = Add(sql, " FETCH FIRST 2 ROWS ONLY") })
 				}
@@ -143,14 +143,14 @@ func test_tsql_TestTSQL_test_set_operation_unordered_pagination(self *Case, a Ar
 		Unpack(item_, &source, &expected)
 		self.SubTest(func() {
 			self.Do(74, func() { self.ValidateAll(expected, Kw("read", NewDict("", source))) })
-			self.Do(75, func() { expression = self.ValidateIdentity(expected) })
+			self.DoAssign(75, func() { expression = self.ValidateIdentity(expected) }, &expression)
 			self.Do(76, func() { self.ValidateIdentity(M(expression, "sql", "tsql", Kw("pretty", true)), Kw("pretty", true)) })
 		}, Kw("source", source))
 	}
-	self.Do(78, func() { expression = M(self.ParseOne("SELECT a FROM x UNION ALL SELECT TOP 1 a FROM y"), "offset", 1) })
-	self.Do(79, func() {
+	self.DoAssign(78, func() { expression = M(self.ParseOne("SELECT a FROM x UNION ALL SELECT TOP 1 a FROM y"), "offset", 1) }, &expression)
+	self.DoAssign(79, func() {
 		sql = "SELECT * FROM (SELECT a FROM x UNION ALL SELECT TOP 1 a FROM y) AS _l_0 ORDER BY (SELECT NULL) OFFSET 1 ROWS"
-	})
+	}, &sql)
 	self.Do(80, func() { self.AssertEqual(M(expression, "sql", "tsql"), sql) })
 	self.Do(81, func() { self.ValidateIdentity(sql) })
 	return nil
@@ -180,21 +180,21 @@ func test_tsql_TestTSQL_test_set_operation_pagination(self *Case, a Args) Value 
 			})
 		}, Kw("op", op))
 	}
-	self.Do(106, func() {
+	self.DoAssign(106, func() {
 		expression = self.ValidateIdentity("SELECT -1 AS x UNION ALL SELECT TOP 2 x FROM (VALUES (2), (1), (0)) AS t(x) ORDER BY x OFFSET 0 ROWS FETCH FIRST 1 ROWS ONLY")
-	})
+	}, &expression)
 	self.Do(109, func() {
-		M(self, "assertIsInstance", Item(A(expression, "args"), "limit"), A(G("sqlglot.exp"), "Fetch"))
+		Stmt(M(self, "assertIsInstance", Item(A(expression, "args"), "limit"), A(G("sqlglot.exp"), "Fetch")))
 	})
 	self.Do(110, func() {
-		M(self, "assertIsInstance", Item(A(A(expression, "expression"), "args"), "limit"), A(G("sqlglot.exp"), "Limit"))
+		Stmt(M(self, "assertIsInstance", Item(A(A(expression, "expression"), "args"), "limit"), A(G("sqlglot.exp"), "Limit")))
 	})
 	for _, item_ := range Iter(NewTuple("SELECT TOP 2 x FROM t ORDER BY x OFFSET 0 ROWS FETCH FIRST 1 ROWS ONLY", "SELECT x FROM t ORDER BY x OFFSET 0 ROWS FETCH FIRST 1 ROWS ONLY FETCH FIRST 2 ROWS ONLY")) {
 		sql = item_
 		self.Do(115, func() {
 			self.AssertRaises(func(cm_ Value) {
 				_ = cm_
-				Call(G("sqlglot.parse_one"), sql, Kw("read", "tsql"))
+				Stmt(Call(G("sqlglot.parse_one"), sql, Kw("read", "tsql")))
 			}, G("sqlglot.errors.ParseError"))
 		})
 	}
@@ -220,16 +220,16 @@ func test_tsql_TestTSQL_test_set_operation_trailing_clauses(self *Case, a Args) 
 			for _, item_ := range Iter(NewTuple("OPTION(RECOMPILE)", "FOR JSON PATH", "FOR XML PATH", "FOR JSON PATH OPTION(RECOMPILE)", "FOR XML PATH OPTION(RECOMPILE)")) {
 				clause = item_
 				self.SubTest(func() {
-					self.Do(162, func() {
+					self.DoAssign(162, func() {
 						expression = self.ValidateIdentity(F("SELECT 1 AS x ", FV{V: op}, " SELECT 2 AS x ORDER BY x", FV{V: pagination}, " ", FV{V: clause}))
-					})
+					}, &expression)
 					for _, item_ := range Iter(NewTuple("for_", "options")) {
 						arg = item_
-						self.Do(166, func() { M(self, "assertNotIn", arg, A(A(expression, "expression"), "args")) })
+						self.Do(166, func() { Stmt(M(self, "assertNotIn", arg, A(A(expression, "expression"), "args"))) })
 					}
 					if Truth(M(clause, "startswith", "FOR")) {
 						self.Do(168, func() {
-							M(self, "assertIsInstance", Item(A(expression, "args"), "for_"), A(G("sqlglot.exp"), "ForClause"))
+							Stmt(M(self, "assertIsInstance", Item(A(expression, "args"), "for_"), A(G("sqlglot.exp"), "ForClause")))
 						})
 					}
 					if Truth(In("OPTION", clause)) {
@@ -243,7 +243,7 @@ func test_tsql_TestTSQL_test_set_operation_trailing_clauses(self *Case, a Args) 
 	for _, item_ := range Iter(NewTuple("OPTION(RECOMPILE)", "FOR JSON PATH OPTION(RECOMPILE)")) {
 		clause = item_
 		self.SubTest(func() {
-			self.Do(176, func() { expression = self.ParseOne(F("SELECT 1 AS x UNION ALL SELECT 2 AS x ", FV{V: clause})) })
+			self.DoAssign(176, func() { expression = self.ParseOne(F("SELECT 1 AS x UNION ALL SELECT 2 AS x ", FV{V: clause})) }, &expression)
 			for _, item_ := range Iter(NewTuple(NewTuple(M(expression, "limit", 1), F("SELECT TOP 1 * FROM (SELECT 1 AS x UNION ALL SELECT 2 AS x) AS _l_0 ", FV{V: clause})), NewTuple(M(expression, "offset", 1), F("SELECT * FROM (SELECT 1 AS x UNION ALL SELECT 2 AS x) AS _l_0 ORDER BY (SELECT NULL) OFFSET 1 ROWS ", FV{V: clause})))) {
 				Unpack(item_, &paginated, &expected)
 				self.Do(187, func() { self.AssertEqual(M(paginated, "sql", "tsql"), expected) })
@@ -287,15 +287,15 @@ func test_tsql_TestTSQL_test_tsql(self *Case, a Args) Value {
 	self.L(257).ValidateIdentity("SELECT EXP(1)")
 	self.L(258).ValidateIdentity("SELECT SYSDATETIMEOFFSET()")
 	self.L(259).ValidateIdentity("SELECT COMPRESS('Hello World')")
-	self.Do(260, func() { M(self.ValidateIdentity("GO"), "assert_is", A(G("sqlglot.exp"), "Command")) })
+	self.Do(260, func() { Stmt(M(self.ValidateIdentity("GO"), "assert_is", A(G("sqlglot.exp"), "Command"))) })
 	self.Do(261, func() {
-		M(Item(A(self.ValidateIdentity("SELECT go"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "Column"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT go"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "Column")))
 	})
 	self.L(262).ValidateIdentity("CREATE view a.b.c", "CREATE VIEW b.c")
 	self.L(263).ValidateIdentity("DROP view a.b.c", "DROP VIEW b.c")
 	self.L(264).ValidateIdentity("DROP VIEW a.b.c, a.b.d", "DROP VIEW b.c, b.d")
 	self.Do(265, func() {
-		M(self.ValidateIdentity("DROP INDEX IF EXISTS i ON dbo.t"), "assert_is", A(G("sqlglot.exp"), "Drop"))
+		Stmt(M(self.ValidateIdentity("DROP INDEX IF EXISTS i ON dbo.t"), "assert_is", A(G("sqlglot.exp"), "Drop")))
 	})
 	self.L(266).ValidateIdentity("ROUND(x, 1, 0)")
 	self.L(267).ValidateIdentity("EXEC MyProc @id = 7, @name = 'Lochristi'", "EXECUTE MyProc @id = 7, @name = 'Lochristi'")
@@ -359,7 +359,7 @@ func test_tsql_TestTSQL_test_tsql(self *Case, a Args) Value {
 	self.L(548).ValidateIdentity("CREATE TABLE tbl (a AS (x + 1) PERSISTED, b AS (y + 2), c AS (y / 3) PERSISTED NOT NULL)")
 	self.L(552).ValidateIdentity("CREATE TABLE [db].[tbl]([a] [int])", "CREATE TABLE [db].[tbl] ([a] INTEGER)")
 	self.Do(557, func() {
-		M(Item(A(M(Item(A(self.ValidateIdentity("SELECT a = 1", "SELECT 1 AS a"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "Alias")), "args"), "alias"), "assert_is", A(G("sqlglot.exp"), "Identifier"))
+		Stmt(M(Item(A(M(Item(A(self.ValidateIdentity("SELECT a = 1", "SELECT 1 AS a"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "Alias")), "args"), "alias"), "assert_is", A(G("sqlglot.exp"), "Identifier")))
 	})
 	self.L(561).ValidateAll("IF OBJECT_ID('tempdb.dbo.#TempTableName', 'U') IS NOT NULL BEGIN DROP TABLE #TempTableName; END", Kw("write", NewDict("tsql", "IF NOT OBJECT_ID('tempdb.dbo.#TempTableName', 'U') IS NULL BEGIN DROP TABLE #TempTableName; END", "spark", "DROP TABLE IF EXISTS TempTableName")))
 	self.L(569).ValidateAll("IF OBJECT_ID('tempdb.dbo.#TempTableName') IS NOT NULL BEGIN DROP TABLE #TempTableName; END", Kw("write", NewDict("tsql", "IF NOT OBJECT_ID('tempdb.dbo.#TempTableName') IS NULL BEGIN DROP TABLE #TempTableName; END", "spark", "DROP TABLE IF EXISTS TempTableName")))
@@ -412,7 +412,7 @@ func test_tsql_TestTSQL_test_tsql(self *Case, a Args) Value {
 	self.Do(766, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			Call(G("sqlglot.parse_one"), "SELECT begin", Kw("read", "tsql"))
+			Stmt(Call(G("sqlglot.parse_one"), "SELECT begin", Kw("read", "tsql")))
 		}, G("sqlglot.errors.ParseError"))
 	})
 	self.L(769).ValidateIdentity("CREATE PROCEDURE test(@v1 INTEGER = 1, @v2 CHAR(1) = 'c')")
@@ -443,10 +443,10 @@ func test_tsql_TestTSQL_test_tsql(self *Case, a Args) Value {
 func test_tsql_TestTSQL_test_unpivot_value_column_comes_first(self *Case, a Args) Value {
 	var schema, expression Value
 	_ = []Value{schema, expression}
-	self.Do(806, func() { schema = NewDict("t", NewDict("id", "int", "jan", "int", "feb", "int")) })
-	self.Do(807, func() {
+	self.DoAssign(806, func() { schema = NewDict("t", NewDict("id", "int", "jan", "int", "feb", "int")) }, &schema)
+	self.DoAssign(807, func() {
 		expression = Call(G("sqlglot.optimizer.qualify.qualify"), Call(G("sqlglot.parse_one"), "SELECT * FROM t UNPIVOT(revenue FOR month IN (jan, feb)) AS u", Kw("dialect", "tsql")), Kw("schema", schema), Kw("dialect", "tsql"))
-	})
+	}, &expression)
 	self.Do(814, func() {
 		self.AssertEqual(func() Value {
 			var s Value
@@ -459,9 +459,9 @@ func test_tsql_TestTSQL_test_unpivot_value_column_comes_first(self *Case, a Args
 			return &List{V: out}
 		}(), NewList("id", "revenue", "month"))
 	})
-	self.Do(817, func() {
+	self.DoAssign(817, func() {
 		expression = Call(G("sqlglot.optimizer.qualify.qualify"), Call(G("sqlglot.parse_one"), "SELECT * FROM t UNPIVOT(revenue FOR month IN (jan, feb)) AS u", Kw("dialect", "duckdb")), Kw("schema", schema), Kw("dialect", "duckdb"))
-	})
+	}, &expression)
 	self.Do(824, func() {
 		self.AssertEqual(func() Value {
 			var s Value
@@ -489,21 +489,21 @@ func test_tsql_TestTSQL_test_null_ordering_simulation_resolves_ordered_against_p
 func test_tsql_TestTSQL_test_option(self *Case, a Args) Value {
 	var possible_options, possible_statements, statement, option, query, result, options, is_query_options, raising_queries Value
 	_ = []Value{possible_options, possible_statements, statement, option, query, result, options, is_query_options, raising_queries}
-	self.Do(869, func() {
+	self.DoAssign(869, func() {
 		possible_options = NewList("HASH GROUP", "ORDER GROUP", "CONCAT UNION", "HASH UNION", "MERGE UNION", "LOOP JOIN", "MERGE JOIN", "HASH JOIN", "DISABLE_OPTIMIZED_PLAN_FORCING", "EXPAND VIEWS", "FAST 15", "FORCE ORDER", "FORCE EXTERNALPUSHDOWN", "DISABLE EXTERNALPUSHDOWN", "FORCE SCALEOUTEXECUTION", "DISABLE SCALEOUTEXECUTION", "IGNORE_NONCLUSTERED_COLUMNSTORE_INDEX", "KEEP PLAN", "KEEPFIXED PLAN", "MAX_GRANT_PERCENT = 5", "MIN_GRANT_PERCENT = 10", "MAXDOP 13", "MAXRECURSION 8", "NO_PERFORMANCE_SPOOL", "OPTIMIZE FOR UNKNOWN", "PARAMETERIZATION SIMPLE", "PARAMETERIZATION FORCED", "QUERYTRACEON 99", "RECOMPILE", "ROBUST PLAN", "USE PLAN N'<xml_plan>'", "LABEL = 'MyLabel'")
-	})
-	self.Do(904, func() {
+	}, &possible_options)
+	self.DoAssign(904, func() {
 		possible_statements = NewList("SELECT * FROM Table1", "SELECT * FROM Table1 WHERE id = 2", "UPDATE t1 SET k = t2.k FROM t2")
-	})
+	}, &possible_statements)
 	for _, item_ := range Iter(possible_statements) {
 		statement = item_
 		for _, item_ := range Iter(possible_options) {
 			option = item_
-			self.Do(916, func() { query = F(FV{V: statement}, " OPTION(", FV{V: option}, ")") })
-			self.Do(917, func() { result = self.ValidateIdentity(query) })
-			self.Do(918, func() { options = M(A(result, "args"), "get", "options") })
-			self.Do(919, func() { M(self, "assertIsInstance", options, G("list"), F("When parsing query ", FV{V: query})) })
-			self.Do(920, func() {
+			self.DoAssign(916, func() { query = F(FV{V: statement}, " OPTION(", FV{V: option}, ")") }, &query)
+			self.DoAssign(917, func() { result = self.ValidateIdentity(query) }, &result)
+			self.DoAssign(918, func() { options = M(A(result, "args"), "get", "options") }, &options)
+			self.Do(919, func() { Stmt(M(self, "assertIsInstance", options, G("list"), F("When parsing query ", FV{V: query}))) })
+			self.DoAssign(920, func() {
 				is_query_options = Call(G("map"), Lambda(func(args ...Value) Value {
 					var o Value = nil
 					if len(args) > 0 {
@@ -512,24 +512,24 @@ func test_tsql_TestTSQL_test_option(self *Case, a Args) Value {
 					_ = o
 					return IsInstance(o, A(G("sqlglot.exp"), "QueryOption"))
 				}), options)
-			})
+			}, &is_query_options)
 			self.Do(921, func() {
-				M(self, "assertTrue", Call(G("all"), is_query_options), F("When parsing query ", FV{V: query}))
+				Stmt(M(self, "assertTrue", Call(G("all"), is_query_options), F("When parsing query ", FV{V: query})))
 			})
 		}
 		self.Do(923, func() {
 			self.ValidateIdentity(F(FV{V: statement}, " OPTION(RECOMPILE, USE PLAN N'<xml_plan>', MAX_GRANT_PERCENT = 5)"))
 		})
 	}
-	self.Do(927, func() {
+	self.DoAssign(927, func() {
 		raising_queries = NewList("SELECT * FROM Table1 OPTION HASH GROUP", "SELECT * FROM Table1 OPTION(KEEPFIXED)", "SELECT * FROM Table1 OPTION(HASH GROUP HASH GROUP)")
-	})
+	}, &raising_queries)
 	for _, item_ := range Iter(raising_queries) {
 		query = item_
 		self.Do(936, func() {
 			self.AssertRaises(func(cm_ Value) {
 				_ = cm_
-				M(self, "parse_one", query)
+				Stmt(M(self, "parse_one", query))
 			}, G("sqlglot.errors.ParseError"), Kw("msg", F("When running '", FV{V: query}, "'")))
 		})
 	}
@@ -540,9 +540,9 @@ func test_tsql_TestTSQL_test_option(self *Case, a Args) Value {
 func test_tsql_TestTSQL_test_for_xml(self *Case, a Args) Value {
 	var xml_possible_options, xml_option Value
 	_ = []Value{xml_possible_options, xml_option}
-	self.Do(948, func() {
+	self.DoAssign(948, func() {
 		xml_possible_options = NewList("RAW('ElementName')", "RAW('ElementName'), BINARY BASE64", "RAW('ElementName'), TYPE", "RAW('ElementName'), ROOT('RootName')", "RAW('ElementName'), BINARY BASE64, TYPE", "RAW('ElementName'), BINARY BASE64, ROOT('RootName')", "RAW('ElementName'), TYPE, ROOT('RootName')", "RAW('ElementName'), BINARY BASE64, TYPE, ROOT('RootName')", "RAW('ElementName'), XMLDATA", "RAW('ElementName'), XMLSCHEMA('TargetNameSpaceURI')", "RAW('ElementName'), XMLDATA, ELEMENTS XSINIL", "RAW('ElementName'), XMLSCHEMA('TargetNameSpaceURI'), ELEMENTS ABSENT", "RAW('ElementName'), XMLDATA, ELEMENTS ABSENT", "RAW('ElementName'), XMLSCHEMA('TargetNameSpaceURI'), ELEMENTS XSINIL", "AUTO", "AUTO, BINARY BASE64", "AUTO, TYPE", "AUTO, ROOT('RootName')", "AUTO, BINARY BASE64, TYPE", "AUTO, TYPE, ROOT('RootName')", "AUTO, BINARY BASE64, TYPE, ROOT('RootName')", "AUTO, XMLDATA", "AUTO, XMLSCHEMA('TargetNameSpaceURI')", "AUTO, XMLDATA, ELEMENTS XSINIL", "AUTO, XMLSCHEMA('TargetNameSpaceURI'), ELEMENTS ABSENT", "AUTO, XMLDATA, ELEMENTS ABSENT", "AUTO, XMLSCHEMA('TargetNameSpaceURI'), ELEMENTS XSINIL", "EXPLICIT", "EXPLICIT, BINARY BASE64", "EXPLICIT, TYPE", "EXPLICIT, ROOT('RootName')", "EXPLICIT, BINARY BASE64, TYPE", "EXPLICIT, TYPE, ROOT('RootName')", "EXPLICIT, BINARY BASE64, TYPE, ROOT('RootName')", "EXPLICIT, XMLDATA", "EXPLICIT, XMLDATA, BINARY BASE64", "EXPLICIT, XMLDATA, TYPE", "EXPLICIT, XMLDATA, ROOT('RootName')", "EXPLICIT, XMLDATA, BINARY BASE64, TYPE", "EXPLICIT, XMLDATA, BINARY BASE64, TYPE, ROOT('RootName')", "PATH('ElementName')", "PATH('ElementName'), BINARY BASE64", "PATH('ElementName'), TYPE", "PATH('ElementName'), ROOT('RootName')", "PATH('ElementName'), BINARY BASE64, TYPE", "PATH('ElementName'), TYPE, ROOT('RootName')", "PATH('ElementName'), BINARY BASE64, TYPE, ROOT('RootName')", "PATH('ElementName'), ELEMENTS XSINIL", "PATH('ElementName'), ELEMENTS ABSENT", "PATH('ElementName'), BINARY BASE64, ELEMENTS XSINIL", "PATH('ElementName'), TYPE, ELEMENTS ABSENT", "PATH('ElementName'), ROOT('RootName'), ELEMENTS XSINIL", "PATH('ElementName'), BINARY BASE64, TYPE, ROOT('RootName'), ELEMENTS ABSENT")
-	})
+	}, &xml_possible_options)
 	for _, item_ := range Iter(xml_possible_options) {
 		xml_option = item_
 		self.SubTest(func() {
@@ -556,9 +556,9 @@ func test_tsql_TestTSQL_test_for_xml(self *Case, a Args) Value {
 func test_tsql_TestTSQL_test_for_modifiers(self *Case, a Args) Value {
 	var json_possible_options, json_option Value
 	_ = []Value{json_possible_options, json_option}
-	self.Do(1022, func() {
+	self.DoAssign(1022, func() {
 		json_possible_options = NewList("AUTO", "PATH", "AUTO, ROOT('RootName')", "PATH, ROOT('RootName')", "AUTO, INCLUDE_NULL_VALUES", "PATH, INCLUDE_NULL_VALUES", "AUTO, WITHOUT_ARRAY_WRAPPER", "PATH, WITHOUT_ARRAY_WRAPPER", "PATH, ROOT('RootName'), INCLUDE_NULL_VALUES", "PATH, ROOT('RootName'), WITHOUT_ARRAY_WRAPPER", "PATH, INCLUDE_NULL_VALUES, WITHOUT_ARRAY_WRAPPER", "PATH, ROOT('RootName'), INCLUDE_NULL_VALUES, WITHOUT_ARRAY_WRAPPER", "PATH, WITHOUT_ARRAY_WRAPPER, ROOT('Root'), INCLUDE_NULL_VALUES")
-	})
+	}, &json_possible_options)
 	for _, item_ := range Iter(json_possible_options) {
 		json_option = item_
 		self.SubTest(func() {
@@ -667,10 +667,10 @@ func test_tsql_TestTSQL_test_ddl(self *Case, a Args) Value {
 	}
 	self.L(1395).ValidateIdentity("CREATE VIEW start WITH SCHEMABINDING AS SELECT a FROM x")
 	self.Do(1397, func() {
-		M(Item(Item(A(M(self.ValidateIdentity("ALTER TABLE dbo.DocExe DROP CONSTRAINT FK_Column_B"), "assert_is", A(G("sqlglot.exp"), "Alter")), "args"), "actions"), 0), "assert_is", A(G("sqlglot.exp"), "Drop"))
+		Stmt(M(Item(Item(A(M(self.ValidateIdentity("ALTER TABLE dbo.DocExe DROP CONSTRAINT FK_Column_B"), "assert_is", A(G("sqlglot.exp"), "Alter")), "args"), "actions"), 0), "assert_is", A(G("sqlglot.exp"), "Drop")))
 	})
 	self.Do(1400, func() {
-		M(self.ValidateIdentity("ALTER TABLE tbl DROP COLUMN col1, col2"), "assert_is", A(G("sqlglot.exp"), "Alter"))
+		Stmt(M(self.ValidateIdentity("ALTER TABLE tbl DROP COLUMN col1, col2"), "assert_is", A(G("sqlglot.exp"), "Alter")))
 	})
 	self.L(1401).ValidateAll("ALTER TABLE a RENAME TO [x'; SELECT 1; --]", Kw("write", NewDict("tsql", "EXEC sp_rename 'a', 'x''; SELECT 1; --'")))
 	for _, item_ := range Iter(NewTuple("CLUSTERED", "NONCLUSTERED")) {
@@ -716,9 +716,9 @@ func test_tsql_TestTSQL_test_ddl(self *Case, a Args) Value {
 	self.L(1597).ValidateAll("ALTER TABLE a ALTER COLUMN b INTEGER NOT NULL", Kw("write", NewDict("", G("sqlglot.errors.UnsupportedError"), "hive", G("sqlglot.errors.UnsupportedError"), "singlestore", G("sqlglot.errors.UnsupportedError"), "mysql", "ALTER TABLE a MODIFY COLUMN b INT NOT NULL", "starrocks", "ALTER TABLE a MODIFY COLUMN b INT NOT NULL")))
 	self.L(1607).ValidateAll("ALTER TABLE a ALTER COLUMN b INTEGER NULL", Kw("write", NewDict("mysql", "ALTER TABLE a MODIFY COLUMN b INT NULL")))
 	self.L(1613).ValidateAll("CREATE TABLE #mytemp (a INTEGER, b CHAR(2), c TIME(4), d FLOAT(24))", Kw("write", NewDict("spark", "CREATE TEMPORARY TABLE mytemp (a INT, b CHAR(2), c TIMESTAMP, d FLOAT) USING PARQUET", "tsql", "CREATE TABLE #mytemp (a INTEGER, b CHAR(2), c TIME(4), d FLOAT(24))")))
-	self.Do(1621, func() {
+	self.DoAssign(1621, func() {
 		constraint = M(self.ValidateIdentity("ALTER TABLE tbl ADD CONSTRAINT cnstr PRIMARY KEY CLUSTERED (ID), CONSTRAINT cnstr2 UNIQUE CLUSTERED (ID)"), "find", A(G("sqlglot.exp"), "AddConstraint"))
-	})
+	}, &constraint)
 	self.Do(1624, func() { Assert(constraint) })
 	self.Do(1625, func() {
 		Assert(Eq(Len(Call(G("list"), M(constraint, "find_all", A(G("sqlglot.exp"), "Constraint")))), 2))
@@ -841,9 +841,9 @@ func test_tsql_TestTSQL_test_datename(self *Case, a Args) Value {
 func test_tsql_TestTSQL_test_datepart(self *Case, a Args) Value {
 	var datepart_formats, formats, canonical, fmt, select_datepart_formats Value
 	_ = []Value{datepart_formats, formats, canonical, fmt, select_datepart_formats}
-	self.Do(1889, func() {
+	self.DoAssign(1889, func() {
 		datepart_formats = NewTuple(NewTuple(NewTuple("QUARTER", "qq", "q"), "QUARTER"), NewTuple(NewTuple("YEAR", "yy", "yyyy"), "YEAR"), NewTuple(NewTuple("HOUR", "hh"), "HOUR"), NewTuple(NewTuple("MINUTE", "mi", "n"), "MINUTE"), NewTuple(NewTuple("SECOND", "ss", "s"), "SECOND"), NewTuple(NewTuple("MILLISECOND", "ms"), "MILLISECOND"), NewTuple(NewTuple("MICROSECOND", "mcs"), "MICROSECOND"), NewTuple(NewTuple("NANOSECOND", "ns"), "NANOSECOND"), NewTuple(NewTuple("WEEKDAY", "dw"), "WEEKDAY"), NewTuple(NewTuple("TZOFFSET", "tz"), "TZOFFSET"), NewTuple(NewTuple("MONTH", "mm", "m"), "MONTH"), NewTuple(NewTuple("DAYOFYEAR", "dy", "y"), "DAYOFYEAR"), NewTuple(NewTuple("DAY", "dd", "d"), "DAY"))
-	})
+	}, &datepart_formats)
 	for _, item_ := range Iter(datepart_formats) {
 		Unpack(item_, &formats, &canonical)
 		for _, item_ := range Iter(formats) {
@@ -855,9 +855,9 @@ func test_tsql_TestTSQL_test_datepart(self *Case, a Args) Value {
 			}, F("Testing DATEPART where part is: ", FV{V: fmt}))
 		}
 	}
-	self.Do(1913, func() {
+	self.DoAssign(1913, func() {
 		select_datepart_formats = NewTuple(NewTuple(NewTuple("WEEK", "WW", "WK"), "WEEK"), NewTuple(NewTuple("ISOWK", "ISOWW", "ISO_WEEK"), "ISO_WEEK"))
-	})
+	}, &select_datepart_formats)
 	for _, item_ := range Iter(select_datepart_formats) {
 		Unpack(item_, &formats, &canonical)
 		for _, item_ := range Iter(formats) {
@@ -1015,27 +1015,27 @@ func test_tsql_TestTSQL_test_identifier_prefixes(self *Case, a Args) Value {
 	var temp_ident, global_ident Value
 	_ = []Value{temp_ident, global_ident}
 	self.Do(2439, func() {
-		M(self, "assertTrue", M(A(M(A(M(self.ValidateIdentity("#x"), "assert_is", A(G("sqlglot.exp"), "Column")), "this"), "assert_is", A(G("sqlglot.exp"), "Identifier")), "args"), "get", "temporary"))
+		Stmt(M(self, "assertTrue", M(A(M(A(M(self.ValidateIdentity("#x"), "assert_is", A(G("sqlglot.exp"), "Column")), "this"), "assert_is", A(G("sqlglot.exp"), "Identifier")), "args"), "get", "temporary")))
 	})
 	self.Do(2445, func() {
-		M(self, "assertTrue", M(A(M(A(M(self.ValidateIdentity("##x"), "assert_is", A(G("sqlglot.exp"), "Column")), "this"), "assert_is", A(G("sqlglot.exp"), "Identifier")), "args"), "get", "global_"))
+		Stmt(M(self, "assertTrue", M(A(M(A(M(self.ValidateIdentity("##x"), "assert_is", A(G("sqlglot.exp"), "Column")), "this"), "assert_is", A(G("sqlglot.exp"), "Identifier")), "args"), "get", "global_")))
 	})
-	self.Do(2453, func() {
+	self.DoAssign(2453, func() {
 		temp_ident = M(A(M(A(Item(A(self.ValidateIdentity("SELECT * FROM [#temp_table]"), "args"), "from_"), "this"), "assert_is", A(G("sqlglot.exp"), "Table")), "this"), "assert_is", A(G("sqlglot.exp"), "Identifier"))
-	})
-	self.Do(2459, func() { M(self, "assertTrue", M(A(temp_ident, "args"), "get", "temporary")) })
+	}, &temp_ident)
+	self.Do(2459, func() { Stmt(M(self, "assertTrue", M(A(temp_ident, "args"), "get", "temporary"))) })
 	self.Do(2460, func() { self.AssertEqual(A(temp_ident, "name"), "temp_table") })
-	self.Do(2462, func() {
+	self.DoAssign(2462, func() {
 		global_ident = M(A(M(A(Item(A(self.ValidateIdentity("SELECT * FROM [##temp_table]"), "args"), "from_"), "this"), "assert_is", A(G("sqlglot.exp"), "Table")), "this"), "assert_is", A(G("sqlglot.exp"), "Identifier"))
-	})
-	self.Do(2468, func() { M(self, "assertTrue", M(A(global_ident, "args"), "get", "global_")) })
+	}, &global_ident)
+	self.Do(2468, func() { Stmt(M(self, "assertTrue", M(A(global_ident, "args"), "get", "global_"))) })
 	self.Do(2469, func() { self.AssertEqual(A(global_ident, "name"), "temp_table") })
 	self.L(2472).ValidateAll("CREATE TABLE [#temptest] (name INTEGER)", Kw("read", NewDict("duckdb", "CREATE TEMPORARY TABLE 'temptest' (name INTEGER)")), Kw("write", NewDict("tsql", "CREATE TABLE [#temptest] (name INTEGER)", "duckdb", `CREATE TEMPORARY TABLE "temptest" (name INT)`)))
 	self.Do(2483, func() {
-		M(A(M(self.ValidateIdentity("@x"), "assert_is", A(G("sqlglot.exp"), "Parameter")), "this"), "assert_is", A(G("sqlglot.exp"), "Var"))
+		Stmt(M(A(M(self.ValidateIdentity("@x"), "assert_is", A(G("sqlglot.exp"), "Parameter")), "this"), "assert_is", A(G("sqlglot.exp"), "Var")))
 	})
 	self.Do(2484, func() {
-		M(A(M(A(M(A(Item(A(self.ValidateIdentity("SELECT * FROM @x"), "args"), "from_"), "this"), "assert_is", A(G("sqlglot.exp"), "Table")), "this"), "assert_is", A(G("sqlglot.exp"), "Parameter")), "this"), "assert_is", A(G("sqlglot.exp"), "Var"))
+		Stmt(M(A(M(A(M(A(Item(A(self.ValidateIdentity("SELECT * FROM @x"), "args"), "from_"), "this"), "assert_is", A(G("sqlglot.exp"), "Table")), "this"), "assert_is", A(G("sqlglot.exp"), "Parameter")), "this"), "assert_is", A(G("sqlglot.exp"), "Var")))
 	})
 	self.L(2488).ValidateAll("SELECT @x", Kw("write", NewDict("databricks", "SELECT ${x}", "hive", "SELECT ${x}", "spark", "SELECT ${x}", "tsql", "SELECT @x")))
 	self.L(2497).ValidateAll("SELECT * FROM #mytemptable", Kw("write", NewDict("duckdb", "SELECT * FROM mytemptable", "spark", "SELECT * FROM mytemptable", "tsql", "SELECT * FROM #mytemptable")))
@@ -1093,17 +1093,17 @@ func test_tsql_TestTSQL_test_bare_table_hints(self *Case, a Args) Value {
 		for _, item_ := range Iter(NewTuple("", " AS s", " s")) {
 			alias = item_
 			self.SubTest(func() {
-				self.Do(2607, func() {
+				self.DoAssign(2607, func() {
 					expected = F("SELECT * FROM ", FV{V: table}, FV{V: IfV(alias, func() Value { return " AS s" }, func() Value { return "" })}, " WITH (NOLOCK)")
-				})
-				self.Do(2608, func() {
+				}, &expected)
+				self.DoAssign(2608, func() {
 					expression = self.ValidateIdentity(F("SELECT * FROM ", FV{V: table}, FV{V: alias}, " (NOLOCK)"), expected)
-				})
+				}, &expression)
 				self.Do(2611, func() { self.AssertEqual(expression, Call(G("sqlglot.parse_one"), expected, Kw("read", "tsql"))) })
 				if Truth(alias) {
-					self.Do(2613, func() {
+					self.DoAssign(2613, func() {
 						expression = self.ValidateIdentity(F("SELECT * FROM ", FV{V: table}, " (NOLOCK)", FV{V: alias}), expected)
-					})
+					}, &expression)
 					self.Do(2616, func() { self.AssertEqual(expression, Call(G("sqlglot.parse_one"), expected, Kw("read", "tsql"))) })
 				}
 			}, Kw("table", table), Kw("alias", alias))
@@ -1112,10 +1112,10 @@ func test_tsql_TestTSQL_test_bare_table_hints(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewTuple(" AS s", " s")) {
 		alias = item_
 		self.SubTest(func() {
-			self.Do(2620, func() { expected = "SELECT * FROM server.db.dbo.t AS s WITH (NOLOCK)" })
-			self.Do(2621, func() {
+			self.DoAssign(2620, func() { expected = "SELECT * FROM server.db.dbo.t AS s WITH (NOLOCK)" }, &expected)
+			self.DoAssign(2621, func() {
 				expression = self.ValidateIdentity(F("SELECT * FROM server.db.dbo.t", FV{V: alias}, " (NOLOCK)"), expected)
-			})
+			}, &expression)
 			self.Do(2624, func() { self.AssertEqual(expression, Call(G("sqlglot.parse_one"), expected, Kw("read", "tsql"))) })
 		}, Kw("alias", alias))
 	}
@@ -1139,8 +1139,8 @@ func test_tsql_TestTSQL_test_bare_table_hints(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewTuple("SELECT s.nolock FROM (SELECT 1 AS x) AS s(nolock)", "SELECT s.nolock FROM (VALUES (1)) AS s(nolock)", "SELECT s.nolock.query('.') FROM dbo.t CROSS APPLY t.doc.nodes('/root') AS s(nolock)", "SELECT * FROM dbo.FN(1)", "SELECT * FROM dbo.FN(1) AS s", "SELECT * FROM dbo.FN('NOLOCK')", "SELECT * FROM dbo.FN(@NOLOCK)", "SELECT * FROM dbo.src CROSS APPLY dbo.fn(NOLOCK)", "SELECT * FROM dbo.src CROSS APPLY dbo.fn(x)", "SELECT * FROM dbo.src CROSS APPLY dbo.fn([NOLOCK])", "SELECT * FROM dbo.src CROSS APPLY dbo.fn(NOLOCK, 1)")) {
 		sql = item_
 		self.SubTest(func() {
-			self.Do(2696, func() { expression = self.ValidateIdentity(sql) })
-			self.Do(2697, func() { M(self, "assertIsNone", M(expression, "find", A(G("sqlglot.exp"), "WithTableHint"))) })
+			self.DoAssign(2696, func() { expression = self.ValidateIdentity(sql) }, &expression)
+			self.Do(2697, func() { Stmt(M(self, "assertIsNone", M(expression, "find", A(G("sqlglot.exp"), "WithTableHint")))) })
 		}, Kw("sql", sql))
 	}
 	return nil
@@ -1191,8 +1191,8 @@ func test_tsql_TestTSQL_test_scope_resolution_op(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewTuple(NewTuple("", "FOO(a, b)"), NewTuple("bar", "baZ(1, 2)"), NewTuple("LOGIN", "EricKurjan"), NewTuple("GEOGRAPHY", "Point(latitude, longitude, 4326)"), NewTuple("GEOGRAPHY", "STGeomFromText('POLYGON((-122.358 47.653 , -122.348 47.649, -122.348 47.658, -122.358 47.658, -122.358 47.653))', 4326)"))) {
 		Unpack(item_, &lhs, &rhs)
 		self.SubTest(func() {
-			self.Do(2832, func() { expr = self.ValidateIdentity(F(FV{V: lhs}, "::", FV{V: rhs})) })
-			self.Do(2833, func() { base_sql = M(expr, "sql") })
+			self.DoAssign(2832, func() { expr = self.ValidateIdentity(F(FV{V: lhs}, "::", FV{V: rhs})) }, &expr)
+			self.DoAssign(2833, func() { base_sql = M(expr, "sql") }, &base_sql)
 			self.Do(2834, func() {
 				self.AssertEqual(base_sql, F("SCOPE_RESOLUTION(", FV{V: IfV(lhs, func() Value { return Add(lhs, ", ") }, func() Value { return "" })}, FV{V: rhs}, ")"))
 			})
@@ -1207,15 +1207,15 @@ func test_tsql_TestTSQL_test_scope_resolution_op(self *Case, a Args) Value {
 func test_tsql_TestTSQL_test_count(self *Case, a Args) Value {
 	var count, count_big Value
 	_ = []Value{count, count_big}
-	self.Do(2838, func() {
+	self.DoAssign(2838, func() {
 		count = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), self.ValidateIdentity("SELECT COUNT(1) FROM x"))
-	})
+	}, &count)
 	self.Do(2839, func() {
 		self.AssertEqual(A(A(Item(A(count, "expressions"), 0), "type"), "this"), A(A(A(G("sqlglot.exp"), "DataType"), "Type"), "INT"))
 	})
-	self.Do(2841, func() {
+	self.DoAssign(2841, func() {
 		count_big = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), self.ValidateIdentity("SELECT COUNT_BIG(1) FROM x"))
-	})
+	}, &count_big)
 	self.Do(2842, func() {
 		self.AssertEqual(A(A(Item(A(count_big, "expressions"), 0), "type"), "this"), A(A(A(G("sqlglot.exp"), "DataType"), "Type"), "BIGINT"))
 	})
@@ -1273,7 +1273,7 @@ func test_tsql_TestTSQL_test_numeric_trunc(self *Case, a Args) Value {
 
 func test_tsql_TestTSQL_test_collation_parse(self *Case, a Args) Value {
 	self.Do(2967, func() {
-		M(A(M(A(Item(M(A(M(self.ValidateIdentity("ALTER TABLE a ALTER COLUMN b CHAR(10) COLLATE abc"), "assert_is", A(G("sqlglot.exp"), "Alter")), "args"), "get", "actions"), 0), "args"), "get", "collate"), "this"), "assert_is", A(G("sqlglot.exp"), "Var"))
+		Stmt(M(A(M(A(Item(M(A(M(self.ValidateIdentity("ALTER TABLE a ALTER COLUMN b CHAR(10) COLLATE abc"), "assert_is", A(G("sqlglot.exp"), "Alter")), "args"), "get", "actions"), 0), "args"), "get", "collate"), "this"), "assert_is", A(G("sqlglot.exp"), "Var")))
 	})
 	return nil
 }
@@ -1284,11 +1284,11 @@ func test_tsql_TestTSQL_test_odbc_date_literals(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewList(NewTuple("{d'2024-01-01'}", A(G("sqlglot.exp"), "Date")), NewTuple("{t'12:00:00'}", A(G("sqlglot.exp"), "Time")), NewTuple("{ts'2024-01-01 12:00:00'}", A(G("sqlglot.exp"), "Timestamp")))) {
 		Unpack(item_, &value, &cls)
 		self.SubTest(func() {
-			self.Do(2978, func() { sql = F("INSERT INTO tab(ds) VALUES (", FV{V: value}, ")") })
-			self.Do(2979, func() { expr = self.ParseOne(sql) })
-			self.Do(2980, func() { M(self, "assertIsInstance", expr, A(G("sqlglot.exp"), "Insert")) })
+			self.DoAssign(2978, func() { sql = F("INSERT INTO tab(ds) VALUES (", FV{V: value}, ")") }, &sql)
+			self.DoAssign(2979, func() { expr = self.ParseOne(sql) }, &expr)
+			self.Do(2980, func() { Stmt(M(self, "assertIsInstance", expr, A(G("sqlglot.exp"), "Insert"))) })
 			self.Do(2981, func() {
-				M(self, "assertIsInstance", Item(A(Item(A(A(expr, "expression"), "expressions"), 0), "expressions"), 0), cls)
+				Stmt(M(self, "assertIsInstance", Item(A(Item(A(A(expr, "expression"), "expressions"), 0), "expressions"), 0), cls))
 			})
 		}, F("Testing ODBC date literal: ", FV{V: value}))
 	}
@@ -1305,14 +1305,16 @@ func test_tsql_TestTSQL_test_create_trigger(self *Case, a Args) Value {
 func test_tsql_TestTSQL_test_procedures(self *Case, a Args) Value {
 	var sqls, sql, ast, expected_sql, roundtripped_sql, expected_sqls, expr Value
 	_ = []Value{sqls, sql, ast, expected_sql, roundtripped_sql, expected_sqls, expr}
-	self.Do(3000, func() { M(self.ValidateIdentity("SELECT 1; SELECT 2"), "assert_is", A(G("sqlglot.exp"), "Block")) })
-	self.Do(3002, func() {
-		sqls = NewList("EXECUTE test @in1 = 100, @in2", "EXECUTE sp_executesql @payload, @param_str, @param1 = value1, @param2 = value2", "EXECUTE sp_executesql @stmt = @payload, @params = param_str, @param1 = value1, @param2 = value2", "\n            CREATE\n            PROCEDURE test1\n            AS\n            BEGIN\n                SELECT 1;\n                SELECT 2;\n                SELECT 3;\n            END\n            ", "\n            CREATE PROCEDURE test2(@in1 INTEGER, @c CHAR(1))\n            AS\n            BEGIN\n                IF @in1 > 1 AND @c = 'c'\n                BEGIN\n                    SELECT col1 FROM t WHERE t.col2 = @in1;\n                END;\n            END\n            ", "\n            CREATE PROCEDURE test(@in1 INTEGER)\n            AS\n            BEGIN\n                SELECT 1;\n                IF @in1 > 1\n                BEGIN\n                    SELECT 1;\n                    SELECT 2;\n                END;\n                ELSE\n                BEGIN\n                    SELECT 3;\n                    SELECT 4;\n                END;\n            END\n            ", "\n            CREATE PROCEDURE test(@in1 INTEGER)\n            AS\n            BEGIN\n                IF @in1 > 1\n                BEGIN\n                    SELECT col1 FROM t WHERE t.col2 = @in1;\n                    SELECT 100;\n                END;\n                IF @in1 > 1\n                BEGIN\n                    SELECT col2 FROM t1;\n                END;\n            END\n            ", "\n            CREATE PROCEDURE test(@in1 INTEGER)\n            AS\n            BEGIN\n                DECLARE @q1 INTEGER, @q2 INTEGER, @q3 INTEGER;\n                SET @q1 = (SELECT MAX(col1) FROM t1);\n                SET @q2 = (SELECT MIN(col1) FROM t2);\n                IF @in1 > 1\n                BEGIN\n                    SELECT 3;\n                    SET @q3 = (SELECT MAX(col2) FROM t1);\n                    IF @q3 < 5\n                    BEGIN\n                        SELECT 1;\n                        SELECT 2;\n                    END;\n                END;\n                IF @in1 > 1\n                BEGIN\n                    SELECT 1;\n                END;\n            END\n            ", "\n            CREATE PROCEDURE test(@in1 INTEGER)\n            AS\n            BEGIN\n                SELECT 1;\n                IF @in1 > 1\n                BEGIN\n                    SELECT 3;\n                END;\n                ELSE\n                BEGIN\n                    SELECT 4;\n                    SELECT 5;\n                    IF @in1 < 0\n                    BEGIN\n                        SELECT 1;\n                    END;\n                END;\n            END\n            ", "\n            CREATE PROCEDURE test(@in1 INTEGER, @c CHAR(1))\n            AS\n            BEGIN\n                WHILE @in1 > 100\n                BEGIN\n                    SELECT col1 FROM t WHERE t.col2 = @in1 AND t.col3 = @c;\n                    SET @in1 = @in1 - 1;\n                END;\n            END\n            ", "\n            CREATE PROCEDURE test(@in1 INTEGER)\n            AS\n            BEGIN\n                DECLARE @temp INTEGER;\n                WHILE @in1 > 100\n                BEGIN\n                    SET @temp = (SELECT MAX(col1) FROM t WHERE t.col2 = @in1);\n                    SET @in1 = @in1 - @temp;\n                END;\n                SET @in1 = 50;\n                WHILE @in1 > 5\n                BEGIN\n                    SELECT col2 FROM t1 WHERE t1.col3 = @in1;\n                    SET @in1 = @in1 - 1;\n                END;\n            END\n            ", "\n            CREATE PROCEDURE dbo.test(@in1 INTEGER = 5, @in2 VARCHAR(40) = 'empty', @in3 INTEGER = 1)\n            AS\n            BEGIN\n                INSERT INTO t (id, col1, col2) VALUES (@in1, @in2, @in3);\n            END;\n            CREATE PROCEDURE c.s.test2\n            AS\n            BEGIN\n                EXECUTE dbo.test;\n                DECLARE @i INTEGER = 0;\n                WHILE @i < 100\n                BEGIN\n                    EXECUTE test @in2 = 'temp_new';\n                    SET @i = @i + 100;\n                END;\n            END\n            ", "\n            CREATE PROCEDURE DropTableIfExists\n                @TableName NVARCHAR(128)\n            AS\n            BEGIN\n                DECLARE @SQL NVARCHAR(MAX);\n                SET @SQL = N'DROP TABLE IF EXISTS [' + @TableName + ']';\n                EXECUTE sp_executesql 'SELECT 1 AS c';\n                EXECUTE sp_executesql N'SELECT 1 AS c';\n                EXECUTE sp_executesql @SQL;\n                EXECUTE sp_executesql @stmt = @SQL;\n            END\n            ", "\n            CREATE PROCEDURE test\n            AS\n            BEGIN\n                DECLARE @x INTEGER = 100;\n                IF @x > ANY (SELECT 100)\n                BEGIN\n                    SET @x = 100;\n                END;\n                ELSE\n                BEGIN\n                    SET @x = 0;\n                END;\n            END\n            ")
+	self.Do(3000, func() {
+		Stmt(M(self.ValidateIdentity("SELECT 1; SELECT 2"), "assert_is", A(G("sqlglot.exp"), "Block")))
 	})
+	self.DoAssign(3002, func() {
+		sqls = NewList("EXECUTE test @in1 = 100, @in2", "EXECUTE sp_executesql @payload, @param_str, @param1 = value1, @param2 = value2", "EXECUTE sp_executesql @stmt = @payload, @params = param_str, @param1 = value1, @param2 = value2", "\n            CREATE\n            PROCEDURE test1\n            AS\n            BEGIN\n                SELECT 1;\n                SELECT 2;\n                SELECT 3;\n            END\n            ", "\n            CREATE PROCEDURE test2(@in1 INTEGER, @c CHAR(1))\n            AS\n            BEGIN\n                IF @in1 > 1 AND @c = 'c'\n                BEGIN\n                    SELECT col1 FROM t WHERE t.col2 = @in1;\n                END;\n            END\n            ", "\n            CREATE PROCEDURE test(@in1 INTEGER)\n            AS\n            BEGIN\n                SELECT 1;\n                IF @in1 > 1\n                BEGIN\n                    SELECT 1;\n                    SELECT 2;\n                END;\n                ELSE\n                BEGIN\n                    SELECT 3;\n                    SELECT 4;\n                END;\n            END\n            ", "\n            CREATE PROCEDURE test(@in1 INTEGER)\n            AS\n            BEGIN\n                IF @in1 > 1\n                BEGIN\n                    SELECT col1 FROM t WHERE t.col2 = @in1;\n                    SELECT 100;\n                END;\n                IF @in1 > 1\n                BEGIN\n                    SELECT col2 FROM t1;\n                END;\n            END\n            ", "\n            CREATE PROCEDURE test(@in1 INTEGER)\n            AS\n            BEGIN\n                DECLARE @q1 INTEGER, @q2 INTEGER, @q3 INTEGER;\n                SET @q1 = (SELECT MAX(col1) FROM t1);\n                SET @q2 = (SELECT MIN(col1) FROM t2);\n                IF @in1 > 1\n                BEGIN\n                    SELECT 3;\n                    SET @q3 = (SELECT MAX(col2) FROM t1);\n                    IF @q3 < 5\n                    BEGIN\n                        SELECT 1;\n                        SELECT 2;\n                    END;\n                END;\n                IF @in1 > 1\n                BEGIN\n                    SELECT 1;\n                END;\n            END\n            ", "\n            CREATE PROCEDURE test(@in1 INTEGER)\n            AS\n            BEGIN\n                SELECT 1;\n                IF @in1 > 1\n                BEGIN\n                    SELECT 3;\n                END;\n                ELSE\n                BEGIN\n                    SELECT 4;\n                    SELECT 5;\n                    IF @in1 < 0\n                    BEGIN\n                        SELECT 1;\n                    END;\n                END;\n            END\n            ", "\n            CREATE PROCEDURE test(@in1 INTEGER, @c CHAR(1))\n            AS\n            BEGIN\n                WHILE @in1 > 100\n                BEGIN\n                    SELECT col1 FROM t WHERE t.col2 = @in1 AND t.col3 = @c;\n                    SET @in1 = @in1 - 1;\n                END;\n            END\n            ", "\n            CREATE PROCEDURE test(@in1 INTEGER)\n            AS\n            BEGIN\n                DECLARE @temp INTEGER;\n                WHILE @in1 > 100\n                BEGIN\n                    SET @temp = (SELECT MAX(col1) FROM t WHERE t.col2 = @in1);\n                    SET @in1 = @in1 - @temp;\n                END;\n                SET @in1 = 50;\n                WHILE @in1 > 5\n                BEGIN\n                    SELECT col2 FROM t1 WHERE t1.col3 = @in1;\n                    SET @in1 = @in1 - 1;\n                END;\n            END\n            ", "\n            CREATE PROCEDURE dbo.test(@in1 INTEGER = 5, @in2 VARCHAR(40) = 'empty', @in3 INTEGER = 1)\n            AS\n            BEGIN\n                INSERT INTO t (id, col1, col2) VALUES (@in1, @in2, @in3);\n            END;\n            CREATE PROCEDURE c.s.test2\n            AS\n            BEGIN\n                EXECUTE dbo.test;\n                DECLARE @i INTEGER = 0;\n                WHILE @i < 100\n                BEGIN\n                    EXECUTE test @in2 = 'temp_new';\n                    SET @i = @i + 100;\n                END;\n            END\n            ", "\n            CREATE PROCEDURE DropTableIfExists\n                @TableName NVARCHAR(128)\n            AS\n            BEGIN\n                DECLARE @SQL NVARCHAR(MAX);\n                SET @SQL = N'DROP TABLE IF EXISTS [' + @TableName + ']';\n                EXECUTE sp_executesql 'SELECT 1 AS c';\n                EXECUTE sp_executesql N'SELECT 1 AS c';\n                EXECUTE sp_executesql @SQL;\n                EXECUTE sp_executesql @stmt = @SQL;\n            END\n            ", "\n            CREATE PROCEDURE test\n            AS\n            BEGIN\n                DECLARE @x INTEGER = 100;\n                IF @x > ANY (SELECT 100)\n                BEGIN\n                    SET @x = 100;\n                END;\n                ELSE\n                BEGIN\n                    SET @x = 0;\n                END;\n            END\n            ")
+	}, &sqls)
 	for _, item_ := range Iter(sqls) {
 		sql = item_
-		self.Do(3178, func() { ast = Call(G("sqlglot.parse_one"), sql, Kw("read", "tsql")) })
-		self.Do(3179, func() {
+		self.DoAssign(3178, func() { ast = Call(G("sqlglot.parse_one"), sql, Kw("read", "tsql")) }, &ast)
+		self.DoAssign(3179, func() {
 			expected_sql = M(" ", "join", func() Value {
 				var line Value
 				_ = []Value{line}
@@ -1334,31 +1336,31 @@ func test_tsql_TestTSQL_test_procedures(self *Case, a Args) Value {
 				}
 				return &List{V: out}
 			}())
-		})
-		self.Do(3180, func() { roundtripped_sql = M(ast, "sql", "tsql") })
+		}, &expected_sql)
+		self.DoAssign(3180, func() { roundtripped_sql = M(ast, "sql", "tsql") }, &roundtripped_sql)
 		self.SubTest(func() {
 			self.Do(3182, func() { self.AssertEqual(expected_sql, roundtripped_sql) })
 		}, F("Testing: ", FV{V: sql}))
 	}
 	self.Do(3184, func() {
-		M(self.ValidateIdentity("EXEC sp_executesql @payload", "EXECUTE sp_executesql @payload"), "assert_is", A(G("sqlglot.exp"), "ExecuteSql"))
+		Stmt(M(self.ValidateIdentity("EXEC sp_executesql @payload", "EXECUTE sp_executesql @payload"), "assert_is", A(G("sqlglot.exp"), "ExecuteSql")))
 	})
-	self.Do(3188, func() {
+	self.DoAssign(3188, func() {
 		sql = "\n            CREATE procedure [TRANSF].[SP_Merge_Sales_Real]\n                @Loadid INTEGER\n               ,@NumberOfRows INTEGER\n            WITH EXECUTE AS OWNER, SCHEMABINDING, NATIVE_COMPILATION\n            AS\n            BEGIN\n                SET XACT_ABORT ON;\n\n                DECLARE @DWH_DateCreated AS DATETIME = CONVERT(DATETIME, getdate(), 104);\n                DECLARE @DWH_DateModified DATETIME2 = CONVERT(DATETIME2, GETDATE(), 104);\n                DECLARE @DWH_IdUserCreated INTEGER = SUSER_ID (CURRENT_USER());\n                DECLARE @DWH_IdUserModified INTEGER = SUSER_ID (SYSTEM_USER);\n\n                DECLARE @SalesAmountBefore float;\n                SELECT @SalesAmountBefore=SUM(SalesAmount) FROM TRANSF.[Pre_Merge_Sales_Real] S;\n            END\n        "
-	})
-	self.Do(3207, func() {
+	}, &sql)
+	self.DoAssign(3207, func() {
 		expected_sqls = NewList("CREATE PROCEDURE [TRANSF].[SP_Merge_Sales_Real] @Loadid INTEGER, @NumberOfRows INTEGER WITH EXECUTE AS OWNER, SCHEMABINDING, NATIVE_COMPILATION AS BEGIN SET XACT_ABORT ON", "DECLARE @DWH_DateCreated DATETIME = CONVERT(DATETIME, GETDATE(), 104)", "DECLARE @DWH_DateModified DATETIME2 = CONVERT(DATETIME2, GETDATE(), 104)", "DECLARE @DWH_IdUserCreated INTEGER = SUSER_ID(CURRENT_USER())", "DECLARE @DWH_IdUserModified INTEGER = SUSER_ID(CURRENT_USER())", "DECLARE @SalesAmountBefore FLOAT", "SELECT @SalesAmountBefore = SUM(SalesAmount) FROM TRANSF.[Pre_Merge_Sales_Real] AS S", "END")
-	})
+	}, &expected_sqls)
 	for _, item_ := range Iter(Call(G("zip"), A(Call(G("sqlglot.parse_one"), sql, Kw("read", "tsql")), "expressions"), expected_sqls)) {
 		Unpack(item_, &expr, &expected_sql)
 		self.Do(3219, func() { self.AssertEqual(M(expr, "sql", Kw("dialect", "tsql")), expected_sql) })
 	}
-	self.Do(3221, func() {
+	self.DoAssign(3221, func() {
 		sql = "\n            CREATE PROC [dbo].[transform_proc] AS\n\n            DECLARE @CurrentDate VARCHAR(20);\n            SET @CurrentDate = CONVERT(VARCHAR(20), GETDATE(), 120);\n\n            CREATE TABLE [target_schema].[target_table]\n            (a INTEGER)\n            WITH (DISTRIBUTION = REPLICATE, HEAP);\n        "
-	})
-	self.Do(3232, func() {
+	}, &sql)
+	self.DoAssign(3232, func() {
 		expected_sqls = NewList("CREATE PROC [dbo].[transform_proc] AS DECLARE @CurrentDate VARCHAR(20)", "SET @CurrentDate = CONVERT(VARCHAR(20), GETDATE(), 120)", "CREATE TABLE [target_schema].[target_table] (a INTEGER) WITH (DISTRIBUTION=REPLICATE, HEAP)")
-	})
+	}, &expected_sqls)
 	for _, item_ := range Iter(Call(G("zip"), A(Call(G("sqlglot.parse_one"), sql, Kw("read", "tsql")), "expressions"), expected_sqls)) {
 		Unpack(item_, &expr, &expected_sql)
 		self.Do(3239, func() { self.AssertEqual(M(expr, "sql", Kw("dialect", "tsql")), expected_sql) })

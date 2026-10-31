@@ -51,7 +51,7 @@ func test_teradata_TestTeradata_test_teradata(self *Case, a Args) Value {
 	self.Do(47, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			M(M(self, "parse_one", "SELECT * FROM t SAMPLE 10, 20"), "sql", "snowflake", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE")))
+			Stmt(M(M(self, "parse_one", "SELECT * FROM t SAMPLE 10, 20"), "sql", "snowflake", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE"))))
 		}, G("sqlglot.UnsupportedError"))
 	})
 	self.L(52).ValidateAll("DATABASE tduser", Kw("read", NewDict("databricks", "USE tduser")), Kw("write", NewDict("databricks", "USE tduser", "teradata", "DATABASE tduser")))
@@ -59,7 +59,7 @@ func test_teradata_TestTeradata_test_teradata(self *Case, a Args) Value {
 	self.L(64).ValidateIdentity("SELECT X'1D'", "SELECT X'1D'")
 	self.L(65).ValidateIdentity("SELECT x'1d'", "SELECT X'1d'")
 	self.Do(67, func() {
-		M(self.ValidateIdentity("RENAME TABLE emp TO employee", Kw("check_command_warning", true)), "assert_is", A(G("sqlglot.exp"), "Command"))
+		Stmt(M(self.ValidateIdentity("RENAME TABLE emp TO employee", Kw("check_command_warning", true)), "assert_is", A(G("sqlglot.exp"), "Command")))
 	})
 	return nil
 }

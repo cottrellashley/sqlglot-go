@@ -81,15 +81,15 @@ func test_trino_TestTrino_test_bigquery_functions(self *Case, a Args) Value {
 			self.Do(96, func() {
 				self.AssertLogs(func(cm_ Value) {
 					cm = cm_
-					M(self, "assertEqual", M(Call(G("sqlglot.parse_one"), sql, Kw("read", "trino")), "sql", "bigquery"), expected)
+					Stmt(M(self, "assertEqual", M(Call(G("sqlglot.parse_one"), sql, Kw("read", "trino")), "sql", "bigquery"), expected))
 				}, G("sqlglot.generator.logger"), Kw("level", "WARNING"))
 			})
 		}, sql)
-		self.Do(98, func() { M(self, "assertIn", warning, Item(A(cm, "output"), 0)) })
+		self.Do(98, func() { Stmt(M(self, "assertIn", warning, Item(A(cm, "output"), 0))) })
 		self.Do(99, func() {
 			self.AssertRaises(func(cm_ Value) {
 				_ = cm_
-				M(Call(G("sqlglot.parse_one"), sql, Kw("read", "trino")), "sql", "bigquery", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE")))
+				Stmt(M(Call(G("sqlglot.parse_one"), sql, Kw("read", "trino")), "sql", "bigquery", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE"))))
 			}, G("sqlglot.UnsupportedError"))
 		})
 	}
@@ -104,12 +104,12 @@ func test_trino_TestTrino_test_approx_percentile(self *Case, a Args) Value {
 		for _, item_ := range Iter(NewTuple("0.5", "ARRAY[0.25, 0.5]")) {
 			quantile = item_
 			self.SubTest(func() {
-				self.Do(106, func() {
+				self.DoAssign(106, func() {
 					expression = self.ValidateIdentity(F("APPROX_PERCENTILE(x, ", FV{V: weight}, ", ", FV{V: quantile}, ")"))
-				})
+				}, &expression)
 				self.Do(109, func() { self.AssertEqual(Item(A(expression, "args"), "weight"), self.ParseOne(weight)) })
 				self.Do(110, func() { self.AssertEqual(Item(A(expression, "args"), "quantile"), self.ParseOne(quantile)) })
-				self.Do(111, func() { M(self, "assertIsNone", M(A(expression, "args"), "get", "accuracy")) })
+				self.Do(111, func() { Stmt(M(self, "assertIsNone", M(A(expression, "args"), "get", "accuracy"))) })
 			}, Kw("weight", weight), Kw("quantile", quantile))
 		}
 	}
@@ -152,7 +152,7 @@ func test_trino_TestTrino_test_concat_ws(self *Case, a Args) Value {
 				self.ValidateAll(F("SELECT ", FV{V: target}), Kw("read", NewDict("spark", F("SELECT ", FV{V: source}))))
 			})
 			self.Do(203, func() {
-				M(Call(G("sqlglot.parse_one"), source, Kw("read", "spark")), "sql", "trino", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE")))
+				Stmt(M(Call(G("sqlglot.parse_one"), source, Kw("read", "spark")), "sql", "trino", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE"))))
 			})
 		}, Kw("source", source))
 	}
@@ -165,9 +165,9 @@ func test_trino_TestTrino_test_concat_ws_typed(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewTuple(NewTuple("ARRAY<STRING>", "STRING", "CONCAT_WS(t.sep, CONCAT(COALESCE(CAST(t.a AS ARRAY(VARCHAR)), ARRAY[]), ARRAY[CAST(t.b AS VARCHAR)]))"), NewTuple("ARRAY<STRING>", "ARRAY<STRING>", "CONCAT_WS(t.sep, CONCAT(COALESCE(CAST(t.a AS ARRAY(VARCHAR)), ARRAY[]), COALESCE(CAST(t.b AS ARRAY(VARCHAR)), ARRAY[])))"), NewTuple("ARRAY<INT>", "INT", "CONCAT_WS(t.sep, CONCAT(COALESCE(CAST(t.a AS ARRAY(VARCHAR)), ARRAY[]), ARRAY[CAST(t.b AS VARCHAR)]))"))) {
 		Unpack(item_, &a_type, &b_type, &expected)
 		self.SubTest(func() {
-			self.Do(227, func() {
+			self.DoAssign(227, func() {
 				expression = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), Call(G("sqlglot.parse_one"), "SELECT CONCAT_WS(t.sep, t.a, t.b) FROM t", Kw("read", "spark")), Kw("schema", NewDict("t", NewDict("sep", "STRING", "a", a_type, "b", b_type))), Kw("dialect", "spark"))
-			})
+			}, &expression)
 			self.Do(232, func() {
 				self.AssertEqual(M(expression, "sql", "trino", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE"))), F("SELECT ", FV{V: expected}, " FROM t"))
 			})
@@ -184,23 +184,23 @@ func test_trino_TestTrino_test_concat_ws_unknown_types(self *Case, a Args) Value
 		for _, item_ := range Iter(NewTuple(false, true)) {
 			annotated = item_
 			self.SubTest(func() {
-				self.Do(244, func() { expression = Call(G("sqlglot.parse_one"), sql, Kw("read", "spark")) })
+				self.DoAssign(244, func() { expression = Call(G("sqlglot.parse_one"), sql, Kw("read", "spark")) }, &expression)
 				if Truth(annotated) {
-					self.Do(246, func() {
+					self.DoAssign(246, func() {
 						expression = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expression, Kw("dialect", "spark"))
-					})
+					}, &expression)
 				}
 				self.Do(248, func() {
 					self.AssertLogs(func(cm_ Value) {
 						logs = cm_
-						M(expression, "sql", "trino")
+						Stmt(M(expression, "sql", "trino"))
 					}, G("sqlglot.generator.logger"))
 				})
-				self.Do(250, func() { M(self, "assertIn", "CONCAT_WS with unknown argument types", Item(A(logs, "output"), 0)) })
+				self.Do(250, func() { Stmt(M(self, "assertIn", "CONCAT_WS with unknown argument types", Item(A(logs, "output"), 0))) })
 				self.Do(252, func() {
 					self.AssertRaisesRegex(func(cm_ Value) {
 						_ = cm_
-						M(expression, "sql", "trino", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE")))
+						Stmt(M(expression, "sql", "trino", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE"))))
 					}, G("sqlglot.UnsupportedError"), "unknown argument types")
 				})
 			}, Kw("sql", sql), Kw("annotated", annotated))
@@ -216,11 +216,11 @@ func test_trino_TestTrino_test_temporal_literal_precision(self *Case, a Args) Va
 		Unpack(item_, &kind, &value)
 		for _, item_ := range Iter(NewTuple("", " +02:00")) {
 			zone = item_
-			self.Do(258, func() { suffix = IfV(zone, func() Value { return " WITH TIME ZONE" }, func() Value { return "" }) })
+			self.DoAssign(258, func() { suffix = IfV(zone, func() Value { return " WITH TIME ZONE" }, func() Value { return "" }) }, &suffix)
 			for _, item_ := range Iter(Call(G("enumerate"), NewTuple("", ".1", ".10", ".100"))) {
 				Unpack(item_, &precision, &fraction)
 				self.SubTest(func() {
-					self.Do(261, func() { literal = F("'", FV{V: value}, FV{V: fraction}, FV{V: zone}, "'") })
+					self.DoAssign(261, func() { literal = F("'", FV{V: value}, FV{V: fraction}, FV{V: zone}, "'") }, &literal)
 					self.Do(262, func() {
 						self.ValidateAll(F("SELECT ", FV{V: kind}, " ", FV{V: literal}), Kw("write", NewDict("presto", F("SELECT CAST(", FV{V: literal}, " AS ", FV{V: kind}, FV{V: suffix}, ")"), "trino", F("SELECT CAST(", FV{V: literal}, " AS ", FV{V: kind}, "(", FV{V: precision}, ")", FV{V: suffix}, ")"))))
 					})
@@ -325,7 +325,7 @@ func test_trino_TestTrino_test_json_value(self *Case, a Args) Value {
 	var json_doc, on_option Value
 	_ = []Value{json_doc, on_option}
 	self.L(471).ValidateIdentity("JSON_VALUE(jl.extra_attributes, 'lax $.amount_source' RETURNING VARCHAR)")
-	self.Do(475, func() { json_doc = `'{"item": "shoes", "price": "49.95"}'` })
+	self.DoAssign(475, func() { json_doc = `'{"item": "shoes", "price": "49.95"}'` }, &json_doc)
 	self.Do(476, func() { self.ValidateIdentity(F("SELECT JSON_VALUE(", FV{V: json_doc}, ", 'strict $.price')")) })
 	self.Do(477, func() {
 		self.ValidateIdentity(F("SELECT JSON_VALUE(", FV{V: json_doc}, ", 'lax $.price' RETURNING DECIMAL(4, 2))"))
@@ -357,7 +357,7 @@ func test_trino_TestTrino_test_inline_udf(self *Case, a Args) Value {
 	self.L(518).ValidateIdentity("WITH FUNCTION f() RETURNS INTEGER DETERMINISTIC RETURN 1 SELECT F()")
 	self.L(521).ValidateIdentity("WITH FUNCTION f() RETURNS INTEGER NOT DETERMINISTIC RETURN 1 SELECT F()")
 	self.Do(524, func() {
-		M(self, "assertIsInstance", Item(A(self.ValidateIdentity("SELECT NOT deterministic FROM t"), "selects"), 0), A(G("sqlglot.exp"), "Not"))
+		Stmt(M(self, "assertIsInstance", Item(A(self.ValidateIdentity("SELECT NOT deterministic FROM t"), "selects"), 0), A(G("sqlglot.exp"), "Not")))
 	})
 	self.L(527).ValidateIdentity("WITH FUNCTION f() RETURNS INTEGER CALLED ON NULL INPUT RETURN 1 SELECT F()")
 	self.L(530).ValidateIdentity("WITH FUNCTION f() RETURNS INTEGER RETURNS NULL ON NULL INPUT RETURN 1 SELECT F()")
@@ -417,13 +417,13 @@ func test_trino_TestTrino_test_inline_udf_while(self *Case, a Args) Value {
 func test_trino_TestTrino_test_inline_udf_loop_repeat(self *Case, a Args) Value {
 	var loop_ast, repeat_ast, node, cm Value
 	_ = []Value{loop_ast, repeat_ast, node, cm}
-	self.Do(794, func() {
+	self.DoAssign(794, func() {
 		loop_ast = self.ValidateIdentity("WITH FUNCTION to_one_hundred(start_value BIGINT, step BIGINT) RETURNS BIGINT BEGIN DECLARE count BIGINT DEFAULT 0; DECLARE current BIGINT DEFAULT 0; SET current = start_value; abc: LOOP IF current >= 100 THEN LEAVE abc; END IF; SET count = count + 1; SET current = current + step; END LOOP; RETURN count; END SELECT TO_ONE_HUNDRED(0, 10)")
-	})
+	}, &loop_ast)
 	self.L(808).ValidateIdentity("WITH FUNCTION test_repeat(a BIGINT) RETURNS BIGINT BEGIN REPEAT SET a = a + 1; UNTIL a >= 10 END REPEAT; RETURN a; END SELECT TEST_REPEAT(5)")
-	self.Do(818, func() {
+	self.DoAssign(818, func() {
 		repeat_ast = self.ValidateIdentity("WITH FUNCTION iter_count() RETURNS BIGINT BEGIN DECLARE a BIGINT DEFAULT 0; DECLARE b BIGINT DEFAULT 0; top: REPEAT SET a = a + 1; IF a <= 3 THEN ITERATE top; END IF; SET b = b + 1; UNTIL a >= 10 END REPEAT; RETURN b; END SELECT ITER_COUNT()")
-	})
+	}, &repeat_ast)
 	self.L(830).ValidateIdentity("WITH FUNCTION nested_test(n BIGINT) RETURNS BIGINT BEGIN DECLARE total BIGINT DEFAULT 0; DECLARE i BIGINT DEFAULT 0; DECLARE j BIGINT DEFAULT 0; outer_loop: WHILE i < n DO SET j = 0; inner_loop: LOOP IF j >= 3 THEN LEAVE inner_loop; END IF; SET total = total + 1; SET j = j + 1; END LOOP; SET i = i + 1; END WHILE; RETURN total; END SELECT NESTED_TEST(2)")
 	self.L(846).ValidateIdentity("WITH FUNCTION last_stmt(n BIGINT) RETURNS BIGINT BEGIN DECLARE i BIGINT DEFAULT 0; top: LOOP IF i >= n THEN LEAVE top; END IF; SET i = i + 1; END LOOP; END SELECT LAST_STMT(5)")
 	self.L(857).ValidateIdentity("WITH FUNCTION label_test(n BIGINT) RETURNS BIGINT BEGIN DECLARE i BIGINT DEFAULT 0; iterate: LOOP IF i >= n THEN LEAVE iterate; END IF; SET i = i + 1; END LOOP; RETURN i; END SELECT LABEL_TEST(5)")
@@ -434,10 +434,10 @@ func test_trino_TestTrino_test_inline_udf_loop_repeat(self *Case, a Args) Value 
 		self.Do(889, func() {
 			self.AssertLogs(func(cm_ Value) {
 				cm = cm_
-				M(self, "assertEqual", M(node, "sql"), "")
+				Stmt(M(self, "assertEqual", M(node, "sql"), ""))
 			}, G("sqlglot.generator.logger"), Kw("level", "WARNING"))
 		})
-		self.Do(892, func() { M(self, "assertIn", "Unsupported", Item(A(cm, "output"), 0)) })
+		self.Do(892, func() { Stmt(M(self, "assertIn", "Unsupported", Item(A(cm, "output"), 0))) })
 	}
 	return nil
 }

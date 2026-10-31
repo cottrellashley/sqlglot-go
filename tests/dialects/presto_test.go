@@ -48,14 +48,14 @@ var test_presto_TestPresto = &Class{
 func test_presto_TestPresto_test_approx_percentile(self *Case, a Args) Value {
 	var expression Value
 	_ = []Value{expression}
-	self.Do(11, func() { expression = self.ValidateIdentity("APPROX_PERCENTILE(x, 0.5, 0.01)") })
+	self.DoAssign(11, func() { expression = self.ValidateIdentity("APPROX_PERCENTILE(x, 0.5, 0.01)") }, &expression)
 	self.Do(12, func() {
 		self.AssertEqual(Item(A(expression, "args"), "quantile"), M(A(G("sqlglot.exp"), "Literal"), "number", "0.5"))
 	})
 	self.Do(13, func() {
 		self.AssertEqual(Item(A(expression, "args"), "accuracy"), M(A(G("sqlglot.exp"), "Literal"), "number", "0.01"))
 	})
-	self.Do(14, func() { M(self, "assertIsNone", M(A(expression, "args"), "get", "weight")) })
+	self.Do(14, func() { Stmt(M(self, "assertIsNone", M(A(expression, "args"), "get", "weight"))) })
 	self.L(15).ValidateAll("APPROX_PERCENTILE(x, 0.5, 0.01)", Kw("write", NewDict("bigquery", "APPROX_QUANTILES(x, 2)[1]")))
 	return nil
 }
@@ -63,21 +63,21 @@ func test_presto_TestPresto_test_approx_percentile(self *Case, a Args) Value {
 func test_presto_TestPresto_test_temporal_precision(self *Case, a Args) Value {
 	var message, kind, value, zone, suffix, expected, precision, expression, logs Value
 	_ = []Value{message, kind, value, zone, suffix, expected, precision, expression, logs}
-	self.Do(21, func() { message = "Presto only supports millisecond precision for temporal types" })
+	self.DoAssign(21, func() { message = "Presto only supports millisecond precision for temporal types" }, &message)
 	for _, item_ := range Iter(NewTuple(NewTuple("TIMESTAMP", "2020-01-01 00:00:00"), NewTuple("TIME", "12:00:00"))) {
 		Unpack(item_, &kind, &value)
 		for _, item_ := range Iter(NewTuple("", " +02:00")) {
 			zone = item_
-			self.Do(24, func() { suffix = IfV(zone, func() Value { return " WITH TIME ZONE" }, func() Value { return "" }) })
-			self.Do(25, func() {
+			self.DoAssign(24, func() { suffix = IfV(zone, func() Value { return " WITH TIME ZONE" }, func() Value { return "" }) }, &suffix)
+			self.DoAssign(25, func() {
 				expected = F("CAST('", FV{V: value}, ".123", FV{V: zone}, "' AS ", FV{V: kind}, FV{V: suffix}, ")")
-			})
+			}, &expected)
 			for _, item_ := range Iter(NewTuple("", "(0)", "(1)", "(2)", "(3)", "(6)")) {
 				precision = item_
 				self.SubTest(func() {
-					self.Do(28, func() {
+					self.DoAssign(28, func() {
 						expression = Call(G("sqlglot.parse_one"), F("CAST('", FV{V: value}, ".123", FV{V: zone}, "' AS ", FV{V: kind}, FV{V: precision}, FV{V: suffix}, ")"), Kw("read", "trino"))
-					})
+					}, &expression)
 					if Truth(In(precision, NewTuple("", "(3)"))) {
 						self.Do(33, func() {
 							self.AssertEqual(M(expression, "sql", "presto", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE"))), expected)
@@ -86,14 +86,14 @@ func test_presto_TestPresto_test_temporal_precision(self *Case, a Args) Value {
 						self.Do(38, func() {
 							self.AssertLogs(func(cm_ Value) {
 								logs = cm_
-								M(self, "assertEqual", M(expression, "sql", "presto"), expected)
+								Stmt(M(self, "assertEqual", M(expression, "sql", "presto"), expected))
 							}, G("sqlglot.generator.logger"))
 						})
-						self.Do(40, func() { M(self, "assertIn", message, Item(A(logs, "output"), 0)) })
+						self.Do(40, func() { Stmt(M(self, "assertIn", message, Item(A(logs, "output"), 0))) })
 						self.Do(41, func() {
 							self.AssertRaisesRegex(func(cm_ Value) {
 								_ = cm_
-								M(expression, "sql", "presto", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE")))
+								Stmt(M(expression, "sql", "presto", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE"))))
 							}, G("sqlglot.UnsupportedError"), message)
 						})
 					}
@@ -154,9 +154,9 @@ func test_presto_TestPresto_test_regex(self *Case, a Args) Value {
 func test_presto_TestPresto_test_interval_plural_to_singular(self *Case, a Args) Value {
 	var unit_to_expected, unit, expected Value
 	_ = []Value{unit_to_expected, unit, expected}
-	self.Do(307, func() {
+	self.DoAssign(307, func() {
 		unit_to_expected = NewDict("SeCoNds", "SECOND", "minutes", "MINUTE", "hours", "HOUR", "days", "DAY", "months", "MONTH", "years", "YEAR")
-	})
+	}, &unit_to_expected)
 	for _, item_ := range Iter(M(unit_to_expected, "items")) {
 		Unpack(item_, &unit, &expected)
 		self.Do(317, func() {
@@ -169,9 +169,9 @@ func test_presto_TestPresto_test_interval_plural_to_singular(self *Case, a Args)
 func test_presto_TestPresto_test_time(self *Case, a Args) Value {
 	var expr Value
 	_ = []Value{expr}
-	self.Do(329, func() {
+	self.DoAssign(329, func() {
 		expr = Call(G("sqlglot.parse_one"), "TIME(7) WITH TIME ZONE", Kw("into", A(G("sqlglot.exp"), "DataType")), Kw("read", "presto"))
-	})
+	}, &expr)
 	self.Do(330, func() { self.AssertEqual(A(expr, "this"), A(A(A(G("sqlglot.exp"), "DataType"), "Type"), "TIMETZ")) })
 	self.L(332).ValidateIdentity("FROM_UNIXTIME(a, b)")
 	self.L(333).ValidateIdentity("FROM_UNIXTIME(a, b, c)")
@@ -270,8 +270,8 @@ func test_presto_TestPresto_test_presto(self *Case, a Args) Value {
 	self.Do(789, func() {
 		self.AssertLogs(func(cm_ Value) {
 			_ = cm_
-			M(self, "validate_all", "SELECT COALESCE(ELEMENT_AT(MAP_FROM_ENTRIES(ARRAY[(51, '1')]), id), quantity) FROM my_table", Kw("write", NewDict("postgres", G("sqlglot.UnsupportedError"), "presto", "SELECT COALESCE(ELEMENT_AT(MAP_FROM_ENTRIES(ARRAY[(51, '1')]), id), quantity) FROM my_table")))
-			M(self, "validate_all", "SELECT ELEMENT_AT(ARRAY[1, 2, 3], 4)", Kw("write", NewDict("", "SELECT ARRAY(1, 2, 3)[3]", "bigquery", "SELECT [1, 2, 3][SAFE_ORDINAL(4)]", "postgres", "SELECT (ARRAY[1, 2, 3])[4]", "presto", "SELECT ELEMENT_AT(ARRAY[1, 2, 3], 4)")))
+			Stmt(M(self, "validate_all", "SELECT COALESCE(ELEMENT_AT(MAP_FROM_ENTRIES(ARRAY[(51, '1')]), id), quantity) FROM my_table", Kw("write", NewDict("postgres", G("sqlglot.UnsupportedError"), "presto", "SELECT COALESCE(ELEMENT_AT(MAP_FROM_ENTRIES(ARRAY[(51, '1')]), id), quantity) FROM my_table"))))
+			Stmt(M(self, "validate_all", "SELECT ELEMENT_AT(ARRAY[1, 2, 3], 4)", Kw("write", NewDict("", "SELECT ARRAY(1, 2, 3)[3]", "bigquery", "SELECT [1, 2, 3][SAFE_ORDINAL(4)]", "postgres", "SELECT (ARRAY[1, 2, 3])[4]", "presto", "SELECT ELEMENT_AT(ARRAY[1, 2, 3], 4)"))))
 		}, G("sqlglot.helper.logger"))
 	})
 	self.L(807).ValidateIdentity("SELECT a FROM t GROUP BY a, ROLLUP (b), ROLLUP (c), ROLLUP (d)")
@@ -282,8 +282,10 @@ func test_presto_TestPresto_test_presto(self *Case, a Args) Value {
 	self.L(812).ValidateIdentity("SELECT * FROM x OFFSET 1 ROW", "SELECT * FROM x OFFSET 1")
 	self.L(813).ValidateIdentity("SELECT * FROM x OFFSET 1 FETCH FIRST 1 ROWS ONLY")
 	self.L(814).ValidateIdentity("SELECT BOOL_OR(a > 10) FROM asd AS T(a)")
-	self.Do(817, func() { M(self.ValidateIdentity("TRUNCATE(3.14159, 2)"), "assert_is", A(G("sqlglot.exp"), "Trunc")) })
-	self.Do(818, func() { M(self.ValidateIdentity("TRUNCATE(3.14159)"), "assert_is", A(G("sqlglot.exp"), "Trunc")) })
+	self.Do(817, func() {
+		Stmt(M(self.ValidateIdentity("TRUNCATE(3.14159, 2)"), "assert_is", A(G("sqlglot.exp"), "Trunc")))
+	})
+	self.Do(818, func() { Stmt(M(self.ValidateIdentity("TRUNCATE(3.14159)"), "assert_is", A(G("sqlglot.exp"), "Trunc"))) })
 	self.L(819).ValidateAll("TRUNCATE(3.14159, 2)", Kw("read", NewDict("postgres", "TRUNC(3.14159, 2)")))
 	self.L(823).ValidateIdentity("SELECT * FROM (VALUES (1))")
 	self.L(824).ValidateIdentity("START TRANSACTION READ WRITE, ISOLATION LEVEL SERIALIZABLE")
@@ -369,7 +371,7 @@ func test_presto_TestPresto_test_json(self *Case, a Args) Value {
 	self.Do(1299, func() {
 		self.AssertLogs(func(cm_ Value) {
 			_ = cm_
-			M(self, "validate_all", `SELECT JSON_EXTRACT_SCALAR(TRY(FILTER(CAST(JSON_EXTRACT('{"k1": [{"k2": "{\"k3\": 1}", "k4": "v"}]}', '$.k1') AS ARRAY(MAP(VARCHAR, VARCHAR))), x -> x['k4'] = 'v')[1]['k2']), '$.k3')`, Kw("write", NewDict("presto", `SELECT JSON_EXTRACT_SCALAR(TRY(FILTER(CAST(JSON_EXTRACT('{"k1": [{"k2": "{\"k3\": 1}", "k4": "v"}]}', '$.k1') AS ARRAY(MAP(VARCHAR, VARCHAR))), x -> x['k4'] = 'v')[1]['k2']), '$.k3')`, "spark", `SELECT GET_JSON_OBJECT(FILTER(FROM_JSON(GET_JSON_OBJECT('{"k1": [{"k2": "{\\"k3\\": 1}", "k4": "v"}]}', '$.k1'), 'ARRAY<MAP<STRING, STRING>>'), x -> x['k4'] = 'v')[0]['k2'], '$.k3')`)))
+			Stmt(M(self, "validate_all", `SELECT JSON_EXTRACT_SCALAR(TRY(FILTER(CAST(JSON_EXTRACT('{"k1": [{"k2": "{\"k3\": 1}", "k4": "v"}]}', '$.k1') AS ARRAY(MAP(VARCHAR, VARCHAR))), x -> x['k4'] = 'v')[1]['k2']), '$.k3')`, Kw("write", NewDict("presto", `SELECT JSON_EXTRACT_SCALAR(TRY(FILTER(CAST(JSON_EXTRACT('{"k1": [{"k2": "{\"k3\": 1}", "k4": "v"}]}', '$.k1') AS ARRAY(MAP(VARCHAR, VARCHAR))), x -> x['k4'] = 'v')[1]['k2']), '$.k3')`, "spark", `SELECT GET_JSON_OBJECT(FILTER(FROM_JSON(GET_JSON_OBJECT('{"k1": [{"k2": "{\\"k3\\": 1}", "k4": "v"}]}', '$.k1'), 'ARRAY<MAP<STRING, STRING>>'), x -> x['k4'] = 'v')[0]['k2'], '$.k3')`))))
 		}, G("sqlglot.helper.logger"))
 	})
 	self.L(1308).ValidateAll("SELECT CAST(JSON '[1,23,456]' AS ARRAY(INTEGER))", Kw("write", NewDict("spark", "SELECT FROM_JSON('[1,23,456]', 'ARRAY<INT>')", "presto", "SELECT CAST(JSON_PARSE('[1,23,456]') AS ARRAY(INTEGER))")))
@@ -405,10 +407,10 @@ func test_presto_TestPresto_test_json_vs_row_extract(self *Case, a Args) Value {
 	_ = []Value{dialect, s, dialect_json_extract_setting, dialect_row_access_setting, json_extract_result}
 	for _, item_ := range Iter(NewTuple("trino", "presto")) {
 		dialect = item_
-		self.Do(1430, func() { s = Call(G("sqlglot.parse_one"), `SELECT col:x:y."special string"`, Kw("read", "snowflake")) })
-		self.Do(1432, func() { dialect_json_extract_setting = F(FV{V: dialect}, ", variant_extract_is_json_extract=True") })
-		self.Do(1433, func() { dialect_row_access_setting = F(FV{V: dialect}, ", variant_extract_is_json_extract=False") })
-		self.Do(1436, func() { json_extract_result = `SELECT JSON_EXTRACT(col, '$.x.y["special string"]')` })
+		self.DoAssign(1430, func() { s = Call(G("sqlglot.parse_one"), `SELECT col:x:y."special string"`, Kw("read", "snowflake")) }, &s)
+		self.DoAssign(1432, func() { dialect_json_extract_setting = F(FV{V: dialect}, ", variant_extract_is_json_extract=True") }, &dialect_json_extract_setting)
+		self.DoAssign(1433, func() { dialect_row_access_setting = F(FV{V: dialect}, ", variant_extract_is_json_extract=False") }, &dialect_row_access_setting)
+		self.DoAssign(1436, func() { json_extract_result = `SELECT JSON_EXTRACT(col, '$.x.y["special string"]')` }, &json_extract_result)
 		self.Do(1437, func() { self.AssertEqual(M(s, "sql", dialect), json_extract_result) })
 		self.Do(1438, func() { self.AssertEqual(M(s, "sql", dialect_json_extract_setting), json_extract_result) })
 		self.Do(1441, func() { self.AssertEqual(M(s, "sql", dialect_row_access_setting), `SELECT col.x.y."special string"`) })

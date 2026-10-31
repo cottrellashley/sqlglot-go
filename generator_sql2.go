@@ -113,7 +113,7 @@ func (g *Generator) partitionSQL(e *exp.Expr) string {
 func (g *Generator) propertyLocation(p *exp.Expr) exp.PropertiesLocation {
 	loc, ok := g.C.PropertiesLocation[p.Kind()]
 	if !ok {
-		g.Raisef("KeyError: <class 'sqlglot.expressions.%s'>", p.ClassName())
+		g.Raisef("KeyError: %s", p.Kind().ClassRepr())
 	}
 	return loc
 }

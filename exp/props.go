@@ -2,6 +2,7 @@ package exp
 
 import (
 	"fmt"
+	"github.com/cottrellashley/sqlglot-go/errs"
 	"math/big"
 	"strconv"
 	"strings"
@@ -248,7 +249,7 @@ func (e *Expr) ToPy() (any, error) {
 			if r, ok := pyDecimal(this); ok {
 				return Decimal{Text: this, Rat: r}, nil
 			}
-			return nil, fmt.Errorf("Invalid numeric literal: '%s'", this)
+			return nil, errs.Valuef("Invalid numeric literal: '%s'", this)
 		}
 		return this, nil
 	case Neg:
@@ -272,7 +273,7 @@ func (e *Expr) ToPy() (any, error) {
 		b, _ := e.Arg("this").(bool)
 		return b, nil
 	}
-	return nil, fmt.Errorf("%s cannot be converted to a Python object.", e.SQL())
+	return nil, errs.Valuef("%s cannot be converted to a Python object.", e.SQL())
 }
 
 // MustToPy is ToPy that panics on error.

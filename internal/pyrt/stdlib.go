@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/cottrellashley/sqlglot-go/exp"
 	"github.com/cottrellashley/sqlglot-go/internal/testutil"
@@ -301,7 +302,7 @@ func init() {
 		}
 		output := strings.Join(msgs, "\n")
 		if !strings.Contains(output, Str(a.Pos[0])) {
-			fail("Expected '%s' not in %s", Str(a.Pos[0]), output)
+			failLog("Expected '%s' not in %s", Str(a.Pos[0]), output)
 		}
 		return nil
 	})
@@ -374,4 +375,72 @@ func init() {
 			})
 		}),
 	}}
+}
+
+// PatchCM is `mock.patch(target, value)` used as a context manager, for the module-level
+// settings that have a Go equivalent.
+type PatchCM struct {
+	set     func(Value)
+	value   Value
+	restore func()
+}
+
+// PyEnter implements the context manager protocol.
+func (p *PatchCM) PyEnter() Value { p.set(p.value); return p.value }
+
+// PyExit implements the context manager protocol.
+func (p *PatchCM) PyExit() { p.restore() }
+
+func init() {
+	globals["patch"] = Func("patch", func(a Args) Value {
+		target := Str(a.Pos[0])
+		switch target {
+		case "sqlglot.pretty":
+			prev := exp.DefaultPretty
+			return &PatchCM{
+				set:     func(v Value) { exp.DefaultPretty = Truth(v) },
+				value:   a.Get(1, "new", nil),
+				restore: func() { exp.DefaultPretty = prev },
+			}
+		}
+		NotPorted("mock.patch(%q)", target)
+		return nil
+	})
+	start := time.Now()
+	globals["time"] = &Module{Name: "time", Attrs: map[string]Value{
+		"time":         Func("time", func(Args) Value { return float64(time.Now().UnixNano()) / 1e9 }),
+		"perf_counter": Func("perf_counter", func(Args) Value { return time.Since(start).Seconds() }),
+	}}
+}
+
+// tzV is a datetime.timezone.
+type tzV struct{ loc *time.Location }
+
+func init() {
+	utc := &tzV{time.UTC}
+	intArg := func(a Args, i int, name string) int {
+		if v := a.Get(i, name, nil); v != nil {
+			return mustInt(v)
+		}
+		return 0
+	}
+	datetimeModule := &Module{Name: "datetime", Attrs: map[string]Value{
+		"timezone": &Module{Name: "datetime.timezone", Attrs: map[string]Value{"utc": utc}},
+		"datetime": Func("datetime", func(a Args) Value {
+			t := time.Date(mustInt(a.Pos[0]), time.Month(mustInt(a.Pos[1])), mustInt(a.Pos[2]),
+				intArg(a, 3, "hour"), intArg(a, 4, "minute"), intArg(a, 5, "second"), intArg(a, 6, "microsecond")*1000, time.UTC)
+			if tz, ok := norm(a.Get(7, "tzinfo", nil)).(*tzV); ok {
+				return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), tz.loc)
+			}
+			return exp.NaiveDatetime{Time: t}
+		}),
+		"date": Func("date", func(a Args) Value {
+			return exp.DateValue{Year: mustInt(a.Pos[0]), Month: mustInt(a.Pos[1]), Day: mustInt(a.Pos[2])}
+		}),
+		"time": Func("time", func(a Args) Value {
+			return exp.TimeValue{Hour: intArg(a, 0, "hour"), Minute: intArg(a, 1, "minute"), Second: intArg(a, 2, "second"),
+				Microsecond: intArg(a, 3, "microsecond")}
+		}),
+	}}
+	globals["datetime"] = datetimeModule
 }

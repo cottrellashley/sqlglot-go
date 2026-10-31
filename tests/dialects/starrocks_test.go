@@ -61,7 +61,9 @@ func test_starrocks_TestStarrocks_test_starrocks(self *Case, a Args) Value {
 	self.L(18).ValidateIdentity("SELECT ARRAY_AGG(a) FROM x")
 	self.L(19).ValidateIdentity("SELECT ST_POINT(10, 20)")
 	self.L(20).ValidateIdentity("SELECT ST_DISTANCE_SPHERE(10.1, 20.2, 30.3, 40.4)")
-	self.Do(21, func() { M(self.ValidateIdentity("ARRAY_FLATTEN(arr)"), "assert_is", A(G("sqlglot.exp"), "Flatten")) })
+	self.Do(21, func() {
+		Stmt(M(self.ValidateIdentity("ARRAY_FLATTEN(arr)"), "assert_is", A(G("sqlglot.exp"), "Flatten")))
+	})
 	self.L(22).ValidateIdentity("SELECT LIKE('xyz', 'x%')", "SELECT 'xyz' LIKE 'x%'")
 	self.L(23).ValidateIdentity("SELECT TO_DAYS(dt) FROM t")
 	self.L(25).ValidateAll("SELECT * FROM t WHERE cond", Kw("read", NewDict("", "SELECT * FROM t WHERE cond IS TRUE", "starrocks", "SELECT * FROM t WHERE cond")))
@@ -117,7 +119,7 @@ func test_starrocks_TestStarrocks_test_generate_date_array(self *Case, a Args) V
 
 func test_starrocks_TestStarrocks_test_table_function(self *Case, a Args) Value {
 	self.Do(146, func() {
-		M(A(M(A(Item(A(self.ValidateIdentity("SELECT * FROM TABLE(GENERATE_SERIES(0, 10))"), "args"), "from_"), "this"), "assert_is", A(G("sqlglot.exp"), "TableFromRows")), "this"), "assert_is", A(G("sqlglot.exp"), "GenerateSeries"))
+		Stmt(M(A(M(A(Item(A(self.ValidateIdentity("SELECT * FROM TABLE(GENERATE_SERIES(0, 10))"), "args"), "from_"), "this"), "assert_is", A(G("sqlglot.exp"), "TableFromRows")), "this"), "assert_is", A(G("sqlglot.exp"), "GenerateSeries")))
 	})
 	self.L(149).ValidateIdentity("SELECT generate_series FROM TABLE(GENERATE_SERIES(0, 10, 2)) AS t")
 	self.L(150).ValidateIdentity("SELECT x FROM TABLE(GENERATE_SERIES(0, 10)) AS t(x)")
@@ -134,7 +136,7 @@ func test_starrocks_TestStarrocks_test_refresh_invalid_mode(self *Case, a Args) 
 			self.Do(156, func() {
 				self.AssertRaises(func(cm_ Value) {
 					_ = cm_
-					M(self, "parse_one", F("REFRESH MATERIALIZED VIEW mv ", FV{V: clause}))
+					Stmt(M(self, "parse_one", F("REFRESH MATERIALIZED VIEW mv ", FV{V: clause})))
 				}, G("sqlglot.errors.ParseError"))
 			})
 		}, Kw("clause", clause))
@@ -145,10 +147,10 @@ func test_starrocks_TestStarrocks_test_refresh_invalid_mode(self *Case, a Args) 
 func test_starrocks_TestStarrocks_test_refresh_unsupported_options(self *Case, a Args) Value {
 	var partition, clause, sql Value
 	_ = []Value{partition, clause, sql}
-	self.Do(160, func() { partition = "PARTITION START ('2020-02-01') END ('2020-03-01')" })
+	self.DoAssign(160, func() { partition = "PARTITION START ('2020-02-01') END ('2020-03-01')" }, &partition)
 	for _, item_ := range Iter(NewTuple("", partition, "FORCE", "WITH SYNC MODE", "WITH ASYNC MODE", F(FV{V: partition}, " FORCE WITH SYNC MODE"))) {
 		clause = item_
-		self.Do(169, func() { sql = M(F("REFRESH MATERIALIZED VIEW mv ", FV{V: clause}), "rstrip") })
+		self.DoAssign(169, func() { sql = M(F("REFRESH MATERIALIZED VIEW mv ", FV{V: clause}), "rstrip") }, &sql)
 		self.SubTest(func() {
 			self.Do(171, func() {
 				self.ValidateAll(sql, Kw("write", NewDict("", IfV(clause, func() Value { return G("sqlglot.errors.UnsupportedError") }, func() Value { return sql }), "postgres", IfV(clause, func() Value { return G("sqlglot.errors.UnsupportedError") }, func() Value { return sql }))))
@@ -179,14 +181,14 @@ func test_starrocks_TestStarrocks_test_ddl(self *Case, a Args) Value {
 	self.L(201).ValidateIdentity("REFRESH MATERIALIZED VIEW lo_mv1 WITH ASYNC MODE")
 	self.L(202).ValidateIdentity(`REFRESH MATERIALIZED VIEW lo_mv1 PARTITION START ("2020-02-01") END ("2020-03-01")`, "REFRESH MATERIALIZED VIEW lo_mv1 PARTITION START ('2020-02-01') END ('2020-03-01')")
 	self.Do(206, func() {
-		M(self.ValidateIdentity("REFRESH MATERIALIZED VIEW db.lo_mv1 PARTITION START ('2020-02-01') END ('2020-03-01') FORCE WITH SYNC MODE"), "assert_is", A(G("sqlglot.exp"), "Refresh"))
+		Stmt(M(self.ValidateIdentity("REFRESH MATERIALIZED VIEW db.lo_mv1 PARTITION START ('2020-02-01') END ('2020-03-01') FORCE WITH SYNC MODE"), "assert_is", A(G("sqlglot.exp"), "Refresh")))
 	})
 	self.L(210).ValidateIdentity("REFRESH DICTIONARY dict_obj", Kw("check_command_warning", true))
 	self.L(211).ValidateIdentity("REFRESH CONNECTIONS", Kw("check_command_warning", true))
 	self.L(212).ValidateIdentity("REFRESH CONNECTIONS FORCE", Kw("check_command_warning", true))
-	self.Do(214, func() {
+	self.DoAssign(214, func() {
 		ddl_sqls = NewList("PARTITION BY (col1, col2)", "PARTITION BY DATE_TRUNC('DAY', col2), col1", "PARTITION BY FROM_UNIXTIME(col2)", "DISTRIBUTED BY HASH (col1) BUCKETS 1", "DISTRIBUTED BY HASH (col1)", "DISTRIBUTED BY RANDOM BUCKETS 1", "DISTRIBUTED BY RANDOM", "DISTRIBUTED BY HASH (col1) ORDER BY (col1)", "DISTRIBUTED BY HASH (col1) PROPERTIES ('replication_num'='1')", "PRIMARY KEY (col1) DISTRIBUTED BY HASH (col1)", "DUPLICATE KEY (col1, col2) DISTRIBUTED BY HASH (col1)", "UNIQUE KEY (col1, col2) PARTITION BY RANGE (col1) (START ('2024-01-01') END ('2024-01-31') EVERY (INTERVAL 1 DAY)) DISTRIBUTED BY HASH (col1)", "UNIQUE KEY (col1, col2) PARTITION BY RANGE (col1, col2) (START ('1') END ('10') EVERY (1), START ('10') END ('100') EVERY (10)) DISTRIBUTED BY HASH (col1)", "ORDER BY (col1, col2)", "DISTRIBUTED BY HASH (col1) ROLLUP (r1(event_day, siteid), r2(event_day, citycode), r3(event_day))", "DISTRIBUTED BY HASH (col1) ROLLUP (r1(col2))", "DISTRIBUTED BY HASH (col1) ROLLUP (`r1`(`col2`))", "DISTRIBUTED BY HASH (col1) ROLLUP (r1(col2) FROM base_index)", "DISTRIBUTED BY HASH (col1) ROLLUP (r1(col2) PROPERTIES ('storage_type'='column'))", "DISTRIBUTED BY HASH (col1) ROLLUP (r1(col2) FROM base_index PROPERTIES ('k'='v'))", "DISTRIBUTED BY HASH (col1) ROLLUP (r1(col2) PROPERTIES ('k1'='v1', 'k2'='v2'))")
-	})
+	}, &ddl_sqls)
 	for _, item_ := range Iter(ddl_sqls) {
 		properties = item_
 		self.SubTest(func() {
@@ -200,19 +202,19 @@ func test_starrocks_TestStarrocks_test_ddl(self *Case, a Args) Value {
 	self.L(249).ValidateIdentity("CREATE TABLE foo (col1 LARGEINT) DISTRIBUTED BY HASH (col1) BUCKETS 1")
 	self.L(252).ValidateIdentity("CREATE VIEW foo (foo_col1) SECURITY NONE AS SELECT bar_col1 FROM bar")
 	self.L(257).ValidateAll("CREATE TABLE foo (col1 BIGINT, col2 BIGINT) ROLLUP (r1(col1, col2), r2(col1))", Kw("write", NewDict("starrocks", "CREATE TABLE foo (col1 BIGINT, col2 BIGINT) ROLLUP (r1(col1, col2), r2(col1))", "spark", "CREATE TABLE foo (col1 BIGINT, col2 BIGINT)", "duckdb", "CREATE TABLE foo (col1 BIGINT, col2 BIGINT)", "postgres", "CREATE TABLE foo (col1 BIGINT, col2 BIGINT)")))
-	self.Do(267, func() {
+	self.DoAssign(267, func() {
 		multi_column_cluster = M(G("sqlglot.exp"), "ClusterProperty", Kw("expressions", NewList(M(G("sqlglot.exp"), "column", "c"), M(G("sqlglot.exp"), "column", "d"))))
-	})
+	}, &multi_column_cluster)
 	self.Do(273, func() {
 		self.AssertEqual(M(multi_column_cluster, "sql", Kw("dialect", "starrocks")), "ORDER BY (c, d)")
 	})
-	self.Do(275, func() {
+	self.DoAssign(275, func() {
 		single_column_cluster = M(G("sqlglot.exp"), "ClusterProperty", Kw("expressions", NewList(M(G("sqlglot.exp"), "column", "c"))))
-	})
+	}, &single_column_cluster)
 	self.Do(276, func() { self.AssertEqual(M(single_column_cluster, "sql", Kw("dialect", "starrocks")), "ORDER BY (c)") })
-	self.Do(278, func() {
+	self.DoAssign(278, func() {
 		mv_properties = NewList("PARTITION BY (DATE_FUNC(ts), region) REFRESH ASYNC", "PARTITION BY (DATE_TRUNC('DAY', ts)) REFRESH ASYNC", "PARTITION BY (col1, col2) REFRESH ASYNC", "REFRESH ASYNC", "REFRESH IMMEDIATE", "REFRESH DEFERRED", "REFRESH DEFERRED ASYNC", "REFRESH IMMEDIATE ASYNC", "REFRESH DEFERRED MANUAL", "REFRESH IMMEDIATE MANUAL", "REFRESH IMMEDIATE START ('2025-01-01 00:00:00') EVERY (INTERVAL 5 MINUTE)", "REFRESH IMMEDIATE ASYNC EVERY (INTERVAL 5 MINUTE)", "REFRESH DEFERRED START ('2025-01-01 00:00:00') EVERY (INTERVAL 5 MINUTE)", "REFRESH DEFERRED ASYNC EVERY (INTERVAL 5 MINUTE)", "REFRESH ASYNC START ('2025-01-01 00:00:00') EVERY (INTERVAL 5 MINUTE)", "REFRESH ASYNC EVERY (INTERVAL 5 MINUTE)")
-	})
+	}, &mv_properties)
 	for _, item_ := range Iter(mv_properties) {
 		properties = item_
 		self.SubTest(func() {
@@ -264,9 +266,9 @@ func test_starrocks_TestStarrocks_test_unnest(self *Case, a Args) Value {
 	self.L(374).ValidateIdentity("SELECT * FROM TABLE(UNNEST([1, 2], ['a', 'b'])) AS t(x, y)")
 	self.L(378).ValidateAll(`SELECT id, t.type, t.scores FROM example_table, unnest(split(type, ";"), scores) AS t(type,scores)`, Kw("write", NewDict("postgres", "SELECT id, t.type, t.scores FROM example_table, UNNEST(SPLIT(type, ';'), scores) AS t(type, scores)", "spark", `SELECT id, t.type, t.scores FROM example_table LATERAL VIEW INLINE(ARRAYS_ZIP(SPLIT(type, CONCAT('\\Q', ';', '\\E')), scores)) t AS type, scores`, "databricks", `SELECT id, t.type, t.scores FROM example_table LATERAL VIEW INLINE(ARRAYS_ZIP(SPLIT(type, CONCAT('\\Q', ';', '\\E')), scores)) t AS type, scores`, "starrocks", "SELECT id, t.type, t.scores FROM example_table, UNNEST(SPLIT(type, ';'), scores) AS t(type, scores)", "hive", G("sqlglot.errors.UnsupportedError"))))
 	self.L(389).ValidateAll(`SELECT id, t.type, t.scores FROM example_table_2 CROSS JOIN LATERAL unnest(split(type, ";"), scores) AS t(type,scores)`, Kw("write", NewDict("spark", `SELECT id, t.type, t.scores FROM example_table_2 LATERAL VIEW INLINE(ARRAYS_ZIP(SPLIT(type, CONCAT('\\Q', ';', '\\E')), scores)) t AS type, scores`, "starrocks", "SELECT id, t.type, t.scores FROM example_table_2 CROSS JOIN LATERAL UNNEST(SPLIT(type, ';'), scores) AS t(type, scores)", "hive", G("sqlglot.errors.UnsupportedError"))))
-	self.Do(398, func() {
+	self.DoAssign(398, func() {
 		lateral_explode_sqls = NewList("SELECT id, t.col FROM tbl, UNNEST(scores) AS t(col)", "SELECT id, t.col FROM tbl CROSS JOIN LATERAL UNNEST(scores) AS t(col)")
-	})
+	}, &lateral_explode_sqls)
 	for _, item_ := range Iter(lateral_explode_sqls) {
 		sql = item_
 		self.SubTest(func() {
@@ -367,18 +369,18 @@ func test_starrocks_TestStarrocks_test_aggregate_key(self *Case, a Args) Value {
 	var agg Value
 	_ = []Value{agg}
 	self.Do(590, func() {
-		M(M(self.ValidateIdentity("CREATE TABLE aggregate_tbl (site_id LARGEINT NOT NULL COMMENT 'id of site', date DATE NOT NULL COMMENT 'time of event', city_code VARCHAR(20) COMMENT 'city_code of user', pv BIGINT SUM DEFAULT '0' COMMENT 'total page views') AGGREGATE KEY (site_id, date, city_code) DISTRIBUTED BY HASH (site_id)"), "find", A(G("sqlglot.exp"), "AggregateKeyProperty")), "assert_is", A(G("sqlglot.exp"), "AggregateKeyProperty"))
+		Stmt(M(M(self.ValidateIdentity("CREATE TABLE aggregate_tbl (site_id LARGEINT NOT NULL COMMENT 'id of site', date DATE NOT NULL COMMENT 'time of event', city_code VARCHAR(20) COMMENT 'city_code of user', pv BIGINT SUM DEFAULT '0' COMMENT 'total page views') AGGREGATE KEY (site_id, date, city_code) DISTRIBUTED BY HASH (site_id)"), "find", A(G("sqlglot.exp"), "AggregateKeyProperty")), "assert_is", A(G("sqlglot.exp"), "AggregateKeyProperty")))
 	})
 	for _, item_ := range Iter(NewTuple("SUM", "MAX", "MIN", "REPLACE", "REPLACE_IF_NOT_NULL")) {
 		agg = item_
 		self.SubTest(func() {
 			self.Do(596, func() {
-				M(self.ValidateIdentity(F("CREATE TABLE t (k1 INT, v1 INT ", FV{V: agg}, " NULL) AGGREGATE KEY (k1) DISTRIBUTED BY HASH (k1)")), "assert_is", A(G("sqlglot.exp"), "Create"))
+				Stmt(M(self.ValidateIdentity(F("CREATE TABLE t (k1 INT, v1 INT ", FV{V: agg}, " NULL) AGGREGATE KEY (k1) DISTRIBUTED BY HASH (k1)")), "assert_is", A(G("sqlglot.exp"), "Create")))
 			})
 		}, agg)
 	}
 	self.Do(600, func() {
-		M(self.ValidateIdentity("CREATE TABLE t (k1 INT, v1 HLL HLL_UNION) AGGREGATE KEY (k1) DISTRIBUTED BY HASH (k1)"), "assert_is", A(G("sqlglot.exp"), "Create"))
+		Stmt(M(self.ValidateIdentity("CREATE TABLE t (k1 INT, v1 HLL HLL_UNION) AGGREGATE KEY (k1) DISTRIBUTED BY HASH (k1)"), "assert_is", A(G("sqlglot.exp"), "Create")))
 	})
 	return nil
 }
@@ -398,7 +400,7 @@ func test_starrocks_TestStarrocks_test_comments(self *Case, a Args) Value {
 			self.Do(627, func() {
 				self.AssertRaises(func(cm_ Value) {
 					_ = cm_
-					M(self, "parse_one", sql)
+					Stmt(M(self, "parse_one", sql))
 				}, G("sqlglot.errors.ParseError"))
 			})
 		}, sql)
@@ -428,10 +430,10 @@ func test_starrocks_TestStarrocks_test_command_statements(self *Case, a Args) Va
 	}
 	self.L(677).ValidateIdentity("SELECT admin, cancel, export, stop FROM t")
 	self.Do(680, func() {
-		M(self.ValidateIdentity("DELETE FROM t WHERE a = 1"), "assert_is", A(G("sqlglot.exp"), "Delete"))
+		Stmt(M(self.ValidateIdentity("DELETE FROM t WHERE a = 1"), "assert_is", A(G("sqlglot.exp"), "Delete")))
 	})
 	self.Do(681, func() {
-		M(self.ValidateIdentity("ALTER TABLE t ADD COLUMN c INT"), "assert_is", A(G("sqlglot.exp"), "Alter"))
+		Stmt(M(self.ValidateIdentity("ALTER TABLE t ADD COLUMN c INT"), "assert_is", A(G("sqlglot.exp"), "Alter")))
 	})
 	self.L(682).ValidateIdentity("SELECT TRANSLATE(c, 'a', 'b'), translate FROM t")
 	return nil
@@ -439,7 +441,7 @@ func test_starrocks_TestStarrocks_test_command_statements(self *Case, a Args) Va
 
 func test_starrocks_TestStarrocks_test_map_literal(self *Case, a Args) Value {
 	self.Do(686, func() {
-		M(A(Item(A(self.ValidateIdentity("SELECT MAP{1:1, 2:2, 3:3} AS numbers"), "selects"), 0), "this"), "assert_is", A(G("sqlglot.exp"), "ToMap"))
+		Stmt(M(A(Item(A(self.ValidateIdentity("SELECT MAP{1:1, 2:2, 3:3} AS numbers"), "selects"), 0), "this"), "assert_is", A(G("sqlglot.exp"), "ToMap")))
 	})
 	self.L(689).ValidateIdentity(`SELECT map{1:"apple", 2:"orange", 3:"pear"} AS fruit`, "SELECT MAP{1:'apple', 2:'orange', 3:'pear'} AS fruit")
 	self.L(693).ValidateIdentity(`SELECT map{true:map{3.13:"abc"}, false:map{}} AS nest`, "SELECT MAP{TRUE:MAP{3.13:'abc'}, FALSE:MAP{}} AS nest")

@@ -106,9 +106,9 @@ func test_doris_TestDoris_test_match(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewTuple(NewTuple("MATCH", nil), NewTuple("MATCH_ANY", "ANY"), NewTuple("MATCH_ALL", "ALL"), NewTuple("MATCH_PHRASE", "PHRASE"), NewTuple("MATCH_PHRASE_PREFIX", "PHRASE_PREFIX"), NewTuple("MATCH_PHRASE_EDGE", "PHRASE_EDGE"), NewTuple("MATCH_REGEXP", "REGEXP"))) {
 		Unpack(item_, &operator, &kind)
 		self.SubTest(func() {
-			self.Do(172, func() {
+			self.DoAssign(172, func() {
 				match = M(self.ValidateIdentity(F("SELECT * FROM t WHERE c ", FV{V: operator}, " 'word1 word2'")), "find", A(G("sqlglot.exp"), "Match"))
-			})
+			}, &match)
 			self.Do(175, func() { self.AssertEqual(M(A(match, "args"), "get", "kind"), kind) })
 			self.Do(176, func() { self.ValidateIdentity(F("SELECT * FROM t WHERE c ", FV{V: operator}, " ('word1 word2')")) })
 		}, operator)
@@ -131,7 +131,7 @@ func test_doris_TestDoris_test_match(self *Case, a Args) Value {
 	self.Do(220, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			M(self, "parse_one", "SELECT * FROM t WHERE c MATCH_ANY 'x' USING ANALYZER")
+			Stmt(M(self, "parse_one", "SELECT * FROM t WHERE c MATCH_ANY 'x' USING ANALYZER"))
 		}, G("sqlglot.ParseError"))
 	})
 	return nil

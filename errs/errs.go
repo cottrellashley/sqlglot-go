@@ -111,6 +111,17 @@ type ExecuteError struct{ Message string }
 func (e *ExecuteError) Error() string { return e.Message }
 func (*ExecuteError) sqlglotError()   {}
 
+// ValueError reports an invalid argument value, where sqlglot raises ValueError (for example
+// when an expression builder gets inconsistent arguments).
+type ValueError struct{ Message string }
+
+func (e *ValueError) Error() string { return e.Message }
+
+// Valuef builds a ValueError.
+func Valuef(format string, args ...any) *ValueError {
+	return &ValueError{Message: fmt.Sprintf(format, args...)}
+}
+
 // AssertionError reports a failed invariant check, where sqlglot uses an assert statement
 // (for example a transform that cannot handle its input).
 type AssertionError struct{ Message string }

@@ -76,6 +76,8 @@ func goErr(err error) *PyErr {
 		return &PyErr{Class: ExecuteError, Msg: err.Error(), Go: err}
 	case *errs.AssertionError:
 		return &PyErr{Class: AssertionError, Msg: err.Error(), Go: err}
+	case *errs.ValueError:
+		return &PyErr{Class: ValueError, Msg: err.Error(), Go: err}
 	}
 	msg := err.Error()
 	if m := unknownDialectRe.FindStringSubmatch(msg); m != nil {
@@ -312,6 +314,11 @@ func exprAttr(e *exp.Expr, name string) Value {
 		return norm(append([]string(nil), e.Comments...))
 	case "meta":
 		return metaDict(e)
+	case "_meta":
+		if e.RawMeta() == nil {
+			return nil
+		}
+		return metaDict(e)
 	case "type":
 		return norm(e.Type())
 	case "is_string":
@@ -335,6 +342,9 @@ func exprAttr(e *exp.Expr, name string) Value {
 	case "parts":
 		return norm(e.Parts())
 	case "table":
+		if e.IsKind(exp.Update) {
+			return exprMethod(e, name, func(a Args) Value { return e.UpdateTable(toGo(a.Pos[0]), toOptions(buildOptions(a))...) })
+		}
 		if e.IsKind(exp.Column) {
 			return e.TableName()
 		}
@@ -456,11 +466,7 @@ func exprAttr(e *exp.Expr, name string) Value {
 		return exprMethod(e, name, func(a Args) Value { return e.FindAncestor(kinds(a.Pos)...) })
 	case "assert_is":
 		return exprMethod(e, name, func(a Args) Value {
-			k := kinds(a.Pos)[0]
-			if !e.Is(k) {
-				Raise(AssertionError, "%s is not %s.", e.SQL(), k.Name())
-			}
-			return e
+			return e.AssertIs(kinds(a.Pos)[0])
 		})
 	case "copy", "__deepcopy__":
 		return exprMethod(e, name, func(a Args) Value { return e.Copy() })
@@ -520,14 +526,23 @@ func exprAttr(e *exp.Expr, name string) Value {
 					kws = append(kws, kw)
 				}
 			}
-			return e.Transform(func(n *exp.Expr) *exp.Expr {
-				r := Call(fun, append(append([]Value{n}, extra...), kws...)...)
-				x, _ := norm(r).(*exp.Expr)
-				return x
+			return e.TransformAny(func(n *exp.Expr) any {
+				switch r := norm(Call(fun, append(append([]Value{n}, extra...), kws...)...)).(type) {
+				case *exp.Expr:
+					return r
+				case *List, Tuple:
+					return exprsOf(r)
+				}
+				return nil
 			}, copy)
 		})
 	case "replace":
 		return exprMethod(e, name, func(a Args) Value {
+			switch v := norm(a.Pos[0]).(type) {
+			case *List, Tuple:
+				e.ReplaceWithList(exprsOf(v))
+				return v
+			}
 			n, _ := norm(a.Pos[0]).(*exp.Expr)
 			return e.Replace(n)
 		})
@@ -562,6 +577,16 @@ func exprAttr(e *exp.Expr, name string) Value {
 		})
 	case "root":
 		return exprMethod(e, name, func(a Args) Value { return e.Root() })
+	case "unwrap":
+		return exprMethod(e, name, func(a Args) Value { return e.Unwrap() })
+	case "update_positions":
+		return exprMethod(e, name, func(a Args) Value {
+			if other, ok := norm(a.Get(0, "other", nil)).(*exp.Expr); ok {
+				return e.UpdatePositionsFrom(other)
+			}
+			return e.UpdatePositions(mustInt(a.Get(1, "line", 0)), mustInt(a.Get(2, "col", 0)),
+				mustInt(a.Get(3, "start", 0)), mustInt(a.Get(4, "end", 0)))
+		})
 	case "to_s":
 		return exprMethod(e, name, func(a Args) Value { return e.ToS() })
 	case "add_comments":
@@ -579,8 +604,6 @@ func exprAttr(e *exp.Expr, name string) Value {
 		})
 	case "pop_comments":
 		return exprMethod(e, name, func(a Args) Value { return norm(e.PopComments()) })
-	case "update_positions":
-		return exprMethod(e, name, func(a Args) Value { NotPorted("Expr.update_positions"); return nil })
 	case "error_messages":
 		return exprMethod(e, name, func(a Args) Value { return norm(e.ErrorMessages(nil)) })
 	case "to_column":
@@ -726,8 +749,34 @@ func exprAttr(e *exp.Expr, name string) Value {
 		})
 	case "returning":
 		return exprMethod(e, name, func(a Args) Value { return e.Returning(toGo(a.Pos[0]), toOptions(buildOptions(a))...) })
+	case "set_":
+		return exprMethod(e, name, func(a Args) Value { return e.UpdateSet(builderArgs(a)...) })
+	case "delete":
+		return exprMethod(e, name, func(a Args) Value { return e.DeleteFrom(toGo(a.Pos[0]), toOptions(buildOptions(a))...) })
 	case "ctas":
-		return exprMethod(e, name, func(a Args) Value { NotPorted("Expr.ctas"); return nil })
+		return exprMethod(e, name, func(a Args) Value {
+			return e.Ctas(toGo(a.Pos[0]), toOrderedMap(a.Get(1, "properties", nil)), toOptions(buildOptions(a, "properties"))...)
+		})
+	case "when":
+		return exprMethod(e, name, func(a Args) Value {
+			return e.When(toGo(a.Get(0, "condition", nil)), toGo(a.Get(1, "then", nil)), toOptions(buildOptions(a, "condition", "then"))...)
+		})
+	case "else_":
+		return exprMethod(e, name, func(a Args) Value {
+			return e.Else(toGo(a.Get(0, "condition", nil)), toOptions(buildOptions(a, "condition"))...)
+		})
+	case "pipe", "apply":
+		return exprMethod(e, name, func(a Args) Value {
+			args := append([]Value{e}, a.Pos[1:]...)
+			for _, kw := range a.KW {
+				args = append(args, kw)
+			}
+			r := Call(a.Pos[0], args...)
+			if name == "apply" {
+				return e
+			}
+			return r
+		})
 	case "set_kwargs":
 		return exprMethod(e, name, func(a Args) Value {
 			var kv []any
@@ -877,6 +926,18 @@ func kindAttr(k exp.Kind, name string) Value {
 		})
 	}
 	switch k {
+	case exp.Dot:
+		if name == "build" {
+			return Func(name, func(a Args) Value { return exp.DotBuild(exprsOf(a.Pos[0])) })
+		}
+	case exp.Properties:
+		if name == "from_dict" {
+			return Func(name, func(a Args) Value { return exp.PropertiesFromDict(toOrderedMap(a.Pos[0])) })
+		}
+	case exp.TimeUnit:
+		if name == "UNABBREVIATED_UNIT_NAME" {
+			return fromGo(exp.UnabbreviatedUnitName)
+		}
 	case exp.Literal:
 		switch name {
 		case "number":
@@ -955,8 +1016,38 @@ func dtypeAttr(d exp.DType, name string) Value {
 	case "value", "name":
 		return string(d)
 	case "into_expr":
-		return Func(name, func(a Args) Value { return d.IntoExpr() })
+		return Func(name, func(a Args) Value {
+			var kv []any
+			for _, kw := range a.KW {
+				kv = append(kv, kw.K, toGo(kw.V))
+			}
+			return d.IntoExpr(kv...)
+		})
 	}
 	Raise(AttributeError, "'DType' object has no attribute '%s'", name)
 	return nil
+}
+
+// toOrderedMap converts a dict into an exp.OrderedMap (nil for None).
+func toOrderedMap(v Value) exp.OrderedMap {
+	d, ok := norm(v).(*Dict)
+	if !ok {
+		return nil
+	}
+	out := make(exp.OrderedMap, 0, d.Len())
+	for i, k := range d.keys {
+		out = append(out, exp.KV{Key: Str(k), Value: toConvert(d.vals[i])})
+	}
+	return out
+}
+
+// exprsOf converts a list of expressions.
+func exprsOf(v Value) []*exp.Expr {
+	var out []*exp.Expr
+	for _, x := range Iter(v) {
+		if e, ok := norm(x).(*exp.Expr); ok {
+			out = append(out, e)
+		}
+	}
+	return out
 }

@@ -2,6 +2,7 @@ package exp
 
 import (
 	"encoding/hex"
+	"errors"
 	"github.com/cottrellashley/sqlglot-go/internal/pydec"
 
 	"github.com/cottrellashley/sqlglot-go/errs"
@@ -142,11 +143,11 @@ func NewVar(name any) *Expr {
 		return New(Var, "this", x.Name())
 	case string:
 		if x == "" {
-			panic("Cannot convert empty name into var.")
+			panic(errs.Valuef("Cannot convert empty name into var."))
 		}
 		return New(Var, "this", x)
 	case nil:
-		panic("Cannot convert empty name into var.")
+		panic(errs.Valuef("Cannot convert empty name into var."))
 	}
 	return New(Var, "this", fmt.Sprint(name))
 }
@@ -280,7 +281,7 @@ func ConvertValue(value any, copy bool) *Expr {
 		}
 		return ConvertValue(rv.Elem().Interface(), copy)
 	}
-	panic(fmt.Sprintf("Cannot convert %v", value))
+	panic(errs.Valuef("Cannot convert %v", value))
 }
 
 // NaiveDatetime is a datetime without time zone for ConvertValue (time.Time values are
@@ -329,13 +330,13 @@ func ToIdentifierOpts(name any, quoted *bool, copy bool) *Expr {
 		}
 		return New(Identifier, "this", x, "quoted", q)
 	}
-	panic(fmt.Sprintf("Name needs to be a string or an Identifier, got: %T", name))
+	panic(errs.Valuef("Name needs to be a string or an Identifier, got: %T", name))
 }
 
 // DotBuild mirrors Dot.build: Dot(Dot(a, b), c) from [a, b, c].
 func DotBuild(exprs []*Expr) *Expr {
 	if len(exprs) < 2 {
-		panic("Dot requires >= 2 expressions.")
+		panic(errs.Valuef("Dot requires >= 2 expressions."))
 	}
 	x := exprs[0]
 	for _, y := range exprs[1:] {
@@ -608,7 +609,7 @@ func NewFunc(name string, args ...any) *Expr {
 	var kwargs []Arg
 	if len(o.extra) > 0 {
 		if len(converted) > 0 {
-			panic("Can't use both args and kwargs to instantiate a function.")
+			panic(errs.Valuef("Can't use both args and kwargs to instantiate a function."))
 		}
 		keys := make([]string, 0, len(o.extra))
 		for k := range o.extra {
@@ -690,7 +691,7 @@ func ToInterval(interval any) *Expr {
 	case *Expr:
 		if x.Is(Literal) {
 			if !x.IsString() {
-				panic("Invalid interval string.")
+				panic(errs.Valuef("Invalid interval string."))
 			}
 			s = x.Str("this")
 		} else {
@@ -714,6 +715,11 @@ func ToTable(sqlPath any, dialect any, kv ...any) *Expr {
 	s := fmt.Sprint(sqlPath)
 	table, err := MaybeParse(sqlPath, ParseOptions{Dialect: dialect, Into: []Kind{Table}, ErrorLevel: errs.Unset}, "", false)
 	if err != nil {
+		// only a parse error falls back to splitting the name (an unknown dialect is raised)
+		var pe *errs.ParseError
+		if !errors.As(err, &pe) {
+			panic(err)
+		}
 		parts := splitNumWords(s, ".", 3)
 		if parts[2] == nil {
 			panic(err)
@@ -758,6 +764,11 @@ func ToColumn(sqlPath any, quoted *bool, dialect any, kv ...any) *Expr {
 	}
 	col, err := MaybeParse(sqlPath, ParseOptions{Dialect: dialect, Into: []Kind{Column}, ErrorLevel: errs.Unset}, "", false)
 	if err != nil {
+		// only a parse error falls back to splitting the name (an unknown dialect is raised)
+		var pe *errs.ParseError
+		if !errors.As(err, &pe) {
+			panic(err)
+		}
 		parts := strings.Split(fmt.Sprint(sqlPath), ".")
 		reverse(parts)
 		args := make([]any, 4)
@@ -781,7 +792,7 @@ func ToColumn(sqlPath any, quoted *bool, dialect any, kv ...any) *Expr {
 // NewValues mirrors exp.values(values, alias, columns).
 func NewValues(values []any, alias string, columns []string) *Expr {
 	if len(columns) > 0 && alias == "" {
-		panic("Alias is required when providing columns")
+		panic(errs.Valuef("Alias is required when providing columns"))
 	}
 	exprs := make([]*Expr, len(values))
 	for i, v := range values {

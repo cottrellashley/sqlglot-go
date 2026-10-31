@@ -9,6 +9,7 @@ package pyrt
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 
@@ -317,6 +318,8 @@ type PyErr struct {
 	Msg   string
 	// Go is the underlying Go error, if any (e.g. *errs.ParseError).
 	Go error
+	// LogCheck marks assertion failures about logged messages.
+	LogCheck bool
 }
 
 func (e *PyErr) Error() string {
@@ -462,10 +465,12 @@ func Try(f func()) *PyErr { return catch(f) }
 func Matches(err *PyErr, cls Value) bool { return matchesExc(err, cls) }
 
 // KwDict returns the keyword arguments of a call as a dict (**kwargs).
-func KwDict(a Args) Value {
+func KwDict(a Args, bound ...string) Value {
 	d := NewDict()
 	for _, kw := range a.KW {
-		d.Set(kw.K, kw.V)
+		if !slices.Contains(bound, kw.K) {
+			d.Set(kw.K, kw.V)
+		}
 	}
 	return d
 }

@@ -446,10 +446,7 @@ func (p *Parser) ParseIntoTypes(kinds []exp.Kind, rawTokens []*tokens.Token, sql
 }
 
 func intoName(k exp.Kind) string {
-	if k == exp.AnyExpression {
-		return "<class 'sqlglot.expressions.core.Expr'>"
-	}
-	return fmt.Sprintf("<class 'sqlglot.expressions.%s'>", k)
+	return k.ClassRepr()
 }
 
 func intoNames(kinds []exp.Kind) string {

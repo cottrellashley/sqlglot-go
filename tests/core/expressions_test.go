@@ -152,28 +152,28 @@ func test_expressions_TestExprs_test_iter(self *Case, a Args) Value {
 func test_expressions_TestExprs_test_eq(self *Case, a Args) Value {
 	var query Value
 	_ = []Value{query}
-	self.Do(40, func() { query = Call(G("sqlglot.parse_one"), "SELECT x FROM t") })
+	self.DoAssign(40, func() { query = Call(G("sqlglot.parse_one"), "SELECT x FROM t") }, &query)
 	self.Do(41, func() { self.AssertEqual(query, M(query, "copy")) })
 	self.Do(43, func() {
-		M(self, "assertNotEqual", M(G("sqlglot.exp"), "to_identifier", "a"), M(G("sqlglot.exp"), "to_identifier", "A"))
+		Stmt(M(self, "assertNotEqual", M(G("sqlglot.exp"), "to_identifier", "a"), M(G("sqlglot.exp"), "to_identifier", "A")))
 	})
 	self.Do(45, func() {
 		self.AssertEqual(M(G("sqlglot.exp"), "Column", Kw("table", M(G("sqlglot.exp"), "to_identifier", "b")), Kw("this", M(G("sqlglot.exp"), "to_identifier", "b"))), M(G("sqlglot.exp"), "Column", Kw("this", M(G("sqlglot.exp"), "to_identifier", "b")), Kw("table", M(G("sqlglot.exp"), "to_identifier", "b"))))
 	})
 	self.Do(50, func() {
-		M(self, "assertNotEqual", M(G("sqlglot.exp"), "to_identifier", "a", Kw("quoted", true)), M(G("sqlglot.exp"), "to_identifier", "A"))
+		Stmt(M(self, "assertNotEqual", M(G("sqlglot.exp"), "to_identifier", "a", Kw("quoted", true)), M(G("sqlglot.exp"), "to_identifier", "A")))
 	})
 	self.Do(51, func() {
-		M(self, "assertNotEqual", M(G("sqlglot.exp"), "to_identifier", "A", Kw("quoted", true)), M(G("sqlglot.exp"), "to_identifier", "A"))
+		Stmt(M(self, "assertNotEqual", M(G("sqlglot.exp"), "to_identifier", "A", Kw("quoted", true)), M(G("sqlglot.exp"), "to_identifier", "A")))
 	})
 	self.Do(52, func() {
-		M(self, "assertNotEqual", M(G("sqlglot.exp"), "to_identifier", "A", Kw("quoted", true)), M(G("sqlglot.exp"), "to_identifier", "a", Kw("quoted", true)))
+		Stmt(M(self, "assertNotEqual", M(G("sqlglot.exp"), "to_identifier", "A", Kw("quoted", true)), M(G("sqlglot.exp"), "to_identifier", "a", Kw("quoted", true))))
 	})
 	self.Do(55, func() {
-		M(self, "assertNotEqual", Call(G("sqlglot.parse_one"), "'x'"), Call(G("sqlglot.parse_one"), "'X'"))
+		Stmt(M(self, "assertNotEqual", Call(G("sqlglot.parse_one"), "'x'"), Call(G("sqlglot.parse_one"), "'X'")))
 	})
 	self.Do(56, func() {
-		M(self, "assertNotEqual", Call(G("sqlglot.parse_one"), "'1'"), Call(G("sqlglot.parse_one"), "1"))
+		Stmt(M(self, "assertNotEqual", Call(G("sqlglot.parse_one"), "'1'"), Call(G("sqlglot.parse_one"), "1")))
 	})
 	self.Do(57, func() {
 		self.AssertEqual(Call(G("sqlglot.parse_one"), "`a`", Kw("read", "hive")), Call(G("sqlglot.parse_one"), `"a"`))
@@ -188,10 +188,10 @@ func test_expressions_TestExprs_test_eq(self *Case, a Args) Value {
 		self.AssertEqual(Call(G("sqlglot.parse_one"), "select a, b+1"), Call(G("sqlglot.parse_one"), "SELECT a, b + 1"))
 	})
 	self.Do(61, func() {
-		M(self, "assertNotEqual", Call(G("sqlglot.parse_one"), "`a`.`b`.`c`", Kw("read", "hive")), Call(G("sqlglot.parse_one"), "a.b.c"))
+		Stmt(M(self, "assertNotEqual", Call(G("sqlglot.parse_one"), "`a`.`b`.`c`", Kw("read", "hive")), Call(G("sqlglot.parse_one"), "a.b.c")))
 	})
 	self.Do(62, func() {
-		M(self, "assertNotEqual", Call(G("sqlglot.parse_one"), "a.b.c.d", Kw("read", "hive")), Call(G("sqlglot.parse_one"), "a.b.c"))
+		Stmt(M(self, "assertNotEqual", Call(G("sqlglot.parse_one"), "a.b.c.d", Kw("read", "hive")), Call(G("sqlglot.parse_one"), "a.b.c")))
 	})
 	self.Do(63, func() {
 		self.AssertEqual(Call(G("sqlglot.parse_one"), "a.b.c.d", Kw("read", "hive")), Call(G("sqlglot.parse_one"), "a.b.c.d"))
@@ -200,13 +200,13 @@ func test_expressions_TestExprs_test_eq(self *Case, a Args) Value {
 		self.AssertEqual(Call(G("sqlglot.parse_one"), "a + b * c - 1.0"), Call(G("sqlglot.parse_one"), "a+b*c-1.0"))
 	})
 	self.Do(65, func() {
-		M(self, "assertNotEqual", Call(G("sqlglot.parse_one"), "a + b * c - 1.0"), Call(G("sqlglot.parse_one"), "a + b * c + 1.0"))
+		Stmt(M(self, "assertNotEqual", Call(G("sqlglot.parse_one"), "a + b * c - 1.0"), Call(G("sqlglot.parse_one"), "a + b * c + 1.0")))
 	})
 	self.Do(66, func() {
 		self.AssertEqual(Call(G("sqlglot.parse_one"), "a as b"), Call(G("sqlglot.parse_one"), "a AS b"))
 	})
 	self.Do(67, func() {
-		M(self, "assertNotEqual", Call(G("sqlglot.parse_one"), "a as b"), Call(G("sqlglot.parse_one"), "a"))
+		Stmt(M(self, "assertNotEqual", Call(G("sqlglot.parse_one"), "a as b"), Call(G("sqlglot.parse_one"), "a")))
 	})
 	self.Do(68, func() {
 		self.AssertEqual(Call(G("sqlglot.parse_one"), "ROW() OVER(Partition by y)"), Call(G("sqlglot.parse_one"), "ROW() OVER (partition BY y)"))
@@ -215,13 +215,13 @@ func test_expressions_TestExprs_test_eq(self *Case, a Args) Value {
 		self.AssertEqual(M(G("sqlglot.exp"), "Table", Kw("pivots", NewList())), M(G("sqlglot.exp"), "Table"))
 	})
 	self.Do(73, func() {
-		M(self, "assertNotEqual", M(G("sqlglot.exp"), "Table", Kw("pivots", NewList(nil))), M(G("sqlglot.exp"), "Table"))
+		Stmt(M(self, "assertNotEqual", M(G("sqlglot.exp"), "Table", Kw("pivots", NewList(nil))), M(G("sqlglot.exp"), "Table")))
 	})
 	self.Do(74, func() {
 		self.AssertEqual(M(A(G("sqlglot.exp"), "DataType"), "build", "int"), M(G("sqlglot.exp"), "DataType", Kw("this", A(A(A(G("sqlglot.exp"), "DataType"), "Type"), "INT")), Kw("nested", false)))
 	})
 	self.Do(77, func() {
-		M(self, "assertNotEqual", M(G("sqlglot.exp"), "Identifier", Kw("this", "a"), Kw("temporary", true)), M(G("sqlglot.exp"), "Identifier", Kw("this", "a")))
+		Stmt(M(self, "assertNotEqual", M(G("sqlglot.exp"), "Identifier", Kw("this", "a"), Kw("temporary", true)), M(G("sqlglot.exp"), "Identifier", Kw("this", "a"))))
 	})
 	return nil
 }
@@ -233,20 +233,20 @@ func test_expressions_TestExprs_test_eq_case_sensitive_text(self *Case, a Args) 
 		Unpack(item_, &read, &sql)
 		self.SubTest(func() {
 			self.Do(99, func() {
-				M(self, "assertNotEqual", Call(G("sqlglot.parse_one"), M(sql, "format", "a"), Kw("read", read)), Call(G("sqlglot.parse_one"), M(sql, "format", "A"), Kw("read", read)))
+				Stmt(M(self, "assertNotEqual", Call(G("sqlglot.parse_one"), M(sql, "format", "a"), Kw("read", read)), Call(G("sqlglot.parse_one"), M(sql, "format", "A"), Kw("read", read))))
 			})
 		}, sql)
 	}
 	for _, item_ := range Iter(NewTuple(A(G("sqlglot.exp"), "AnonymousAggFunc"), A(G("sqlglot.exp"), "CombinedAggFunc"))) {
 		agg = item_
 		self.Do(105, func() {
-			M(self, "assertNotEqual", Call(agg, Kw("this", "sumMap"), Kw("expressions", NewList())), Call(agg, Kw("this", "summap"), Kw("expressions", NewList())))
+			Stmt(M(self, "assertNotEqual", Call(agg, Kw("this", "sumMap"), Kw("expressions", NewList())), Call(agg, Kw("this", "summap"), Kw("expressions", NewList()))))
 		})
 	}
 	for _, item_ := range Iter(NewTuple(A(G("sqlglot.exp"), "ParameterizedAgg"), A(G("sqlglot.exp"), "CombinedParameterizedAgg"))) {
 		agg = item_
 		self.Do(109, func() {
-			M(self, "assertNotEqual", Call(agg, Kw("this", "quantileGK"), Kw("expressions", NewList()), Kw("params", NewList())), Call(agg, Kw("this", "quantilegk"), Kw("expressions", NewList()), Kw("params", NewList())))
+			Stmt(M(self, "assertNotEqual", Call(agg, Kw("this", "quantileGK"), Kw("expressions", NewList()), Kw("params", NewList())), Call(agg, Kw("this", "quantilegk"), Kw("expressions", NewList()), Kw("params", NewList()))))
 		})
 	}
 	self.Do(114, func() {
@@ -255,30 +255,26 @@ func test_expressions_TestExprs_test_eq_case_sensitive_text(self *Case, a Args) 
 	self.Do(117, func() {
 		self.AssertLogs(func(cm_ Value) {
 			_ = cm_
-			M(self, "assertNotEqual", Call(G("sqlglot.parse_one"), "GRANT a"), Call(G("sqlglot.parse_one"), "GRANT A"))
-			M(self, "assertEqual", Call(G("sqlglot.parse_one"), "VACUUM a"), Call(G("sqlglot.parse_one"), "vacuum a"))
+			Stmt(M(self, "assertNotEqual", Call(G("sqlglot.parse_one"), "GRANT a"), Call(G("sqlglot.parse_one"), "GRANT A")))
+			Stmt(M(self, "assertEqual", Call(G("sqlglot.parse_one"), "VACUUM a"), Call(G("sqlglot.parse_one"), "vacuum a")))
 		}, G("sqlglot.parser.logger"))
 	})
 	return nil
 }
 
 func test_expressions_TestExprs_test_eq_on_same_instance_short_circuits(self *Case, a Args) Value {
-	var expr Value
-	_ = []Value{expr}
-	self.Do(122, func() { expr = Call(G("sqlglot.parse_one"), "1") })
-	self.Do(123, func() { _ = Eq(expr, expr) })
-	self.Do(124, func() { M(self, "assertIsNone", A(expr, "_hash")) })
+	M(self, "skipTest", "python-only: inspects the private hash cache of an expression")
 	return nil
 }
 
 func test_expressions_TestExprs_test_find(self *Case, a Args) Value {
 	var expression Value
 	_ = []Value{expression}
-	self.Do(127, func() {
+	self.DoAssign(127, func() {
 		expression = Call(G("sqlglot.parse_one"), "CREATE TABLE x STORED AS PARQUET AS SELECT * FROM y")
-	})
-	self.Do(128, func() { M(self, "assertTrue", M(expression, "find", A(G("sqlglot.exp"), "Create"))) })
-	self.Do(129, func() { M(self, "assertFalse", M(expression, "find", A(G("sqlglot.exp"), "Group"))) })
+	}, &expression)
+	self.Do(128, func() { Stmt(M(self, "assertTrue", M(expression, "find", A(G("sqlglot.exp"), "Create")))) })
+	self.Do(129, func() { Stmt(M(self, "assertFalse", M(expression, "find", A(G("sqlglot.exp"), "Group")))) })
 	self.Do(130, func() {
 		self.AssertEqual(func() Value {
 			var table Value
@@ -297,9 +293,9 @@ func test_expressions_TestExprs_test_find(self *Case, a Args) Value {
 func test_expressions_TestExprs_test_find_all(self *Case, a Args) Value {
 	var expression Value
 	_ = []Value{expression}
-	self.Do(136, func() {
+	self.DoAssign(136, func() {
 		expression = Call(G("sqlglot.parse_one"), "\n            SELECT *\n            FROM (\n                SELECT b.*\n                FROM a.b b\n            ) x\n            JOIN (\n              SELECT c.foo\n              FROM a.c c\n              WHERE foo = 1\n            ) y\n              ON x.c = y.foo\n            CROSS JOIN (\n              SELECT *\n              FROM (\n                SELECT d.bar\n                FROM d\n              ) nested\n            ) z\n              ON x.c = y.foo\n            ")
-	})
+	}, &expression)
 	self.Do(160, func() {
 		self.AssertEqual(func() Value {
 			var table Value
@@ -312,7 +308,7 @@ func test_expressions_TestExprs_test_find_all(self *Case, a Args) Value {
 			return &List{V: out}
 		}(), NewList("b", "c", "d"))
 	})
-	self.Do(165, func() { expression = Call(G("sqlglot.parse_one"), "select a + b + c + d") })
+	self.DoAssign(165, func() { expression = Call(G("sqlglot.parse_one"), "select a + b + c + d") }, &expression)
 	self.Do(167, func() {
 		self.AssertEqual(func() Value {
 			var column Value
@@ -343,23 +339,23 @@ func test_expressions_TestExprs_test_find_all(self *Case, a Args) Value {
 func test_expressions_TestExprs_test_find_ancestor(self *Case, a Args) Value {
 	var column Value
 	_ = []Value{column}
-	self.Do(177, func() {
+	self.DoAssign(177, func() {
 		column = M(Call(G("sqlglot.parse_one"), "select * from foo where (a + 1 > 2)"), "find", A(G("sqlglot.exp"), "Column"))
-	})
-	self.Do(178, func() { M(self, "assertIsInstance", column, A(G("sqlglot.exp"), "Column")) })
-	self.Do(179, func() { M(self, "assertIsInstance", A(column, "parent_select"), A(G("sqlglot.exp"), "Select")) })
-	self.Do(180, func() { M(self, "assertIsNone", M(column, "find_ancestor", A(G("sqlglot.exp"), "Join"))) })
+	}, &column)
+	self.Do(178, func() { Stmt(M(self, "assertIsInstance", column, A(G("sqlglot.exp"), "Column"))) })
+	self.Do(179, func() { Stmt(M(self, "assertIsInstance", A(column, "parent_select"), A(G("sqlglot.exp"), "Select"))) })
+	self.Do(180, func() { Stmt(M(self, "assertIsNone", M(column, "find_ancestor", A(G("sqlglot.exp"), "Join")))) })
 	return nil
 }
 
 func test_expressions_TestExprs_test_to_dot(self *Case, a Args) Value {
 	var column, orig, dot Value
 	_ = []Value{column, orig, dot}
-	self.Do(183, func() { column = Call(G("sqlglot.parse_one"), "a.$1", Kw("dialect", "snowflake")) })
+	self.DoAssign(183, func() { column = Call(G("sqlglot.parse_one"), "a.$1", Kw("dialect", "snowflake")) }, &column)
 	self.Do(184, func() { self.AssertEqual(M(M(column, "to_dot"), "sql", "snowflake"), "a.$1") })
-	self.Do(185, func() { M(column, "set", "table", nil) })
+	self.Do(185, func() { Stmt(M(column, "set", "table", nil)) })
 	self.Do(186, func() { self.AssertEqual(M(column, "to_dot"), A(column, "this")) })
-	self.Do(188, func() { orig = Call(G("sqlglot.parse_one"), `a.b.c."d".e.f`) })
+	self.DoAssign(188, func() { orig = Call(G("sqlglot.parse_one"), `a.b.c."d".e.f`) }, &orig)
 	self.Do(189, func() {
 		self.AssertEqual(M(".", "join", func() Value {
 			var p Value
@@ -396,8 +392,8 @@ func test_expressions_TestExprs_test_to_dot(self *Case, a Args) Value {
 			return &List{V: out}
 		}()), `a.b.c."d".e.f`)
 	})
-	self.Do(207, func() { column = M(orig, "find", A(G("sqlglot.exp"), "Column")) })
-	self.Do(208, func() { dot = M(column, "to_dot") })
+	self.DoAssign(207, func() { column = M(orig, "find", A(G("sqlglot.exp"), "Column")) }, &column)
+	self.DoAssign(208, func() { dot = M(column, "to_dot") }, &dot)
 	self.Do(210, func() { self.AssertEqual(M(dot, "sql"), `a.b.c."d".e.f`) })
 	self.Do(212, func() {
 		self.AssertEqual(dot, M(G("sqlglot.exp"), "Dot", Kw("this", M(G("sqlglot.exp"), "Dot", Kw("this", M(G("sqlglot.exp"), "Dot", Kw("this", M(G("sqlglot.exp"), "Dot", Kw("this", M(G("sqlglot.exp"), "Dot", Kw("this", M(G("sqlglot.exp"), "to_identifier", "a")), Kw("expression", M(G("sqlglot.exp"), "to_identifier", "b")))), Kw("expression", M(G("sqlglot.exp"), "to_identifier", "c")))), Kw("expression", M(G("sqlglot.exp"), "to_identifier", "d", Kw("quoted", true))))), Kw("expression", M(G("sqlglot.exp"), "to_identifier", "e")))), Kw("expression", M(G("sqlglot.exp"), "to_identifier", "f"))))
@@ -408,18 +404,18 @@ func test_expressions_TestExprs_test_to_dot(self *Case, a Args) Value {
 func test_expressions_TestExprs_test_root(self *Case, a Args) Value {
 	var ast Value
 	_ = []Value{ast}
-	self.Do(233, func() { ast = Call(G("sqlglot.parse_one"), "select * from (select a from x)") })
-	self.Do(234, func() { M(self, "assertIs", ast, M(ast, "root")) })
-	self.Do(235, func() { M(self, "assertIs", ast, M(M(ast, "find", A(G("sqlglot.exp"), "Column")), "root")) })
+	self.DoAssign(233, func() { ast = Call(G("sqlglot.parse_one"), "select * from (select a from x)") }, &ast)
+	self.Do(234, func() { Stmt(M(self, "assertIs", ast, M(ast, "root"))) })
+	self.Do(235, func() { Stmt(M(self, "assertIs", ast, M(M(ast, "find", A(G("sqlglot.exp"), "Column")), "root"))) })
 	return nil
 }
 
 func test_expressions_TestExprs_test_alias_or_name(self *Case, a Args) Value {
 	var expression Value
 	_ = []Value{expression}
-	self.Do(238, func() {
+	self.DoAssign(238, func() {
 		expression = Call(G("sqlglot.parse_one"), "SELECT a, b AS B, c + d AS e, *, 'zz', 'zz' AS z FROM foo as bar, baz")
-	})
+	}, &expression)
 	self.Do(241, func() {
 		self.AssertEqual(func() Value {
 			var e Value
@@ -444,9 +440,9 @@ func test_expressions_TestExprs_test_alias_or_name(self *Case, a Args) Value {
 			return out
 		}(), NewSet("bar", "baz"))
 	})
-	self.Do(250, func() {
+	self.DoAssign(250, func() {
 		expression = Call(G("sqlglot.parse_one"), "\n            WITH first AS (SELECT * FROM foo),\n                 second AS (SELECT * FROM bar)\n            SELECT * FROM first, second, (SELECT * FROM baz) AS third\n        ")
-	})
+	}, &expression)
 	self.Do(258, func() {
 		self.AssertEqual(func() Value {
 			var e Value
@@ -481,7 +477,7 @@ func test_expressions_TestExprs_test_alias_or_name(self *Case, a Args) Value {
 func test_expressions_TestExprs_test_table_name(self *Case, a Args) Value {
 	var bq_dashed_table Value
 	_ = []Value{bq_dashed_table}
-	self.Do(274, func() { bq_dashed_table = M(G("sqlglot.exp"), "to_table", "a-1.b.c", Kw("dialect", "bigquery")) })
+	self.DoAssign(274, func() { bq_dashed_table = M(G("sqlglot.exp"), "to_table", "a-1.b.c", Kw("dialect", "bigquery")) }, &bq_dashed_table)
 	self.Do(275, func() { self.AssertEqual(M(G("sqlglot.exp"), "table_name", bq_dashed_table), `"a-1".b.c`) })
 	self.Do(276, func() {
 		self.AssertEqual(M(G("sqlglot.exp"), "table_name", bq_dashed_table, Kw("dialect", "bigquery")), "`a-1`.b.c")
@@ -585,14 +581,14 @@ func test_expressions_TestExprs_test_replace_placeholders(self *Case, a Args) Va
 	for _, item_ := range Iter(NewTuple(NewTuple(":x * 2", "a + b", "(a + b) * 2"), NewTuple("(:x) * 2", "a + b", "(a + b) * 2"), NewTuple("NOT :x", "a = 1 OR b = 2", "NOT (a = 1 OR b = 2)"), NewTuple("-:x", "a + b", "-(a + b)"), NewTuple("~:x", "a + b", "~(a + b)"), NewTuple(":x AND c", "a OR b", "(a OR b) AND c"), NewTuple("? - c", "a - b", "(a - b) - c"), NewTuple("c - ?", "a - b", "c - (a - b)"), NewTuple(":x + 1", "a * b", "(a * b) + 1"), NewTuple(":x[1]", "a + b", "(a + b)[1]"), NewTuple(":x AT TIME ZONE 'UTC'", "a + b", "(a + b) AT TIME ZONE 'UTC'"), NewTuple(":x + 1", "SELECT 1", "(SELECT 1) + 1"), NewTuple("ABS(:x)", "a - b", "ABS(a - b)"), NewTuple("SELECT :x", "a + b", "SELECT a + b"), NewTuple("SELECT :x AS y", "a OR b", "SELECT a OR b AS y"), NewTuple("x IN (:x, 1)", "a + b", "x IN (a + b, 1)"), NewTuple("COALESCE(:x, 1)", "a + b", "COALESCE(a + b, 1)"), NewTuple(":x[1]", "a", "a[1]"), NewTuple(":x * 2", "ABS(a)", "ABS(a) * 2"), NewTuple(":x * 2", "a.b.c.d.e", "a.b.c.d.e * 2"), NewTuple("SELECT * FROM t WHERE EXISTS(:x)", "SELECT 1", "SELECT * FROM t WHERE EXISTS(SELECT 1)"), NewTuple(":x", "a OR b", "a OR b"), NewTuple("x IN :x", "(1, 2)", "x IN (1, 2)"), NewTuple("x IN :x", "(SELECT 1)", "x IN (SELECT 1)"), NewTuple(":x BETWEEN 1 AND 2", "a OR b", "(a OR b) BETWEEN 1 AND 2"), NewTuple("c = :x", "a IN (1, 2)", "c = (a IN (1, 2))"), NewTuple("SELECT * FROM :x", M(G("sqlglot.exp"), "to_table", "db.t"), "SELECT * FROM db.t"), NewTuple("x IS :x", M(G("sqlglot.exp"), "null"), "x IS NULL"), NewTuple("SELECT * FROM :x", M(G("sqlglot.exp"), "values", NewList(NewTuple(1, 2)), Kw("alias", "v"), Kw("columns", NewList("a", "b"))), "SELECT * FROM (VALUES (1, 2)) AS v(a, b)"), NewTuple("SELECT * FROM t ORDER BY :x", M(M(G("sqlglot.exp"), "column", "x"), "desc"), "SELECT * FROM t ORDER BY x DESC"), NewTuple("x = ANY(:x)", "SELECT 1", "x = ANY(SELECT 1)"), NewTuple("d + :x", "INTERVAL 1 DAY", "d + INTERVAL '1' DAY"), NewTuple(":x", "SELECT 1", "SELECT 1"), NewTuple("x IN :x", "SELECT 1", "x IN (SELECT 1)"), NewTuple("x IN (:x)", "SELECT 1", "x IN (SELECT 1)"), NewTuple(":x IN (1)", "SELECT 1", "(SELECT 1) IN (1)"), NewTuple("x >= ALL(:x)", "SELECT 1", "x >= ALL(SELECT 1)"), NewTuple("x IN (:x, 3)", "SELECT 1", "x IN ((SELECT 1), 3)"), NewTuple("SELECT * FROM :x", "SELECT 1", "SELECT * FROM (SELECT 1)"), NewTuple("SELECT * FROM (:x) AS s", "SELECT 1", "SELECT * FROM (SELECT 1) AS s"), NewTuple("SELECT :x AS y", "SELECT 1", "SELECT (SELECT 1) AS y"), NewTuple("COALESCE(:x, 1)", "SELECT 1", "COALESCE((SELECT 1), 1)"), NewTuple("WITH a AS (:x) SELECT * FROM a", "SELECT 1", "WITH a AS (SELECT 1) SELECT * FROM a"), NewTuple(":x UNION SELECT 2", "SELECT 1", "SELECT 1 UNION SELECT 2"), NewTuple("CREATE TABLE t AS :x", "SELECT 1", "CREATE TABLE t AS SELECT 1"))) {
 		Unpack(item_, &sql, &replacement, &expected)
 		self.SubTest(func() {
-			self.Do(481, func() { replacement = M(G("sqlglot.exp"), "maybe_parse", replacement) })
+			self.DoAssign(481, func() { replacement = M(G("sqlglot.exp"), "maybe_parse", replacement) }, &replacement)
 			self.Do(482, func() {
 				self.AssertEqual(M(M(G("sqlglot.exp"), "replace_placeholders", Call(G("sqlglot.parse_one"), sql), replacement, Kw("x", replacement)), "sql"), expected)
 			})
 		}, Kw("sql", sql), Kw("replacement", replacement))
 	}
 	self.Do(487, func() {
-		M(self, "assertIsInstance", A(M(G("sqlglot.exp"), "replace_placeholders", Call(G("sqlglot.parse_one"), ":x + 1"), Kw("x", Call(G("sqlglot.parse_one"), "SELECT 1"))), "this"), A(G("sqlglot.exp"), "Subquery"))
+		Stmt(M(self, "assertIsInstance", A(M(G("sqlglot.exp"), "replace_placeholders", Call(G("sqlglot.parse_one"), ":x + 1"), Kw("x", Call(G("sqlglot.parse_one"), "SELECT 1"))), "this"), A(G("sqlglot.exp"), "Subquery")))
 	})
 	return nil
 }
@@ -620,33 +616,33 @@ func test_expressions_TestExprs_test_function_building(self *Case, a Args) Value
 		self.AssertEqual(M(M(G("sqlglot.exp"), "func", "log", Kw("dialect", "bigquery"), Kw("expression", "x"), Kw("this", 2)), "sql", "bigquery"), "LOG(x, 2)")
 	})
 	self.Do(513, func() {
-		M(self, "assertIsInstance", M(G("sqlglot.exp"), "func", "instr", "x", "b", Kw("dialect", "mysql")), A(G("sqlglot.exp"), "StrPosition"))
+		Stmt(M(self, "assertIsInstance", M(G("sqlglot.exp"), "func", "instr", "x", "b", Kw("dialect", "mysql")), A(G("sqlglot.exp"), "StrPosition")))
 	})
 	self.Do(514, func() {
-		M(self, "assertIsInstance", M(G("sqlglot.exp"), "func", "instr", "x", "b", Kw("dialect", "sqlite")), A(G("sqlglot.exp"), "StrPosition"))
+		Stmt(M(self, "assertIsInstance", M(G("sqlglot.exp"), "func", "instr", "x", "b", Kw("dialect", "sqlite")), A(G("sqlglot.exp"), "StrPosition")))
 	})
 	self.Do(515, func() {
-		M(self, "assertIsInstance", M(G("sqlglot.exp"), "func", "bla", 1, "foo"), A(G("sqlglot.exp"), "Anonymous"))
+		Stmt(M(self, "assertIsInstance", M(G("sqlglot.exp"), "func", "bla", 1, "foo"), A(G("sqlglot.exp"), "Anonymous")))
 	})
 	self.Do(516, func() {
-		M(self, "assertIsInstance", M(G("sqlglot.exp"), "func", "cast", Kw("this", M(A(G("sqlglot.exp"), "Literal"), "number", 5)), Kw("to", M(A(G("sqlglot.exp"), "DataType"), "build", "DOUBLE"))), A(G("sqlglot.exp"), "Cast"))
+		Stmt(M(self, "assertIsInstance", M(G("sqlglot.exp"), "func", "cast", Kw("this", M(A(G("sqlglot.exp"), "Literal"), "number", 5)), Kw("to", M(A(G("sqlglot.exp"), "DataType"), "build", "DOUBLE"))), A(G("sqlglot.exp"), "Cast")))
 	})
 	self.Do(521, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			M(G("sqlglot.exp"), "func", "some_func", 1, Kw("arg2", "foo"))
+			Stmt(M(G("sqlglot.exp"), "func", "some_func", 1, Kw("arg2", "foo")))
 		}, G("ValueError"))
 	})
 	self.Do(524, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			M(G("sqlglot.exp"), "func", "abs")
+			Stmt(M(G("sqlglot.exp"), "func", "abs"))
 		}, G("ValueError"))
 	})
 	self.Do(527, func() {
 		self.AssertRaises(func(cm_ Value) {
 			cm = cm_
-			M(G("sqlglot.exp"), "func", "to_hex", Kw("dialect", "bigquery"), Kw("this", 5))
+			Stmt(M(G("sqlglot.exp"), "func", "to_hex", Kw("dialect", "bigquery"), Kw("this", 5)))
 		}, G("ValueError"))
 	})
 	self.Do(530, func() {
@@ -658,30 +654,30 @@ func test_expressions_TestExprs_test_function_building(self *Case, a Args) Value
 func test_expressions_TestExprs_test_var_len_args_spill_into_var_len_arg_key(self *Case, a Args) Value {
 	var chr_, count, greatest, var_map Value
 	_ = []Value{chr_, count, greatest, var_map}
-	self.Do(538, func() {
+	self.DoAssign(538, func() {
 		chr_ = M(A(G("sqlglot.exp"), "Chr"), "from_arg_list", NewList(M(G("sqlglot.exp"), "convert", 65), M(G("sqlglot.exp"), "convert", 66)))
-	})
+	}, &chr_)
 	self.Do(539, func() {
 		self.AssertEqual(A(chr_, "expressions"), NewList(M(G("sqlglot.exp"), "convert", 65), M(G("sqlglot.exp"), "convert", 66)))
 	})
-	self.Do(540, func() { M(self, "assertIsNone", M(A(chr_, "args"), "get", "charset")) })
+	self.Do(540, func() { Stmt(M(self, "assertIsNone", M(A(chr_, "args"), "get", "charset"))) })
 	self.Do(541, func() { self.AssertEqual(M(chr_, "sql"), "CHR(65, 66)") })
 	self.Do(542, func() { self.AssertEqual(M(M(G("sqlglot.exp"), "func", "CHR", 65, 66), "sql"), "CHR(65, 66)") })
-	self.Do(544, func() {
+	self.DoAssign(544, func() {
 		count = M(A(G("sqlglot.exp"), "Count"), "from_arg_list", NewList(M(G("sqlglot.exp"), "column", "a"), M(G("sqlglot.exp"), "column", "b"), M(G("sqlglot.exp"), "column", "c")))
-	})
+	}, &count)
 	self.Do(545, func() {
 		self.AssertEqual(A(count, "expressions"), NewList(M(G("sqlglot.exp"), "column", "b"), M(G("sqlglot.exp"), "column", "c")))
 	})
-	self.Do(546, func() { M(self, "assertIsNone", M(A(count, "args"), "get", "big_int")) })
-	self.Do(548, func() {
+	self.Do(546, func() { Stmt(M(self, "assertIsNone", M(A(count, "args"), "get", "big_int"))) })
+	self.DoAssign(548, func() {
 		greatest = M(A(G("sqlglot.exp"), "Greatest"), "from_arg_list", NewList(M(G("sqlglot.exp"), "column", "a"), M(G("sqlglot.exp"), "column", "b")))
-	})
+	}, &greatest)
 	self.Do(549, func() { self.AssertEqual(A(greatest, "expressions"), NewList(M(G("sqlglot.exp"), "column", "b"))) })
-	self.Do(550, func() { M(self, "assertIsNone", M(A(greatest, "args"), "get", "ignore_nulls")) })
-	self.Do(553, func() {
+	self.Do(550, func() { Stmt(M(self, "assertIsNone", M(A(greatest, "args"), "get", "ignore_nulls"))) })
+	self.DoAssign(553, func() {
 		var_map = M(A(G("sqlglot.exp"), "VarMap"), "from_arg_list", NewList(M(G("sqlglot.exp"), "column", "k"), M(G("sqlglot.exp"), "column", "v1"), M(G("sqlglot.exp"), "column", "v2")))
-	})
+	}, &var_map)
 	self.Do(554, func() { self.AssertEqual(Item(A(var_map, "args"), "keys"), M(G("sqlglot.exp"), "column", "k")) })
 	self.Do(555, func() {
 		self.AssertEqual(Item(A(var_map, "args"), "values"), NewList(M(G("sqlglot.exp"), "column", "v1"), M(G("sqlglot.exp"), "column", "v2")))
@@ -692,29 +688,29 @@ func test_expressions_TestExprs_test_var_len_args_spill_into_var_len_arg_key(sel
 func test_expressions_TestExprs_test_named_selects(self *Case, a Args) Value {
 	var expression Value
 	_ = []Value{expression}
-	self.Do(558, func() {
+	self.DoAssign(558, func() {
 		expression = Call(G("sqlglot.parse_one"), "SELECT a, b AS B, c + d AS e, *, 'zz', 'zz' AS z FROM foo as bar, baz")
-	})
+	}, &expression)
 	self.Do(561, func() { self.AssertEqual(A(expression, "named_selects"), NewList("a", "B", "e", "*", "zz", "z")) })
-	self.Do(563, func() {
+	self.DoAssign(563, func() {
 		expression = Call(G("sqlglot.parse_one"), "\n            WITH first AS (SELECT * FROM foo)\n            SELECT foo.bar, foo.baz as bazz, SUM(x) FROM first\n        ")
-	})
+	}, &expression)
 	self.Do(569, func() { self.AssertEqual(A(expression, "named_selects"), NewList("bar", "bazz")) })
-	self.Do(571, func() {
+	self.DoAssign(571, func() {
 		expression = Call(G("sqlglot.parse_one"), "\n            SELECT foo, bar FROM first\n            UNION SELECT \"ss\" as foo, bar FROM second\n            UNION ALL SELECT foo, bazz FROM third\n        ")
-	})
+	}, &expression)
 	self.Do(578, func() { self.AssertEqual(A(expression, "named_selects"), NewList("foo", "bar")) })
-	self.Do(580, func() {
+	self.DoAssign(580, func() {
 		expression = Call(G("sqlglot.parse_one"), "SELECT a, b FROM x UNION BY NAME SELECT c, b FROM y", Kw("read", "duckdb"))
-	})
+	}, &expression)
 	self.Do(581, func() { self.AssertEqual(A(expression, "named_selects"), NewList("a", "b", "c")) })
-	self.Do(583, func() {
+	self.DoAssign(583, func() {
 		expression = Call(G("sqlglot.parse_one"), "SELECT a FROM x UNION SELECT b FROM y UNION BY NAME SELECT c FROM z", Kw("read", "duckdb"))
-	})
+	}, &expression)
 	self.Do(587, func() { self.AssertEqual(A(expression, "named_selects"), NewList("a", "c")) })
-	self.Do(589, func() {
+	self.DoAssign(589, func() {
 		expression = Call(G("sqlglot.parse_one"), "(SELECT a FROM x UNION BY NAME SELECT c FROM z) UNION SELECT a, c FROM w", Kw("read", "duckdb"))
-	})
+	}, &expression)
 	self.Do(593, func() { self.AssertEqual(A(expression, "named_selects"), NewList("a", "c")) })
 	return nil
 }
@@ -722,9 +718,9 @@ func test_expressions_TestExprs_test_named_selects(self *Case, a Args) Value {
 func test_expressions_TestExprs_test_selects(self *Case, a Args) Value {
 	var expression Value
 	_ = []Value{expression}
-	self.Do(596, func() { expression = Call(G("sqlglot.parse_one"), "SELECT FROM x") })
+	self.DoAssign(596, func() { expression = Call(G("sqlglot.parse_one"), "SELECT FROM x") }, &expression)
 	self.Do(597, func() { self.AssertEqual(A(expression, "selects"), NewList()) })
-	self.Do(599, func() { expression = Call(G("sqlglot.parse_one"), "SELECT a FROM x") })
+	self.DoAssign(599, func() { expression = Call(G("sqlglot.parse_one"), "SELECT a FROM x") }, &expression)
 	self.Do(600, func() {
 		self.AssertEqual(func() Value {
 			var s Value
@@ -737,7 +733,7 @@ func test_expressions_TestExprs_test_selects(self *Case, a Args) Value {
 			return &List{V: out}
 		}(), NewList("a"))
 	})
-	self.Do(602, func() { expression = Call(G("sqlglot.parse_one"), "SELECT a, b FROM x") })
+	self.DoAssign(602, func() { expression = Call(G("sqlglot.parse_one"), "SELECT a, b FROM x") }, &expression)
 	self.Do(603, func() {
 		self.AssertEqual(func() Value {
 			var s Value
@@ -750,7 +746,7 @@ func test_expressions_TestExprs_test_selects(self *Case, a Args) Value {
 			return &List{V: out}
 		}(), NewList("a", "b"))
 	})
-	self.Do(605, func() { expression = Call(G("sqlglot.parse_one"), "(SELECT a, b FROM x)") })
+	self.DoAssign(605, func() { expression = Call(G("sqlglot.parse_one"), "(SELECT a, b FROM x)") }, &expression)
 	self.Do(606, func() {
 		self.AssertEqual(func() Value {
 			var s Value
@@ -769,23 +765,23 @@ func test_expressions_TestExprs_test_selects(self *Case, a Args) Value {
 func test_expressions_TestExprs_test_alias_column_names(self *Case, a Args) Value {
 	var expression, subquery, cte, table Value
 	_ = []Value{expression, subquery, cte, table}
-	self.Do(609, func() { expression = Call(G("sqlglot.parse_one"), "SELECT * FROM (SELECT * FROM x) AS y") })
-	self.Do(610, func() { subquery = M(expression, "find", A(G("sqlglot.exp"), "Subquery")) })
+	self.DoAssign(609, func() { expression = Call(G("sqlglot.parse_one"), "SELECT * FROM (SELECT * FROM x) AS y") }, &expression)
+	self.DoAssign(610, func() { subquery = M(expression, "find", A(G("sqlglot.exp"), "Subquery")) }, &subquery)
 	self.Do(611, func() { self.AssertEqual(A(subquery, "alias_column_names"), NewList()) })
-	self.Do(613, func() { expression = Call(G("sqlglot.parse_one"), "SELECT * FROM (SELECT * FROM x) AS y(a)") })
-	self.Do(614, func() { subquery = M(expression, "find", A(G("sqlglot.exp"), "Subquery")) })
+	self.DoAssign(613, func() { expression = Call(G("sqlglot.parse_one"), "SELECT * FROM (SELECT * FROM x) AS y(a)") }, &expression)
+	self.DoAssign(614, func() { subquery = M(expression, "find", A(G("sqlglot.exp"), "Subquery")) }, &subquery)
 	self.Do(615, func() { self.AssertEqual(A(subquery, "alias_column_names"), NewList("a")) })
-	self.Do(617, func() { expression = Call(G("sqlglot.parse_one"), "SELECT * FROM (SELECT * FROM x) AS y(a, b)") })
-	self.Do(618, func() { subquery = M(expression, "find", A(G("sqlglot.exp"), "Subquery")) })
+	self.DoAssign(617, func() { expression = Call(G("sqlglot.parse_one"), "SELECT * FROM (SELECT * FROM x) AS y(a, b)") }, &expression)
+	self.DoAssign(618, func() { subquery = M(expression, "find", A(G("sqlglot.exp"), "Subquery")) }, &subquery)
 	self.Do(619, func() { self.AssertEqual(A(subquery, "alias_column_names"), NewList("a", "b")) })
-	self.Do(621, func() { expression = Call(G("sqlglot.parse_one"), "WITH y AS (SELECT * FROM x) SELECT * FROM y") })
-	self.Do(622, func() { cte = M(expression, "find", A(G("sqlglot.exp"), "CTE")) })
+	self.DoAssign(621, func() { expression = Call(G("sqlglot.parse_one"), "WITH y AS (SELECT * FROM x) SELECT * FROM y") }, &expression)
+	self.DoAssign(622, func() { cte = M(expression, "find", A(G("sqlglot.exp"), "CTE")) }, &cte)
 	self.Do(623, func() { self.AssertEqual(A(cte, "alias_column_names"), NewList()) })
-	self.Do(625, func() { expression = Call(G("sqlglot.parse_one"), "WITH y(a, b) AS (SELECT * FROM x) SELECT * FROM y") })
-	self.Do(626, func() { cte = M(expression, "find", A(G("sqlglot.exp"), "CTE")) })
+	self.DoAssign(625, func() { expression = Call(G("sqlglot.parse_one"), "WITH y(a, b) AS (SELECT * FROM x) SELECT * FROM y") }, &expression)
+	self.DoAssign(626, func() { cte = M(expression, "find", A(G("sqlglot.exp"), "CTE")) }, &cte)
 	self.Do(627, func() { self.AssertEqual(A(cte, "alias_column_names"), NewList("a", "b")) })
-	self.Do(629, func() { expression = Call(G("sqlglot.parse_one"), "SELECT * FROM tbl AS tbl(a, b)") })
-	self.Do(630, func() { table = M(expression, "find", A(G("sqlglot.exp"), "Table")) })
+	self.DoAssign(629, func() { expression = Call(G("sqlglot.parse_one"), "SELECT * FROM tbl AS tbl(a, b)") }, &expression)
+	self.DoAssign(630, func() { table = M(expression, "find", A(G("sqlglot.exp"), "Table")) }, &table)
 	self.Do(631, func() { self.AssertEqual(A(table, "alias_column_names"), NewList("a", "b")) })
 	return nil
 }
@@ -793,30 +789,30 @@ func test_expressions_TestExprs_test_alias_column_names(self *Case, a Args) Valu
 func test_expressions_TestExprs_test_cast(self *Case, a Args) Value {
 	var expression, casts, cast, recast, interval_cast Value
 	_ = []Value{expression, casts, cast, recast, interval_cast}
-	self.Do(634, func() { expression = Call(G("sqlglot.parse_one"), "CAST(x AS DATE)") })
-	self.Do(635, func() { M(self, "assertIs", A(expression, "type"), A(expression, "to")) })
-	self.Do(637, func() { expression = Call(G("sqlglot.parse_one"), "select cast(x as DATE)") })
-	self.Do(638, func() { casts = Call(G("list"), M(expression, "find_all", A(G("sqlglot.exp"), "Cast"))) })
+	self.DoAssign(634, func() { expression = Call(G("sqlglot.parse_one"), "CAST(x AS DATE)") }, &expression)
+	self.Do(635, func() { Stmt(M(self, "assertIs", A(expression, "type"), A(expression, "to"))) })
+	self.DoAssign(637, func() { expression = Call(G("sqlglot.parse_one"), "select cast(x as DATE)") }, &expression)
+	self.DoAssign(638, func() { casts = Call(G("list"), M(expression, "find_all", A(G("sqlglot.exp"), "Cast"))) }, &casts)
 	self.Do(639, func() { self.AssertEqual(Len(casts), 1) })
-	self.Do(641, func() { cast = Item(casts, 0) })
+	self.DoAssign(641, func() { cast = Item(casts, 0) }, &cast)
 	self.Do(642, func() {
-		M(self, "assertTrue", M(A(cast, "to"), "is_type", A(A(A(G("sqlglot.exp"), "DataType"), "Type"), "DATE")))
+		Stmt(M(self, "assertTrue", M(A(cast, "to"), "is_type", A(A(A(G("sqlglot.exp"), "DataType"), "Type"), "DATE"))))
 	})
-	self.Do(645, func() {
+	self.DoAssign(645, func() {
 		recast = M(G("sqlglot.exp"), "cast", cast, Kw("to", A(A(A(G("sqlglot.exp"), "DataType"), "Type"), "DATE")))
-	})
+	}, &recast)
 	self.Do(646, func() { self.AssertEqual(recast, cast) })
 	self.Do(647, func() { self.AssertEqual(M(recast, "sql"), "CAST(x AS DATE)") })
-	self.Do(650, func() {
+	self.DoAssign(650, func() {
 		recast = M(G("sqlglot.exp"), "cast", cast, Kw("to", A(A(A(G("sqlglot.exp"), "DataType"), "Type"), "VARCHAR")))
-	})
-	self.Do(651, func() { M(self, "assertNotEqual", recast, cast) })
+	}, &recast)
+	self.Do(651, func() { Stmt(M(self, "assertNotEqual", recast, cast)) })
 	self.Do(652, func() { self.AssertEqual(Len(Call(G("list"), M(recast, "find_all", A(G("sqlglot.exp"), "Cast")))), 2) })
 	self.Do(653, func() { self.AssertEqual(M(recast, "sql"), "CAST(CAST(x AS DATE) AS VARCHAR)") })
-	self.Do(657, func() { interval_cast = Call(G("sqlglot.parse_one"), "CAST(-1 AS INTERVAL HOUR)") })
-	self.Do(658, func() {
+	self.DoAssign(657, func() { interval_cast = Call(G("sqlglot.parse_one"), "CAST(-1 AS INTERVAL HOUR)") }, &interval_cast)
+	self.DoAssign(658, func() {
 		recast = M(G("sqlglot.exp"), "cast", interval_cast, Kw("to", A(A(A(G("sqlglot.exp"), "DataType"), "Type"), "BIGINT")))
-	})
+	}, &recast)
 	self.Do(659, func() { self.AssertEqual(M(recast, "sql"), "CAST(CAST(-1 AS INTERVAL HOUR) AS BIGINT)") })
 	self.Do(662, func() {
 		self.AssertEqual(M(M(G("sqlglot.exp"), "cast", "x", Kw("to", "regtype"), Kw("dialect", "postgres")), "sql"), "CAST(x AS REGTYPE)")
@@ -830,9 +826,9 @@ func test_expressions_TestExprs_test_cast(self *Case, a Args) Value {
 func test_expressions_TestExprs_test_ctes(self *Case, a Args) Value {
 	var expression Value
 	_ = []Value{expression}
-	self.Do(668, func() { expression = Call(G("sqlglot.parse_one"), "SELECT a FROM x") })
+	self.DoAssign(668, func() { expression = Call(G("sqlglot.parse_one"), "SELECT a FROM x") }, &expression)
 	self.Do(669, func() { self.AssertEqual(A(expression, "ctes"), NewList()) })
-	self.Do(671, func() { expression = Call(G("sqlglot.parse_one"), "WITH x AS (SELECT a FROM y) SELECT a FROM x") })
+	self.DoAssign(671, func() { expression = Call(G("sqlglot.parse_one"), "WITH x AS (SELECT a FROM y) SELECT a FROM x") }, &expression)
 	self.Do(672, func() {
 		self.AssertEqual(func() Value {
 			var s Value
@@ -858,9 +854,9 @@ func test_expressions_TestExprs_test_hash(self *Case, a Args) Value {
 func test_expressions_TestExprs_test_hash_invalidated_on_append(self *Case, a Args) Value {
 	var expr Value
 	_ = []Value{expr}
-	self.Do(691, func() { expr = Call(G("sqlglot.parse_one"), "SELECT a") })
+	self.DoAssign(691, func() { expr = Call(G("sqlglot.parse_one"), "SELECT a") }, &expr)
 	self.Do(692, func() { Hash(expr) })
-	self.Do(693, func() { M(expr, "append", "expressions", M(G("sqlglot.exp"), "column", "b")) })
+	self.Do(693, func() { Stmt(M(expr, "append", "expressions", M(G("sqlglot.exp"), "column", "b"))) })
 	self.Do(694, func() { self.AssertEqual(Hash(expr), Hash(Call(G("sqlglot.parse_one"), "SELECT a, b"))) })
 	return nil
 }
@@ -885,7 +881,7 @@ func test_expressions_TestExprs_test_sql(self *Case, a Args) Value {
 func test_expressions_TestExprs_test_transform_with_arguments(self *Case, a Args) Value {
 	var expression, fun, transformed_expression, transformed_expression_2 Value
 	_ = []Value{expression, fun, transformed_expression, transformed_expression_2}
-	self.Do(704, func() { expression = Call(G("sqlglot.parse_one"), "a") })
+	self.DoAssign(704, func() { expression = Call(G("sqlglot.parse_one"), "a") }, &expression)
 	self.Do(706, func() {
 		fun = Func("fun", func(a Args) Value {
 			var node, alias_ Value
@@ -898,9 +894,9 @@ func test_expressions_TestExprs_test_transform_with_arguments(self *Case, a Args
 			return node
 		})
 	})
-	self.Do(711, func() { transformed_expression = M(expression, "transform", fun) })
+	self.DoAssign(711, func() { transformed_expression = M(expression, "transform", fun) }, &transformed_expression)
 	self.Do(712, func() { self.AssertEqual(M(transformed_expression, "sql", Kw("dialect", "presto")), "a AS a") })
-	self.Do(714, func() { transformed_expression_2 = M(expression, "transform", fun, Kw("alias_", false)) })
+	self.DoAssign(714, func() { transformed_expression_2 = M(expression, "transform", fun, Kw("alias_", false)) }, &transformed_expression_2)
 	self.Do(715, func() { self.AssertEqual(M(transformed_expression_2, "sql", Kw("dialect", "presto")), "a") })
 	return nil
 }
@@ -908,7 +904,7 @@ func test_expressions_TestExprs_test_transform_with_arguments(self *Case, a Args
 func test_expressions_TestExprs_test_transform_simple(self *Case, a Args) Value {
 	var expression, fun, actual_expression_1, actual_expression_2 Value
 	_ = []Value{expression, fun, actual_expression_1, actual_expression_2}
-	self.Do(718, func() { expression = Call(G("sqlglot.parse_one"), "IF(a > 0, a, b)") })
+	self.DoAssign(718, func() { expression = Call(G("sqlglot.parse_one"), "IF(a > 0, a, b)") }, &expression)
 	self.Do(720, func() {
 		fun = Func("fun", func(a Args) Value {
 			var node Value
@@ -920,23 +916,23 @@ func test_expressions_TestExprs_test_transform_simple(self *Case, a Args) Value 
 			return node
 		})
 	})
-	self.Do(725, func() { actual_expression_1 = M(expression, "transform", fun) })
+	self.DoAssign(725, func() { actual_expression_1 = M(expression, "transform", fun) }, &actual_expression_1)
 	self.Do(726, func() {
 		self.AssertEqual(M(actual_expression_1, "sql", Kw("dialect", "presto")), "IF(c - 2 > 0, c - 2, b)")
 	})
-	self.Do(727, func() { M(self, "assertIsNot", actual_expression_1, expression) })
-	self.Do(729, func() { actual_expression_2 = M(expression, "transform", fun, Kw("copy", false)) })
+	self.Do(727, func() { Stmt(M(self, "assertIsNot", actual_expression_1, expression)) })
+	self.DoAssign(729, func() { actual_expression_2 = M(expression, "transform", fun, Kw("copy", false)) }, &actual_expression_2)
 	self.Do(730, func() {
 		self.AssertEqual(M(actual_expression_2, "sql", Kw("dialect", "presto")), "IF(c - 2 > 0, c - 2, b)")
 	})
-	self.Do(731, func() { M(self, "assertIs", actual_expression_2, expression) })
+	self.Do(731, func() { Stmt(M(self, "assertIs", actual_expression_2, expression)) })
 	return nil
 }
 
 func test_expressions_TestExprs_test_transform_no_infinite_recursion(self *Case, a Args) Value {
 	var expression, fun Value
 	_ = []Value{expression, fun}
-	self.Do(734, func() { expression = Call(G("sqlglot.parse_one"), "a") })
+	self.DoAssign(734, func() { expression = Call(G("sqlglot.parse_one"), "a") }, &expression)
 	self.Do(736, func() {
 		fun = Func("fun", func(a Args) Value {
 			var node Value
@@ -955,7 +951,7 @@ func test_expressions_TestExprs_test_transform_no_infinite_recursion(self *Case,
 func test_expressions_TestExprs_test_transform_with_parent_mutation(self *Case, a Args) Value {
 	var expression, fun, transformed Value
 	_ = []Value{expression, fun, transformed}
-	self.Do(744, func() { expression = Call(G("sqlglot.parse_one"), "SELECT COUNT(1) FROM table") })
+	self.DoAssign(744, func() { expression = Call(G("sqlglot.parse_one"), "SELECT COUNT(1) FROM table") }, &expression)
 	self.Do(746, func() {
 		fun = Func("fun", func(a Args) Value {
 			var node Value
@@ -967,7 +963,7 @@ func test_expressions_TestExprs_test_transform_with_parent_mutation(self *Case, 
 			return node
 		})
 	})
-	self.Do(752, func() { transformed = M(expression, "transform", fun) })
+	self.DoAssign(752, func() { transformed = M(expression, "transform", fun) }, &transformed)
 	self.Do(753, func() { self.AssertEqual(M(transformed, "sql"), "SELECT COUNT(1) FILTER(WHERE TRUE) FROM table") })
 	return nil
 }
@@ -975,7 +971,7 @@ func test_expressions_TestExprs_test_transform_with_parent_mutation(self *Case, 
 func test_expressions_TestExprs_test_transform_multiple_children(self *Case, a Args) Value {
 	var expression, fun Value
 	_ = []Value{expression, fun}
-	self.Do(756, func() { expression = Call(G("sqlglot.parse_one"), "SELECT * FROM x") })
+	self.DoAssign(756, func() { expression = Call(G("sqlglot.parse_one"), "SELECT * FROM x") }, &expression)
 	self.Do(758, func() {
 		fun = Func("fun", func(a Args) Value {
 			var node Value
@@ -1003,7 +999,7 @@ func test_expressions_TestExprs_test_transform_multiple_children(self *Case, a A
 func test_expressions_TestExprs_test_transform_node_removal(self *Case, a Args) Value {
 	var expression, remove_column_b, remove_non_list_arg, remove_all_columns Value
 	_ = []Value{expression, remove_column_b, remove_non_list_arg, remove_all_columns}
-	self.Do(766, func() { expression = Call(G("sqlglot.parse_one"), "SELECT a, b FROM x") })
+	self.DoAssign(766, func() { expression = Call(G("sqlglot.parse_one"), "SELECT a, b FROM x") }, &expression)
 	self.Do(768, func() {
 		remove_column_b = Func("remove_column_b", func(a Args) Value {
 			var node Value
@@ -1016,7 +1012,7 @@ func test_expressions_TestExprs_test_transform_node_removal(self *Case, a Args) 
 		})
 	})
 	self.Do(773, func() { self.AssertEqual(M(M(expression, "transform", remove_column_b), "sql"), "SELECT a FROM x") })
-	self.Do(775, func() { expression = Call(G("sqlglot.parse_one"), "CAST(x AS FLOAT)") })
+	self.DoAssign(775, func() { expression = Call(G("sqlglot.parse_one"), "CAST(x AS FLOAT)") }, &expression)
 	self.Do(777, func() {
 		remove_non_list_arg = Func("remove_non_list_arg", func(a Args) Value {
 			var node Value
@@ -1029,7 +1025,7 @@ func test_expressions_TestExprs_test_transform_node_removal(self *Case, a Args) 
 		})
 	})
 	self.Do(782, func() { self.AssertEqual(M(M(expression, "transform", remove_non_list_arg), "sql"), "CAST(x AS)") })
-	self.Do(784, func() { expression = Call(G("sqlglot.parse_one"), "SELECT a, b FROM x") })
+	self.DoAssign(784, func() { expression = Call(G("sqlglot.parse_one"), "SELECT a, b FROM x") }, &expression)
 	self.Do(786, func() {
 		remove_all_columns = Func("remove_all_columns", func(a Args) Value {
 			var node Value
@@ -1048,18 +1044,18 @@ func test_expressions_TestExprs_test_transform_node_removal(self *Case, a Args) 
 func test_expressions_TestExprs_test_replace(self *Case, a Args) Value {
 	var expression Value
 	_ = []Value{expression}
-	self.Do(794, func() { expression = Call(G("sqlglot.parse_one"), "SELECT a, b FROM x") })
+	self.DoAssign(794, func() { expression = Call(G("sqlglot.parse_one"), "SELECT a, b FROM x") }, &expression)
 	self.Do(795, func() {
-		M(M(expression, "find", A(G("sqlglot.exp"), "Column")), "replace", Call(G("sqlglot.parse_one"), "c"))
+		Stmt(M(M(expression, "find", A(G("sqlglot.exp"), "Column")), "replace", Call(G("sqlglot.parse_one"), "c")))
 	})
 	self.Do(796, func() { self.AssertEqual(M(expression, "sql"), "SELECT c, b FROM x") })
 	self.Do(797, func() {
-		M(M(expression, "find", A(G("sqlglot.exp"), "Table")), "replace", Call(G("sqlglot.parse_one"), "y"))
+		Stmt(M(M(expression, "find", A(G("sqlglot.exp"), "Table")), "replace", Call(G("sqlglot.parse_one"), "y")))
 	})
 	self.Do(798, func() { self.AssertEqual(M(expression, "sql"), "SELECT c, b FROM y") })
-	self.Do(801, func() { expression = Call(G("sqlglot.parse_one"), "SELECT * FROM x ORDER BY a DESC, c") })
+	self.DoAssign(801, func() { expression = Call(G("sqlglot.parse_one"), "SELECT * FROM x ORDER BY a DESC, c") }, &expression)
 	self.Do(802, func() {
-		M(A(M(expression, "find", A(G("sqlglot.exp"), "Ordered")), "this"), "replace", NewList(M(M(G("sqlglot.exp"), "column", "a"), "asc"), M(M(G("sqlglot.exp"), "column", "b"), "desc")))
+		Stmt(M(A(M(expression, "find", A(G("sqlglot.exp"), "Ordered")), "this"), "replace", NewList(M(M(G("sqlglot.exp"), "column", "a"), "asc"), M(M(G("sqlglot.exp"), "column", "b"), "desc"))))
 	})
 	self.Do(803, func() { self.AssertEqual(M(expression, "sql"), "SELECT * FROM x ORDER BY a, b DESC, c") })
 	return nil
@@ -1068,33 +1064,33 @@ func test_expressions_TestExprs_test_replace(self *Case, a Args) Value {
 func test_expressions_TestExprs_test_arg_deletion(self *Case, a Args) Value {
 	var expression Value
 	_ = []Value{expression}
-	self.Do(807, func() { expression = Call(G("sqlglot.parse_one"), "SELECT a, b FROM x") })
-	self.Do(808, func() { M(M(expression, "find", A(G("sqlglot.exp"), "Column")), "pop") })
+	self.DoAssign(807, func() { expression = Call(G("sqlglot.parse_one"), "SELECT a, b FROM x") }, &expression)
+	self.Do(808, func() { Stmt(M(M(expression, "find", A(G("sqlglot.exp"), "Column")), "pop")) })
 	self.Do(809, func() { self.AssertEqual(M(expression, "sql"), "SELECT b FROM x") })
-	self.Do(811, func() { M(M(expression, "find", A(G("sqlglot.exp"), "Column")), "pop") })
+	self.Do(811, func() { Stmt(M(M(expression, "find", A(G("sqlglot.exp"), "Column")), "pop")) })
 	self.Do(812, func() { self.AssertEqual(M(expression, "sql"), "SELECT FROM x") })
-	self.Do(814, func() { M(expression, "pop") })
+	self.Do(814, func() { Stmt(M(expression, "pop")) })
 	self.Do(815, func() { self.AssertEqual(M(expression, "sql"), "SELECT FROM x") })
-	self.Do(817, func() { expression = Call(G("sqlglot.parse_one"), "WITH x AS (SELECT a FROM x) SELECT * FROM x") })
-	self.Do(818, func() { M(M(expression, "find", A(G("sqlglot.exp"), "With")), "pop") })
+	self.DoAssign(817, func() { expression = Call(G("sqlglot.parse_one"), "WITH x AS (SELECT a FROM x) SELECT * FROM x") }, &expression)
+	self.Do(818, func() { Stmt(M(M(expression, "find", A(G("sqlglot.exp"), "With")), "pop")) })
 	self.Do(819, func() { self.AssertEqual(M(expression, "sql"), "SELECT * FROM x") })
-	self.Do(822, func() { expression = Call(G("sqlglot.parse_one"), "SELECT * FROM foo JOIN bar") })
+	self.DoAssign(822, func() { expression = Call(G("sqlglot.parse_one"), "SELECT * FROM foo JOIN bar") }, &expression)
 	self.Do(823, func() { self.AssertEqual(Len(M(A(expression, "args"), "get", "joins", NewList())), 1) })
-	self.Do(825, func() { M(expression, "set", "joins", nil) })
+	self.Do(825, func() { Stmt(M(expression, "set", "joins", nil)) })
 	self.Do(826, func() { self.AssertEqual(M(expression, "sql"), "SELECT * FROM foo") })
 	self.Do(827, func() { self.AssertEqual(M(A(expression, "args"), "get", "joins", NewList()), NewList()) })
-	self.Do(828, func() { M(self, "assertIsNone", M(A(expression, "args"), "get", "joins")) })
+	self.Do(828, func() { Stmt(M(self, "assertIsNone", M(A(expression, "args"), "get", "joins"))) })
 	return nil
 }
 
 func test_expressions_TestExprs_test_walk(self *Case, a Args) Value {
 	var expression Value
 	_ = []Value{expression}
-	self.Do(831, func() { expression = Call(G("sqlglot.parse_one"), "SELECT * FROM (SELECT * FROM x)") })
+	self.DoAssign(831, func() { expression = Call(G("sqlglot.parse_one"), "SELECT * FROM (SELECT * FROM x)") }, &expression)
 	self.Do(832, func() { self.AssertEqual(Len(Call(G("list"), M(expression, "walk"))), 9) })
 	self.Do(833, func() { self.AssertEqual(Len(Call(G("list"), M(expression, "walk", Kw("bfs", false)))), 9) })
 	self.Do(834, func() {
-		M(self, "assertTrue", Call(G("all"), func() Value {
+		Stmt(M(self, "assertTrue", Call(G("all"), func() Value {
 			var e Value
 			_ = []Value{e}
 			var out []Value
@@ -1103,10 +1099,10 @@ func test_expressions_TestExprs_test_walk(self *Case, a Args) Value {
 				out = append(out, IsInstance(e, A(G("sqlglot.exp"), "Expr")))
 			}
 			return &List{V: out}
-		}()))
+		}())))
 	})
 	self.Do(835, func() {
-		M(self, "assertTrue", Call(G("all"), func() Value {
+		Stmt(M(self, "assertTrue", Call(G("all"), func() Value {
 			var e Value
 			_ = []Value{e}
 			var out []Value
@@ -1115,7 +1111,7 @@ func test_expressions_TestExprs_test_walk(self *Case, a Args) Value {
 				out = append(out, IsInstance(e, A(G("sqlglot.exp"), "Expr")))
 			}
 			return &List{V: out}
-		}()))
+		}())))
 	})
 	return nil
 }
@@ -1123,8 +1119,8 @@ func test_expressions_TestExprs_test_walk(self *Case, a Args) Value {
 func test_expressions_TestExprs_test_str_position_order(self *Case, a Args) Value {
 	var str_position_exp Value
 	_ = []Value{str_position_exp}
-	self.Do(838, func() { str_position_exp = Call(G("sqlglot.parse_one"), "STR_POSITION('mytest', 'test')") })
-	self.Do(839, func() { M(self, "assertIsInstance", str_position_exp, A(G("sqlglot.exp"), "StrPosition")) })
+	self.DoAssign(838, func() { str_position_exp = Call(G("sqlglot.parse_one"), "STR_POSITION('mytest', 'test')") }, &str_position_exp)
+	self.Do(839, func() { Stmt(M(self, "assertIsInstance", str_position_exp, A(G("sqlglot.exp"), "StrPosition"))) })
 	self.Do(840, func() { self.AssertEqual(A(M(A(str_position_exp, "args"), "get", "this"), "this"), "mytest") })
 	self.Do(841, func() { self.AssertEqual(A(M(A(str_position_exp, "args"), "get", "substr"), "this"), "test") })
 	return nil
@@ -1134,281 +1130,283 @@ func test_expressions_TestExprs_test_functions(self *Case, a Args) Value {
 	var ast Value
 	_ = []Value{ast}
 	self.Do(844, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "x LIKE ANY (y)"), A(G("sqlglot.exp"), "Like"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "x LIKE ANY (y)"), A(G("sqlglot.exp"), "Like")))
 	})
 	self.Do(845, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "x ILIKE ANY (y)"), A(G("sqlglot.exp"), "ILike"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "x ILIKE ANY (y)"), A(G("sqlglot.exp"), "ILike")))
 	})
 	self.Do(846, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "ABS(a)"), A(G("sqlglot.exp"), "Abs"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "ABS(a)"), A(G("sqlglot.exp"), "Abs")))
 	})
 	self.Do(847, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "APPROX_DISTINCT(a)"), A(G("sqlglot.exp"), "ApproxDistinct"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "APPROX_DISTINCT(a)"), A(G("sqlglot.exp"), "ApproxDistinct")))
 	})
 	self.Do(848, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "ARRAY(a)"), A(G("sqlglot.exp"), "Array"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "ARRAY(a)"), A(G("sqlglot.exp"), "Array")))
 	})
 	self.Do(849, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "ARRAY_AGG(a)"), A(G("sqlglot.exp"), "ArrayAgg"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "ARRAY_AGG(a)"), A(G("sqlglot.exp"), "ArrayAgg")))
 	})
 	self.Do(850, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "ARRAY_CONTAINS(a, 'a')"), A(G("sqlglot.exp"), "ArrayContains"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "ARRAY_CONTAINS(a, 'a')"), A(G("sqlglot.exp"), "ArrayContains")))
 	})
 	self.Do(851, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "ARRAY_SIZE(a)"), A(G("sqlglot.exp"), "ArraySize"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "ARRAY_SIZE(a)"), A(G("sqlglot.exp"), "ArraySize")))
 	})
 	self.Do(852, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "ARRAY_INTERSECTION([1, 2], [2, 3])"), A(G("sqlglot.exp"), "ArrayIntersect"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "ARRAY_INTERSECTION([1, 2], [2, 3])"), A(G("sqlglot.exp"), "ArrayIntersect")))
 	})
 	self.Do(853, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "ARRAY_INTERSECT([1, 2], [2, 3])"), A(G("sqlglot.exp"), "ArrayIntersect"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "ARRAY_INTERSECT([1, 2], [2, 3])"), A(G("sqlglot.exp"), "ArrayIntersect")))
 	})
 	self.Do(854, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "AVG(a)"), A(G("sqlglot.exp"), "Avg"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "AVG(a)"), A(G("sqlglot.exp"), "Avg")))
 	})
 	self.Do(855, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "BEGIN DEFERRED TRANSACTION"), A(G("sqlglot.exp"), "Transaction"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "BEGIN DEFERRED TRANSACTION"), A(G("sqlglot.exp"), "Transaction")))
 	})
 	self.Do(856, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "CEIL(a)"), A(G("sqlglot.exp"), "Ceil"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "CEIL(a)"), A(G("sqlglot.exp"), "Ceil")))
 	})
 	self.Do(857, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "CEILING(a)"), A(G("sqlglot.exp"), "Ceil"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "CEILING(a)"), A(G("sqlglot.exp"), "Ceil")))
 	})
 	self.Do(858, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "COALESCE(a, b)"), A(G("sqlglot.exp"), "Coalesce"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "COALESCE(a, b)"), A(G("sqlglot.exp"), "Coalesce")))
 	})
 	self.Do(859, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "COMMIT"), A(G("sqlglot.exp"), "Commit"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "COMMIT"), A(G("sqlglot.exp"), "Commit")))
 	})
 	self.Do(860, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "COUNT(a)"), A(G("sqlglot.exp"), "Count"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "COUNT(a)"), A(G("sqlglot.exp"), "Count")))
 	})
 	self.Do(861, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "COUNT_IF(a > 0)"), A(G("sqlglot.exp"), "CountIf"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "COUNT_IF(a > 0)"), A(G("sqlglot.exp"), "CountIf")))
 	})
 	self.Do(862, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "DATE_ADD(a, 1)"), A(G("sqlglot.exp"), "DateAdd"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "DATE_ADD(a, 1)"), A(G("sqlglot.exp"), "DateAdd")))
 	})
 	self.Do(863, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "DATE_DIFF(a, 2)"), A(G("sqlglot.exp"), "DateDiff"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "DATE_DIFF(a, 2)"), A(G("sqlglot.exp"), "DateDiff")))
 	})
 	self.Do(864, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "DATE_STR_TO_DATE(a)"), A(G("sqlglot.exp"), "DateStrToDate"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "DATE_STR_TO_DATE(a)"), A(G("sqlglot.exp"), "DateStrToDate")))
 	})
 	self.Do(865, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "TS_OR_DS_TO_TIME(a)"), A(G("sqlglot.exp"), "TsOrDsToTime"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "TS_OR_DS_TO_TIME(a)"), A(G("sqlglot.exp"), "TsOrDsToTime")))
 	})
 	self.Do(866, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "DAY(a)"), A(G("sqlglot.exp"), "Day"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "DAY(a)"), A(G("sqlglot.exp"), "Day")))
 	})
 	self.Do(867, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "EXP(a)"), A(G("sqlglot.exp"), "Exp"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "EXP(a)"), A(G("sqlglot.exp"), "Exp")))
 	})
 	self.Do(868, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "FLOOR(a)"), A(G("sqlglot.exp"), "Floor"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "FLOOR(a)"), A(G("sqlglot.exp"), "Floor")))
 	})
 	self.Do(869, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "GENERATE_SERIES(a, b, c)"), A(G("sqlglot.exp"), "GenerateSeries"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "GENERATE_SERIES(a, b, c)"), A(G("sqlglot.exp"), "GenerateSeries")))
 	})
 	self.Do(870, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "GLOB(x, y)"), A(G("sqlglot.exp"), "Glob"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "GLOB(x, y)"), A(G("sqlglot.exp"), "Glob")))
 	})
 	self.Do(871, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "GREATEST(a, b)"), A(G("sqlglot.exp"), "Greatest"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "GREATEST(a, b)"), A(G("sqlglot.exp"), "Greatest")))
 	})
 	self.Do(872, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "IF(a, b, c)"), A(G("sqlglot.exp"), "If"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "IF(a, b, c)"), A(G("sqlglot.exp"), "If")))
 	})
 	self.Do(873, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "INITCAP(a)"), A(G("sqlglot.exp"), "Initcap"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "INITCAP(a)"), A(G("sqlglot.exp"), "Initcap")))
 	})
 	self.Do(874, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "JSON_EXTRACT(a, '$.name')"), A(G("sqlglot.exp"), "JSONExtract"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "JSON_EXTRACT(a, '$.name')"), A(G("sqlglot.exp"), "JSONExtract")))
 	})
 	self.Do(875, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "JSON_EXTRACT_SCALAR(a, '$.name')"), A(G("sqlglot.exp"), "JSONExtractScalar"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "JSON_EXTRACT_SCALAR(a, '$.name')"), A(G("sqlglot.exp"), "JSONExtractScalar")))
 	})
 	self.Do(876, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "LEAST(a, b)"), A(G("sqlglot.exp"), "Least"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "LEAST(a, b)"), A(G("sqlglot.exp"), "Least")))
 	})
 	self.Do(877, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "LIKE(x, y)"), A(G("sqlglot.exp"), "Like"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "LIKE(x, y)"), A(G("sqlglot.exp"), "Like")))
 	})
-	self.Do(878, func() { M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "LN(a)"), A(G("sqlglot.exp"), "Ln")) })
+	self.Do(878, func() {
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "LN(a)"), A(G("sqlglot.exp"), "Ln")))
+	})
 	self.Do(879, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "LOG(b, n)"), A(G("sqlglot.exp"), "Log"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "LOG(b, n)"), A(G("sqlglot.exp"), "Log")))
 	})
 	self.Do(880, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "LOG2(a)"), A(G("sqlglot.exp"), "Log"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "LOG2(a)"), A(G("sqlglot.exp"), "Log")))
 	})
 	self.Do(881, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "LOG10(a)"), A(G("sqlglot.exp"), "Log"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "LOG10(a)"), A(G("sqlglot.exp"), "Log")))
 	})
 	self.Do(882, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "MAX(a)"), A(G("sqlglot.exp"), "Max"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "MAX(a)"), A(G("sqlglot.exp"), "Max")))
 	})
 	self.Do(883, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "MIN(a)"), A(G("sqlglot.exp"), "Min"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "MIN(a)"), A(G("sqlglot.exp"), "Min")))
 	})
 	self.Do(884, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "MONTH(a)"), A(G("sqlglot.exp"), "Month"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "MONTH(a)"), A(G("sqlglot.exp"), "Month")))
 	})
 	self.Do(885, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "QUARTER(a)"), A(G("sqlglot.exp"), "Quarter"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "QUARTER(a)"), A(G("sqlglot.exp"), "Quarter")))
 	})
 	self.Do(886, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "POSITION(' ' IN a)"), A(G("sqlglot.exp"), "StrPosition"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "POSITION(' ' IN a)"), A(G("sqlglot.exp"), "StrPosition")))
 	})
 	self.Do(887, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "POW(a, 2)"), A(G("sqlglot.exp"), "Pow"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "POW(a, 2)"), A(G("sqlglot.exp"), "Pow")))
 	})
 	self.Do(888, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "POWER(a, 2)"), A(G("sqlglot.exp"), "Pow"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "POWER(a, 2)"), A(G("sqlglot.exp"), "Pow")))
 	})
 	self.Do(889, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "QUANTILE(a, 0.90)"), A(G("sqlglot.exp"), "Quantile"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "QUANTILE(a, 0.90)"), A(G("sqlglot.exp"), "Quantile")))
 	})
 	self.Do(890, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "REGEXP_LIKE(a, 'test')"), A(G("sqlglot.exp"), "RegexpLike"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "REGEXP_LIKE(a, 'test')"), A(G("sqlglot.exp"), "RegexpLike")))
 	})
 	self.Do(891, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "REGEXP_SPLIT(a, 'test')"), A(G("sqlglot.exp"), "RegexpSplit"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "REGEXP_SPLIT(a, 'test')"), A(G("sqlglot.exp"), "RegexpSplit")))
 	})
 	self.Do(892, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "ROLLBACK"), A(G("sqlglot.exp"), "Rollback"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "ROLLBACK"), A(G("sqlglot.exp"), "Rollback")))
 	})
 	self.Do(893, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "ROUND(a)"), A(G("sqlglot.exp"), "Round"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "ROUND(a)"), A(G("sqlglot.exp"), "Round")))
 	})
 	self.Do(894, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "ROUND(a, 2)"), A(G("sqlglot.exp"), "Round"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "ROUND(a, 2)"), A(G("sqlglot.exp"), "Round")))
 	})
 	self.Do(895, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "SPLIT(a, 'test')"), A(G("sqlglot.exp"), "Split"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "SPLIT(a, 'test')"), A(G("sqlglot.exp"), "Split")))
 	})
 	self.Do(896, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "ST_POINT(10, 20)"), A(G("sqlglot.exp"), "StPoint"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "ST_POINT(10, 20)"), A(G("sqlglot.exp"), "StPoint")))
 	})
 	self.Do(897, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "ST_DISTANCE(a, b)"), A(G("sqlglot.exp"), "StDistance"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "ST_DISTANCE(a, b)"), A(G("sqlglot.exp"), "StDistance")))
 	})
 	self.Do(898, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "STR_POSITION(a, 'test')"), A(G("sqlglot.exp"), "StrPosition"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "STR_POSITION(a, 'test')"), A(G("sqlglot.exp"), "StrPosition")))
 	})
 	self.Do(899, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "STR_TO_UNIX(a, 'format')"), A(G("sqlglot.exp"), "StrToUnix"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "STR_TO_UNIX(a, 'format')"), A(G("sqlglot.exp"), "StrToUnix")))
 	})
 	self.Do(900, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "STRUCT_EXTRACT(a, 'test')"), A(G("sqlglot.exp"), "StructExtract"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "STRUCT_EXTRACT(a, 'test')"), A(G("sqlglot.exp"), "StructExtract")))
 	})
 	self.Do(901, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "SUBSTR('a', 1, 1)"), A(G("sqlglot.exp"), "Substring"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "SUBSTR('a', 1, 1)"), A(G("sqlglot.exp"), "Substring")))
 	})
 	self.Do(902, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "SUBSTRING('a', 1, 1)"), A(G("sqlglot.exp"), "Substring"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "SUBSTRING('a', 1, 1)"), A(G("sqlglot.exp"), "Substring")))
 	})
 	self.Do(903, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "SUM(a)"), A(G("sqlglot.exp"), "Sum"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "SUM(a)"), A(G("sqlglot.exp"), "Sum")))
 	})
 	self.Do(904, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "SQRT(a)"), A(G("sqlglot.exp"), "Sqrt"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "SQRT(a)"), A(G("sqlglot.exp"), "Sqrt")))
 	})
 	self.Do(905, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "STDDEV(a)"), A(G("sqlglot.exp"), "Stddev"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "STDDEV(a)"), A(G("sqlglot.exp"), "Stddev")))
 	})
 	self.Do(906, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "STDDEV_POP(a)"), A(G("sqlglot.exp"), "StddevPop"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "STDDEV_POP(a)"), A(G("sqlglot.exp"), "StddevPop")))
 	})
 	self.Do(907, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "STDDEV_SAMP(a)"), A(G("sqlglot.exp"), "StddevSamp"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "STDDEV_SAMP(a)"), A(G("sqlglot.exp"), "StddevSamp")))
 	})
 	self.Do(908, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "TIME_TO_STR(a, 'format')"), A(G("sqlglot.exp"), "TimeToStr"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "TIME_TO_STR(a, 'format')"), A(G("sqlglot.exp"), "TimeToStr")))
 	})
 	self.Do(909, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "TIME_TO_TIME_STR(a)"), A(G("sqlglot.exp"), "Cast"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "TIME_TO_TIME_STR(a)"), A(G("sqlglot.exp"), "Cast")))
 	})
 	self.Do(910, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "TIME_TO_UNIX(a)"), A(G("sqlglot.exp"), "TimeToUnix"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "TIME_TO_UNIX(a)"), A(G("sqlglot.exp"), "TimeToUnix")))
 	})
 	self.Do(911, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "TIME_STR_TO_DATE(a)"), A(G("sqlglot.exp"), "TimeStrToDate"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "TIME_STR_TO_DATE(a)"), A(G("sqlglot.exp"), "TimeStrToDate")))
 	})
 	self.Do(912, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "TIME_STR_TO_TIME(a)"), A(G("sqlglot.exp"), "TimeStrToTime"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "TIME_STR_TO_TIME(a)"), A(G("sqlglot.exp"), "TimeStrToTime")))
 	})
 	self.Do(913, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "TIME_STR_TO_TIME(a, 'some_zone')"), A(G("sqlglot.exp"), "TimeStrToTime"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "TIME_STR_TO_TIME(a, 'some_zone')"), A(G("sqlglot.exp"), "TimeStrToTime")))
 	})
 	self.Do(914, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "TIME_STR_TO_UNIX(a)"), A(G("sqlglot.exp"), "TimeStrToUnix"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "TIME_STR_TO_UNIX(a)"), A(G("sqlglot.exp"), "TimeStrToUnix")))
 	})
 	self.Do(915, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "TRIM(LEADING 'b' FROM 'bla')"), A(G("sqlglot.exp"), "Trim"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "TRIM(LEADING 'b' FROM 'bla')"), A(G("sqlglot.exp"), "Trim")))
 	})
 	self.Do(916, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "TS_OR_DS_ADD(a, 1, 'day')"), A(G("sqlglot.exp"), "TsOrDsAdd"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "TS_OR_DS_ADD(a, 1, 'day')"), A(G("sqlglot.exp"), "TsOrDsAdd")))
 	})
 	self.Do(917, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "TS_OR_DS_TO_DATE(a)"), A(G("sqlglot.exp"), "TsOrDsToDate"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "TS_OR_DS_TO_DATE(a)"), A(G("sqlglot.exp"), "TsOrDsToDate")))
 	})
 	self.Do(918, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "TS_OR_DS_TO_DATE_STR(a)"), A(G("sqlglot.exp"), "Substring"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "TS_OR_DS_TO_DATE_STR(a)"), A(G("sqlglot.exp"), "Substring")))
 	})
 	self.Do(919, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "UNIX_TO_STR(a, 'format')"), A(G("sqlglot.exp"), "UnixToStr"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "UNIX_TO_STR(a, 'format')"), A(G("sqlglot.exp"), "UnixToStr")))
 	})
 	self.Do(920, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "UNIX_TO_TIME(a)"), A(G("sqlglot.exp"), "UnixToTime"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "UNIX_TO_TIME(a)"), A(G("sqlglot.exp"), "UnixToTime")))
 	})
 	self.Do(921, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "UNIX_TO_TIME_STR(a)"), A(G("sqlglot.exp"), "UnixToTimeStr"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "UNIX_TO_TIME_STR(a)"), A(G("sqlglot.exp"), "UnixToTimeStr")))
 	})
 	self.Do(922, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "VARIANCE(a)"), A(G("sqlglot.exp"), "Variance"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "VARIANCE(a)"), A(G("sqlglot.exp"), "Variance")))
 	})
 	self.Do(923, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "VARIANCE_POP(a)"), A(G("sqlglot.exp"), "VariancePop"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "VARIANCE_POP(a)"), A(G("sqlglot.exp"), "VariancePop")))
 	})
 	self.Do(924, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "YEAR(a)"), A(G("sqlglot.exp"), "Year"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "YEAR(a)"), A(G("sqlglot.exp"), "Year")))
 	})
 	self.Do(925, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "HLL(a)"), A(G("sqlglot.exp"), "Hll"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "HLL(a)"), A(G("sqlglot.exp"), "Hll")))
 	})
 	self.Do(926, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "ARRAY(time, foo)"), A(G("sqlglot.exp"), "Array"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "ARRAY(time, foo)"), A(G("sqlglot.exp"), "Array")))
 	})
 	self.Do(927, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "STANDARD_HASH('hello', 'sha256')"), A(G("sqlglot.exp"), "StandardHash"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "STANDARD_HASH('hello', 'sha256')"), A(G("sqlglot.exp"), "StandardHash")))
 	})
 	self.Do(928, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "DATE(foo)"), A(G("sqlglot.exp"), "Date"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "DATE(foo)"), A(G("sqlglot.exp"), "Date")))
 	})
 	self.Do(929, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "HEX(foo)"), A(G("sqlglot.exp"), "Hex"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "HEX(foo)"), A(G("sqlglot.exp"), "Hex")))
 	})
 	self.Do(930, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "LOWER(HEX(foo))"), A(G("sqlglot.exp"), "LowerHex"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "LOWER(HEX(foo))"), A(G("sqlglot.exp"), "LowerHex")))
 	})
 	self.Do(931, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "TO_HEX(foo)", Kw("read", "bigquery")), A(G("sqlglot.exp"), "LowerHex"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "TO_HEX(foo)", Kw("read", "bigquery")), A(G("sqlglot.exp"), "LowerHex")))
 	})
 	self.Do(932, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "UPPER(TO_HEX(foo))", Kw("read", "bigquery")), A(G("sqlglot.exp"), "Hex"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "UPPER(TO_HEX(foo))", Kw("read", "bigquery")), A(G("sqlglot.exp"), "Hex")))
 	})
 	self.Do(933, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "TO_HEX(MD5(foo))", Kw("read", "bigquery")), A(G("sqlglot.exp"), "MD5"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "TO_HEX(MD5(foo))", Kw("read", "bigquery")), A(G("sqlglot.exp"), "MD5")))
 	})
 	self.Do(934, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "TRANSFORM(a, b)", Kw("read", "spark")), A(G("sqlglot.exp"), "Transform"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "TRANSFORM(a, b)", Kw("read", "spark")), A(G("sqlglot.exp"), "Transform")))
 	})
 	self.Do(935, func() {
-		M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "ADD_MONTHS(a, b)"), A(G("sqlglot.exp"), "AddMonths"))
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "ADD_MONTHS(a, b)"), A(G("sqlglot.exp"), "AddMonths")))
 	})
-	self.Do(937, func() { ast = Call(G("sqlglot.parse_one"), "GREATEST(a, b, c)") })
-	self.Do(938, func() { M(self, "assertIsInstance", A(ast, "expressions"), G("list")) })
+	self.DoAssign(937, func() { ast = Call(G("sqlglot.parse_one"), "GREATEST(a, b, c)") }, &ast)
+	self.Do(938, func() { Stmt(M(self, "assertIsInstance", A(ast, "expressions"), G("list"))) })
 	self.Do(939, func() { self.AssertEqual(Len(A(ast, "expressions")), 2) })
 	return nil
 }
@@ -1416,45 +1414,47 @@ func test_expressions_TestExprs_test_functions(self *Case, a Args) Value {
 func test_expressions_TestExprs_test_column(self *Case, a Args) Value {
 	var column, fields, dot Value
 	_ = []Value{column, fields, dot}
-	self.Do(942, func() { column = M(G("sqlglot.exp"), "column", M(G("sqlglot.exp"), "Star"), Kw("table", "t")) })
+	self.DoAssign(942, func() { column = M(G("sqlglot.exp"), "column", M(G("sqlglot.exp"), "Star"), Kw("table", "t")) }, &column)
 	self.Do(943, func() { self.AssertEqual(M(column, "sql"), "t.*") })
-	self.Do(945, func() { column = Call(G("sqlglot.parse_one"), "a.b.c.d") })
+	self.DoAssign(945, func() { column = Call(G("sqlglot.parse_one"), "a.b.c.d") }, &column)
 	self.Do(946, func() { self.AssertEqual(A(column, "catalog"), "a") })
 	self.Do(947, func() { self.AssertEqual(A(column, "db"), "b") })
 	self.Do(948, func() { self.AssertEqual(A(column, "table"), "c") })
 	self.Do(949, func() { self.AssertEqual(A(column, "name"), "d") })
-	self.Do(951, func() { column = Call(G("sqlglot.parse_one"), "a") })
+	self.DoAssign(951, func() { column = Call(G("sqlglot.parse_one"), "a") }, &column)
 	self.Do(952, func() { self.AssertEqual(A(column, "name"), "a") })
 	self.Do(953, func() { self.AssertEqual(A(column, "table"), "") })
-	self.Do(955, func() { fields = Call(G("sqlglot.parse_one"), "a.b.c.d.e") })
-	self.Do(956, func() { M(self, "assertIsInstance", fields, A(G("sqlglot.exp"), "Dot")) })
+	self.DoAssign(955, func() { fields = Call(G("sqlglot.parse_one"), "a.b.c.d.e") }, &fields)
+	self.Do(956, func() { Stmt(M(self, "assertIsInstance", fields, A(G("sqlglot.exp"), "Dot"))) })
 	self.Do(957, func() { self.AssertEqual(M(fields, "text", "expression"), "e") })
-	self.Do(958, func() { column = M(fields, "find", A(G("sqlglot.exp"), "Column")) })
+	self.DoAssign(958, func() { column = M(fields, "find", A(G("sqlglot.exp"), "Column")) }, &column)
 	self.Do(959, func() { self.AssertEqual(A(column, "name"), "d") })
 	self.Do(960, func() { self.AssertEqual(A(column, "table"), "c") })
 	self.Do(961, func() { self.AssertEqual(A(column, "db"), "b") })
 	self.Do(962, func() { self.AssertEqual(A(column, "catalog"), "a") })
-	self.Do(964, func() { column = Call(G("sqlglot.parse_one"), "a[0].b") })
-	self.Do(965, func() { M(self, "assertIsInstance", column, A(G("sqlglot.exp"), "Dot")) })
-	self.Do(966, func() { M(self, "assertIsInstance", A(column, "this"), A(G("sqlglot.exp"), "Bracket")) })
-	self.Do(967, func() { M(self, "assertIsInstance", A(A(column, "this"), "this"), A(G("sqlglot.exp"), "Column")) })
-	self.Do(969, func() { column = Call(G("sqlglot.parse_one"), "a.*") })
-	self.Do(970, func() { M(self, "assertIsInstance", column, A(G("sqlglot.exp"), "Column")) })
-	self.Do(971, func() { M(self, "assertIsInstance", A(column, "this"), A(G("sqlglot.exp"), "Star")) })
+	self.DoAssign(964, func() { column = Call(G("sqlglot.parse_one"), "a[0].b") }, &column)
+	self.Do(965, func() { Stmt(M(self, "assertIsInstance", column, A(G("sqlglot.exp"), "Dot"))) })
+	self.Do(966, func() { Stmt(M(self, "assertIsInstance", A(column, "this"), A(G("sqlglot.exp"), "Bracket"))) })
+	self.Do(967, func() { Stmt(M(self, "assertIsInstance", A(A(column, "this"), "this"), A(G("sqlglot.exp"), "Column"))) })
+	self.DoAssign(969, func() { column = Call(G("sqlglot.parse_one"), "a.*") }, &column)
+	self.Do(970, func() { Stmt(M(self, "assertIsInstance", column, A(G("sqlglot.exp"), "Column"))) })
+	self.Do(971, func() { Stmt(M(self, "assertIsInstance", A(column, "this"), A(G("sqlglot.exp"), "Star"))) })
 	self.Do(972, func() {
-		M(self, "assertIsInstance", Item(A(column, "args"), "table"), A(G("sqlglot.exp"), "Identifier"))
+		Stmt(M(self, "assertIsInstance", Item(A(column, "args"), "table"), A(G("sqlglot.exp"), "Identifier")))
 	})
 	self.Do(973, func() { self.AssertEqual(A(column, "table"), "a") })
-	self.Do(975, func() { M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "*"), A(G("sqlglot.exp"), "Star")) })
+	self.Do(975, func() {
+		Stmt(M(self, "assertIsInstance", Call(G("sqlglot.parse_one"), "*"), A(G("sqlglot.exp"), "Star")))
+	})
 	self.Do(976, func() {
 		self.AssertEqual(M(G("sqlglot.exp"), "column", "a", Kw("table", "b"), Kw("db", "c"), Kw("catalog", "d")), M(G("sqlglot.exp"), "to_column", "d.c.b.a"))
 	})
-	self.Do(978, func() { dot = M(G("sqlglot.exp"), "column", "d", "c", "b", "a", Kw("fields", NewList("e", "f"))) })
-	self.Do(979, func() { M(self, "assertIsInstance", dot, A(G("sqlglot.exp"), "Dot")) })
+	self.DoAssign(978, func() { dot = M(G("sqlglot.exp"), "column", "d", "c", "b", "a", Kw("fields", NewList("e", "f"))) }, &dot)
+	self.Do(979, func() { Stmt(M(self, "assertIsInstance", dot, A(G("sqlglot.exp"), "Dot"))) })
 	self.Do(980, func() { self.AssertEqual(M(dot, "sql"), "a.b.c.d.e.f") })
-	self.Do(982, func() {
+	self.DoAssign(982, func() {
 		dot = M(G("sqlglot.exp"), "column", "d", "c", "b", "a", Kw("fields", NewList("e", "f")), Kw("quoted", true))
-	})
+	}, &dot)
 	self.Do(983, func() { self.AssertEqual(M(dot, "sql"), `"a"."b"."c"."d"."e"."f"`) })
 	return nil
 }
@@ -1465,20 +1465,20 @@ func test_expressions_TestExprs_test_column_expression(self *Case, a Args) Value
 	for _, item_ := range Iter(NewTuple("a.$1", "a.:name", "a.1", "a.*")) {
 		sql = item_
 		self.SubTest(func() {
-			self.Do(988, func() { expected = Call(G("sqlglot.parse_one"), sql, Kw("dialect", "snowflake")) })
-			self.Do(989, func() { part = A(expected, "this") })
-			self.Do(990, func() { column = M(G("sqlglot.exp"), "column", part, Kw("table", "a")) })
+			self.DoAssign(988, func() { expected = Call(G("sqlglot.parse_one"), sql, Kw("dialect", "snowflake")) }, &expected)
+			self.DoAssign(989, func() { part = A(expected, "this") }, &part)
+			self.DoAssign(990, func() { column = M(G("sqlglot.exp"), "column", part, Kw("table", "a")) }, &column)
 			self.Do(991, func() { self.AssertEqual(column, expected) })
-			self.Do(992, func() { M(self, "assertIsNot", A(column, "this"), part) })
-			self.Do(993, func() { M(self, "assertIs", A(part, "parent"), expected) })
+			self.Do(992, func() { Stmt(M(self, "assertIsNot", A(column, "this"), part)) })
+			self.Do(993, func() { Stmt(M(self, "assertIs", A(part, "parent"), expected)) })
 			self.Do(994, func() {
-				M(self, "assertIs", A(M(G("sqlglot.exp"), "column", part, Kw("table", "a"), Kw("copy", false)), "this"), part)
+				Stmt(M(self, "assertIs", A(M(G("sqlglot.exp"), "column", part, Kw("table", "a"), Kw("copy", false)), "this"), part))
 			})
 		}, Kw("sql", sql))
 	}
-	self.Do(996, func() { parameter = Call(G("sqlglot.parse_one"), "$1", Kw("dialect", "snowflake")) })
-	self.Do(997, func() { dot = M(G("sqlglot.exp"), "column", parameter, Kw("table", "a"), Kw("fields", NewList("b"))) })
-	self.Do(998, func() { M(self, "assertIsInstance", dot, A(G("sqlglot.exp"), "Dot")) })
+	self.DoAssign(996, func() { parameter = Call(G("sqlglot.parse_one"), "$1", Kw("dialect", "snowflake")) }, &parameter)
+	self.DoAssign(997, func() { dot = M(G("sqlglot.exp"), "column", parameter, Kw("table", "a"), Kw("fields", NewList("b"))) }, &dot)
+	self.Do(998, func() { Stmt(M(self, "assertIsInstance", dot, A(G("sqlglot.exp"), "Dot"))) })
 	self.Do(999, func() { self.AssertEqual(M(dot, "sql", "snowflake"), "a.$1.b") })
 	return nil
 }
@@ -1486,7 +1486,7 @@ func test_expressions_TestExprs_test_column_expression(self *Case, a Args) Value
 func test_expressions_TestExprs_test_text(self *Case, a Args) Value {
 	var column Value
 	_ = []Value{column}
-	self.Do(1002, func() { column = Call(G("sqlglot.parse_one"), "a.b.c.d.e") })
+	self.DoAssign(1002, func() { column = Call(G("sqlglot.parse_one"), "a.b.c.d.e") }, &column)
 	self.Do(1003, func() { self.AssertEqual(M(column, "text", "expression"), "e") })
 	self.Do(1004, func() { self.AssertEqual(M(column, "text", "y"), "") })
 	self.Do(1005, func() {
@@ -1513,12 +1513,12 @@ func test_expressions_TestExprs_test_alias(self *Case, a Args) Value {
 func test_expressions_TestExprs_test_alias_with_placeholder(self *Case, a Args) Value {
 	var expr, select_ Value
 	_ = []Value{expr, select_}
-	self.Do(1021, func() {
+	self.DoAssign(1021, func() {
 		expr = Call(G("sqlglot.parse_one"), "SELECT PARSE_JSON(col) AS :userInfo FROM t", Kw("dialect", "snowflake"))
-	})
-	self.Do(1022, func() { select_ = Item(A(expr, "selects"), 0) })
+	}, &expr)
+	self.DoAssign(1022, func() { select_ = Item(A(expr, "selects"), 0) }, &select_)
 	self.Do(1023, func() {
-		M(self, "assertIsInstance", M(A(select_, "args"), "get", "alias"), A(G("sqlglot.exp"), "Placeholder"))
+		Stmt(M(self, "assertIsInstance", M(A(select_, "args"), "get", "alias"), A(G("sqlglot.exp"), "Placeholder")))
 	})
 	self.Do(1024, func() { self.AssertEqual(A(select_, "alias"), "userInfo") })
 	self.Do(1025, func() { self.AssertEqual(A(select_, "alias_or_name"), "userInfo") })
@@ -1529,24 +1529,24 @@ func test_expressions_TestExprs_test_alias_with_placeholder(self *Case, a Args) 
 func test_expressions_TestExprs_test_unit(self *Case, a Args) Value {
 	var unit, week, abbreviated_unit, unnabreviated_unit, interval Value
 	_ = []Value{unit, week, abbreviated_unit, unnabreviated_unit, interval}
-	self.Do(1029, func() { unit = Call(G("sqlglot.parse_one"), "timestamp_trunc(current_timestamp, week(thursday))") })
-	self.Do(1030, func() { M(self, "assertIsNotNone", M(unit, "find", A(G("sqlglot.exp"), "CurrentTimestamp"))) })
-	self.Do(1031, func() { week = M(unit, "find", A(G("sqlglot.exp"), "Week")) })
+	self.DoAssign(1029, func() { unit = Call(G("sqlglot.parse_one"), "timestamp_trunc(current_timestamp, week(thursday))") }, &unit)
+	self.Do(1030, func() { Stmt(M(self, "assertIsNotNone", M(unit, "find", A(G("sqlglot.exp"), "CurrentTimestamp")))) })
+	self.DoAssign(1031, func() { week = M(unit, "find", A(G("sqlglot.exp"), "Week")) }, &week)
 	self.Do(1032, func() { self.AssertEqual(A(week, "this"), M(G("sqlglot.exp"), "var", "thursday")) })
 	for _, item_ := range Iter(M(A(A(G("sqlglot.exp"), "TimeUnit"), "UNABBREVIATED_UNIT_NAME"), "items")) {
 		Unpack(item_, &abbreviated_unit, &unnabreviated_unit)
-		self.Do(1035, func() { interval = Call(G("sqlglot.parse_one"), F("interval '500 ", FV{V: abbreviated_unit}, "'")) })
-		self.Do(1036, func() { M(self, "assertIsInstance", A(interval, "unit"), A(G("sqlglot.exp"), "Var")) })
+		self.DoAssign(1035, func() { interval = Call(G("sqlglot.parse_one"), F("interval '500 ", FV{V: abbreviated_unit}, "'")) }, &interval)
+		self.Do(1036, func() { Stmt(M(self, "assertIsInstance", A(interval, "unit"), A(G("sqlglot.exp"), "Var"))) })
 		self.Do(1037, func() { self.AssertEqual(A(A(interval, "unit"), "name"), unnabreviated_unit) })
 	}
 	return nil
 }
 
 func test_expressions_TestExprs_test_identifier(self *Case, a Args) Value {
-	self.Do(1040, func() { M(self, "assertTrue", A(M(G("sqlglot.exp"), "to_identifier", `"x"`), "quoted")) })
-	self.Do(1041, func() { M(self, "assertFalse", A(M(G("sqlglot.exp"), "to_identifier", "x"), "quoted")) })
-	self.Do(1042, func() { M(self, "assertTrue", A(M(G("sqlglot.exp"), "to_identifier", "foo "), "quoted")) })
-	self.Do(1043, func() { M(self, "assertFalse", A(M(G("sqlglot.exp"), "to_identifier", "_x"), "quoted")) })
+	self.Do(1040, func() { Stmt(M(self, "assertTrue", A(M(G("sqlglot.exp"), "to_identifier", `"x"`), "quoted"))) })
+	self.Do(1041, func() { Stmt(M(self, "assertFalse", A(M(G("sqlglot.exp"), "to_identifier", "x"), "quoted"))) })
+	self.Do(1042, func() { Stmt(M(self, "assertTrue", A(M(G("sqlglot.exp"), "to_identifier", "foo "), "quoted"))) })
+	self.Do(1043, func() { Stmt(M(self, "assertFalse", A(M(G("sqlglot.exp"), "to_identifier", "_x"), "quoted"))) })
 	return nil
 }
 
@@ -1574,50 +1574,28 @@ func test_expressions_TestExprs_test_properties_from_dict(self *Case, a Args) Va
 		self.AssertEqual(M(A(G("sqlglot.exp"), "Properties"), "from_dict", NewDict("FORMAT", "parquet", "PARTITIONED_BY", NewTuple(M(G("sqlglot.exp"), "to_identifier", "a"), M(G("sqlglot.exp"), "to_identifier", "b")), "custom", 1, "ENGINE", nil, "COLLATE", true)), M(G("sqlglot.exp"), "Properties", Kw("expressions", NewList(M(G("sqlglot.exp"), "FileFormatProperty", Kw("this", M(A(G("sqlglot.exp"), "Literal"), "string", "parquet"))), M(G("sqlglot.exp"), "PartitionedByProperty", Kw("this", M(G("sqlglot.exp"), "Tuple", Kw("expressions", NewList(M(G("sqlglot.exp"), "to_identifier", "a"), M(G("sqlglot.exp"), "to_identifier", "b")))))), M(G("sqlglot.exp"), "Property", Kw("this", M(A(G("sqlglot.exp"), "Literal"), "string", "custom")), Kw("value", M(A(G("sqlglot.exp"), "Literal"), "number", 1))), M(G("sqlglot.exp"), "EngineProperty", Kw("this", M(G("sqlglot.exp"), "null"))), M(G("sqlglot.exp"), "CollateProperty", Kw("this", M(G("sqlglot.exp"), "true")))))))
 	})
 	self.Do(1076, func() {
-		M(self, "assertRaises", G("ValueError"), A(A(G("sqlglot.exp"), "Properties"), "from_dict"), NewDict("FORMAT", G("object")))
+		Stmt(M(self, "assertRaises", G("ValueError"), A(A(G("sqlglot.exp"), "Properties"), "from_dict"), NewDict("FORMAT", G("object"))))
 	})
 	return nil
 }
 
 func test_expressions_TestExprs_test_convert(self *Case, a Args) Value {
-	var PointTuple_, value, expected Value
-	_ = []Value{PointTuple_, value, expected}
-	self.Do(1083, func() { PointTuple_ = Call(G("collections.namedtuple"), "Point", NewList("x", "y")) })
-	self.Do(1085, func() { NP("%s", "ClassDef: class PointClass: def __init__(self, x=0, y=0): self.x = x self.y = y") })
-	for _, item_ := range Iter(NewList(NewTuple(1, "1"), NewTuple("1", "'1'"), NewTuple(nil, "NULL"), NewTuple(true, "TRUE"), NewTuple(NewTuple(1, "2", nil), "(1, '2', NULL)"), NewTuple(NewList(1, "2", nil), "ARRAY(1, '2', NULL)"), NewTuple(NewDict("x", nil), "MAP(ARRAY('x'), ARRAY(NULL))"), NewTuple(M(G("datetime"), "datetime", 2022, 10, 1, 1, 1, 1, 1), "TIME_STR_TO_TIME('2022-10-01 01:01:01.000001')"), NewTuple(M(G("datetime"), "datetime", 2022, 10, 1, 1, 1, 1, Kw("tzinfo", A(A(G("datetime"), "timezone"), "utc"))), "TIME_STR_TO_TIME('2022-10-01 01:01:01+00:00', 'UTC')"), NewTuple(M(M(G("pytz"), "timezone", "America/Los_Angeles"), "localize", M(G("datetime"), "datetime", 2022, 10, 1, 1, 1, 1)), "TIME_STR_TO_TIME('2022-10-01 01:01:01-07:00', 'America/Los_Angeles')"), NewTuple(M(G("datetime"), "date", 2022, 10, 1), "DATE_STR_TO_DATE('2022-10-01')"), NewTuple(A(G("math"), "nan"), "NULL"), NewTuple(Bytes("\u0000\u0000\u0000\u0000\u0000\u0000\u0007Ó"), "2003"), NewTuple(Call(PointTuple_, 1, 2), "STRUCT(1 AS x, 2 AS y)"), NewTuple(Call(G("PointClass"), 1, 2), "STRUCT(1 AS x, 2 AS y)"))) {
-		Unpack(item_, &value, &expected)
-		self.SubTest(func() {
-			self.Do(1119, func() { self.AssertEqual(M(M(G("sqlglot.exp"), "convert", value), "sql"), expected) })
-		}, value)
-	}
-	self.Do(1121, func() {
-		self.AssertEqual(M(M(G("sqlglot.exp"), "convert", NewDict("test", "value")), "sql", Kw("dialect", "spark")), "MAP_FROM_ARRAYS(ARRAY('test'), ARRAY('value'))")
-	})
+	M(self, "skipTest", "python-only: converts namedtuples, plain objects and pytz datetimes; see TestConvertValue in exp/convert_test.go")
 	return nil
 }
 
 func test_expressions_TestExprs_test_convert_python39(self *Case, a Args) Value {
-	var value, expected Value
-	_ = []Value{value, expected}
-	if Truth(Not(Ge(A(G("sys"), "version_info"), NewTuple(3, 9)))) {
-		M(self, "skipTest", "zoneinfo only available from python 3.9+")
-	}
-	for _, item_ := range Iter(NewList(NewTuple(M(G("datetime"), "datetime", 2022, 10, 1, 1, 1, 1, Kw("tzinfo", M(G("zoneinfo"), "ZoneInfo", "America/Los_Angeles"))), "TIME_STR_TO_TIME('2022-10-01 01:01:01-07:00', 'America/Los_Angeles')"))) {
-		Unpack(item_, &value, &expected)
-		self.SubTest(func() {
-			self.Do(1139, func() { self.AssertEqual(M(M(G("sqlglot.exp"), "convert", value), "sql"), expected) })
-		}, value)
-	}
+	M(self, "skipTest", "python-only: converts zoneinfo datetimes; see TestConvertValue in exp/convert_test.go")
 	return nil
 }
 
 func test_expressions_TestExprs_test_comment_alias(self *Case, a Args) Value {
 	var sql, expression Value
 	_ = []Value{sql, expression}
-	self.Do(1142, func() {
+	self.DoAssign(1142, func() {
 		sql = "\n        SELECT\n            a,\n            b AS B,\n            c, /*comment*/\n            d AS D, -- another comment\n            CAST(x AS INT), -- yet another comment\n            y AND /* foo */ w AS E -- final comment\n        FROM foo\n        "
-	})
-	self.Do(1152, func() { expression = Call(G("sqlglot.parse_one"), sql) })
+	}, &sql)
+	self.DoAssign(1152, func() { expression = Call(G("sqlglot.parse_one"), sql) }, &expression)
 	self.Do(1153, func() {
 		self.AssertEqual(func() Value {
 			var e Value
@@ -1669,17 +1647,17 @@ func test_expressions_TestExprs_test_to_interval(self *Case, a Args) Value {
 func test_expressions_TestExprs_test_to_table(self *Case, a Args) Value {
 	var table_only, db_and_table, catalog_db_and_table, table_only_unsafe_identifier Value
 	_ = []Value{table_only, db_and_table, catalog_db_and_table, table_only_unsafe_identifier}
-	self.Do(1202, func() { table_only = M(G("sqlglot.exp"), "to_table", "table_name") })
+	self.DoAssign(1202, func() { table_only = M(G("sqlglot.exp"), "to_table", "table_name") }, &table_only)
 	self.Do(1203, func() { self.AssertEqual(A(table_only, "name"), "table_name") })
-	self.Do(1204, func() { M(self, "assertIsNone", M(A(table_only, "args"), "get", "db")) })
-	self.Do(1205, func() { M(self, "assertIsNone", M(A(table_only, "args"), "get", "catalog")) })
-	self.Do(1207, func() { db_and_table = M(G("sqlglot.exp"), "to_table", "db.table_name") })
+	self.Do(1204, func() { Stmt(M(self, "assertIsNone", M(A(table_only, "args"), "get", "db"))) })
+	self.Do(1205, func() { Stmt(M(self, "assertIsNone", M(A(table_only, "args"), "get", "catalog"))) })
+	self.DoAssign(1207, func() { db_and_table = M(G("sqlglot.exp"), "to_table", "db.table_name") }, &db_and_table)
 	self.Do(1208, func() { self.AssertEqual(A(db_and_table, "name"), "table_name") })
 	self.Do(1209, func() {
 		self.AssertEqual(M(A(db_and_table, "args"), "get", "db"), M(G("sqlglot.exp"), "to_identifier", "db"))
 	})
-	self.Do(1210, func() { M(self, "assertIsNone", M(A(db_and_table, "args"), "get", "catalog")) })
-	self.Do(1212, func() { catalog_db_and_table = M(G("sqlglot.exp"), "to_table", "catalog.db.table_name") })
+	self.Do(1210, func() { Stmt(M(self, "assertIsNone", M(A(db_and_table, "args"), "get", "catalog"))) })
+	self.DoAssign(1212, func() { catalog_db_and_table = M(G("sqlglot.exp"), "to_table", "catalog.db.table_name") }, &catalog_db_and_table)
 	self.Do(1213, func() { self.AssertEqual(A(catalog_db_and_table, "name"), "table_name") })
 	self.Do(1214, func() {
 		self.AssertEqual(M(A(catalog_db_and_table, "args"), "get", "db"), M(G("sqlglot.exp"), "to_identifier", "db"))
@@ -1687,7 +1665,7 @@ func test_expressions_TestExprs_test_to_table(self *Case, a Args) Value {
 	self.Do(1215, func() {
 		self.AssertEqual(M(A(catalog_db_and_table, "args"), "get", "catalog"), M(G("sqlglot.exp"), "to_identifier", "catalog"))
 	})
-	self.Do(1217, func() { table_only_unsafe_identifier = M(G("sqlglot.exp"), "to_table", "3e") })
+	self.DoAssign(1217, func() { table_only_unsafe_identifier = M(G("sqlglot.exp"), "to_table", "3e") }, &table_only_unsafe_identifier)
 	self.Do(1218, func() { self.AssertEqual(M(table_only_unsafe_identifier, "sql"), `"3e"`) })
 	return nil
 }
@@ -1695,10 +1673,10 @@ func test_expressions_TestExprs_test_to_table(self *Case, a Args) Value {
 func test_expressions_TestExprs_test_to_column(self *Case, a Args) Value {
 	var column_only, table_and_column Value
 	_ = []Value{column_only, table_and_column}
-	self.Do(1221, func() { column_only = M(G("sqlglot.exp"), "to_column", "column_name") })
+	self.DoAssign(1221, func() { column_only = M(G("sqlglot.exp"), "to_column", "column_name") }, &column_only)
 	self.Do(1222, func() { self.AssertEqual(A(column_only, "name"), "column_name") })
-	self.Do(1223, func() { M(self, "assertIsNone", M(A(column_only, "args"), "get", "table")) })
-	self.Do(1224, func() { table_and_column = M(G("sqlglot.exp"), "to_column", "table_name.column_name") })
+	self.Do(1223, func() { Stmt(M(self, "assertIsNone", M(A(column_only, "args"), "get", "table"))) })
+	self.DoAssign(1224, func() { table_and_column = M(G("sqlglot.exp"), "to_column", "table_name.column_name") }, &table_and_column)
 	self.Do(1225, func() { self.AssertEqual(A(table_and_column, "name"), "column_name") })
 	self.Do(1226, func() {
 		self.AssertEqual(M(A(table_and_column, "args"), "get", "table"), M(G("sqlglot.exp"), "to_identifier", "table_name"))
@@ -1719,8 +1697,8 @@ func test_expressions_TestExprs_test_to_column(self *Case, a Args) Value {
 func test_expressions_TestExprs_test_union(self *Case, a Args) Value {
 	var expression Value
 	_ = []Value{expression}
-	self.Do(1237, func() { expression = Call(G("sqlglot.parse_one"), "SELECT cola, colb UNION SELECT colx, coly") })
-	self.Do(1238, func() { M(self, "assertIsInstance", expression, A(G("sqlglot.exp"), "Union")) })
+	self.DoAssign(1237, func() { expression = Call(G("sqlglot.parse_one"), "SELECT cola, colb UNION SELECT colx, coly") }, &expression)
+	self.Do(1238, func() { Stmt(M(self, "assertIsInstance", expression, A(G("sqlglot.exp"), "Union"))) })
 	self.Do(1239, func() { self.AssertEqual(A(expression, "named_selects"), NewList("cola", "colb")) })
 	self.Do(1240, func() {
 		self.AssertEqual(A(expression, "selects"), NewList(M(G("sqlglot.exp"), "Column", Kw("this", M(G("sqlglot.exp"), "to_identifier", "cola"))), M(G("sqlglot.exp"), "Column", Kw("this", M(G("sqlglot.exp"), "to_identifier", "colb")))))
@@ -1738,7 +1716,7 @@ func test_expressions_TestExprs_test_values(self *Case, a Args) Value {
 	self.Do(1261, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			M(G("sqlglot.exp"), "values", NewList(NewTuple(1, 2), NewTuple(3, 4)), Kw("columns", NewList("a")))
+			Stmt(M(G("sqlglot.exp"), "values", NewList(NewTuple(1, 2), NewTuple(3, 4)), Kw("columns", NewList("a"))))
 		}, G("ValueError"))
 	})
 	return nil
@@ -1747,23 +1725,23 @@ func test_expressions_TestExprs_test_values(self *Case, a Args) Value {
 func test_expressions_TestExprs_test_ref_type_builder(self *Case, a Args) Value {
 	var target, datatype Value
 	_ = []Value{target, datatype}
-	self.Do(1265, func() {
+	self.DoAssign(1265, func() {
 		target = M(G("sqlglot.exp"), "Table", Kw("this", M(G("sqlglot.exp"), "Identifier", Kw("this", "Customer"), Kw("quoted", true))), Kw("db", M(G("sqlglot.exp"), "Identifier", Kw("this", "Sales"), Kw("quoted", true))))
-	})
-	self.Do(1269, func() {
+	}, &target)
+	self.DoAssign(1269, func() {
 		datatype = M(A(A(G("sqlglot.exp"), "DType"), "REF"), "into_expr", Kw("expressions", NewList(target)))
-	})
+	}, &datatype)
 	self.Do(1271, func() {
 		self.AssertEqual(datatype, M(A(G("sqlglot.exp"), "DataType"), "build", `REF("Sales"."Customer")`))
 	})
 	self.Do(1272, func() { self.AssertEqual(M(datatype, "sql", "snowflake"), `REF("Sales"."Customer")`) })
 	self.Do(1273, func() { self.AssertEqual(M(datatype, "sql", "bigquery"), "REF(`Sales`.`Customer`)") })
 	self.Do(1274, func() { self.AssertEqual(M(datatype, "sql", "tsql"), "REF([Sales].[Customer])") })
-	self.Do(1275, func() { M(self, "assertTrue", M(datatype, "is_type", A(A(G("sqlglot.exp"), "DType"), "REF"))) })
-	self.Do(1276, func() { M(self, "assertTrue", M(datatype, "is_type", `REF("Sales"."Customer")`)) })
-	self.Do(1277, func() { M(self, "assertFalse", M(datatype, "is_type", `REF("Sales"."Employee")`)) })
+	self.Do(1275, func() { Stmt(M(self, "assertTrue", M(datatype, "is_type", A(A(G("sqlglot.exp"), "DType"), "REF")))) })
+	self.Do(1276, func() { Stmt(M(self, "assertTrue", M(datatype, "is_type", `REF("Sales"."Customer")`))) })
+	self.Do(1277, func() { Stmt(M(self, "assertFalse", M(datatype, "is_type", `REF("Sales"."Employee")`))) })
 	self.Do(1278, func() {
-		M(self, "assertFalse", M(datatype, "is_type", A(A(G("sqlglot.exp"), "DType"), "OBJECT"), A(A(G("sqlglot.exp"), "DType"), "STRUCT")))
+		Stmt(M(self, "assertFalse", M(datatype, "is_type", A(A(G("sqlglot.exp"), "DType"), "OBJECT"), A(A(G("sqlglot.exp"), "DType"), "STRUCT"))))
 	})
 	self.Do(1279, func() { self.AssertEqual(M(A(G("sqlglot.exp"), "Expr"), "load", M(datatype, "dump")), datatype) })
 	return nil
@@ -1880,7 +1858,7 @@ func test_expressions_TestExprs_test_data_type_builder(self *Case, a Args) Value
 	self.Do(1336, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			M(A(G("sqlglot.exp"), "DataType"), "build", "varchar(")
+			Stmt(M(A(G("sqlglot.exp"), "DataType"), "build", "varchar("))
 		}, G("sqlglot.ParseError"))
 	})
 	return nil
@@ -1895,27 +1873,27 @@ func test_expressions_TestExprs_test_rename_table(self *Case, a Args) Value {
 
 func test_expressions_TestExprs_test_to_py(self *Case, a Args) Value {
 	self.Do(1346, func() { self.AssertEqual(M(Call(G("sqlglot.parse_one"), "- -1"), "to_py"), 1) })
-	self.Do(1347, func() { M(self, "assertIs", M(Call(G("sqlglot.parse_one"), "TRUE"), "to_py"), true) })
-	self.Do(1348, func() { M(self, "assertIs", M(Call(G("sqlglot.parse_one"), "1"), "to_py"), 1) })
-	self.Do(1349, func() { M(self, "assertIs", M(Call(G("sqlglot.parse_one"), "'1'"), "to_py"), "1") })
-	self.Do(1350, func() { M(self, "assertIs", M(Call(G("sqlglot.parse_one"), "null"), "to_py"), nil) })
+	self.Do(1347, func() { Stmt(M(self, "assertIs", M(Call(G("sqlglot.parse_one"), "TRUE"), "to_py"), true)) })
+	self.Do(1348, func() { Stmt(M(self, "assertIs", M(Call(G("sqlglot.parse_one"), "1"), "to_py"), 1)) })
+	self.Do(1349, func() { Stmt(M(self, "assertIs", M(Call(G("sqlglot.parse_one"), "'1'"), "to_py"), "1")) })
+	self.Do(1350, func() { Stmt(M(self, "assertIs", M(Call(G("sqlglot.parse_one"), "null"), "to_py"), nil)) })
 	self.Do(1352, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			M(Call(G("sqlglot.parse_one"), "x"), "to_py")
+			Stmt(M(Call(G("sqlglot.parse_one"), "x"), "to_py"))
 		}, G("ValueError"))
 	})
 	self.Do(1355, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			M(M(A(G("sqlglot.exp"), "Literal"), "number", "0.1.2"), "to_py")
+			Stmt(M(M(A(G("sqlglot.exp"), "Literal"), "number", "0.1.2"), "to_py"))
 		}, G("ValueError"))
 	})
 	return nil
 }
 
 func test_expressions_TestExprs_test_is_int(self *Case, a Args) Value {
-	self.Do(1359, func() { M(self, "assertTrue", A(Call(G("sqlglot.parse_one"), "- -1"), "is_int")) })
+	self.Do(1359, func() { Stmt(M(self, "assertTrue", A(Call(G("sqlglot.parse_one"), "- -1"), "is_int"))) })
 	return nil
 }
 
@@ -1945,14 +1923,14 @@ func test_expressions_TestExprs_test_is_star(self *Case, a Args) Value {
 	self.Do(1376, func() {
 		Assert(A(Call(G("sqlglot.parse_one"), "SELECT 1 AS x UNION SELECT 1 AS x UNION SELECT * FROM foo"), "is_star"))
 	})
-	self.Do(1379, func() { deep_union = M(G("sqlglot.exp"), "select", "1") })
-	self.Do(1380, func() { deep_subquery = M(G("sqlglot.exp"), "select", "1") })
+	self.DoAssign(1379, func() { deep_union = M(G("sqlglot.exp"), "select", "1") }, &deep_union)
+	self.DoAssign(1380, func() { deep_subquery = M(G("sqlglot.exp"), "select", "1") }, &deep_subquery)
 	for _, item_ := range Iter(Call(G("range"), 5000)) {
 		underscore1 = item_
-		self.Do(1382, func() {
+		self.DoAssign(1382, func() {
 			deep_union = M(G("sqlglot.exp"), "Union", Kw("this", deep_union), Kw("expression", M(G("sqlglot.exp"), "select", "1")))
-		})
-		self.Do(1383, func() { deep_subquery = M(G("sqlglot.exp"), "Subquery", Kw("this", deep_subquery)) })
+		}, &deep_union)
+		self.DoAssign(1383, func() { deep_subquery = M(G("sqlglot.exp"), "Subquery", Kw("this", deep_subquery)) }, &deep_subquery)
 	}
 	self.Do(1385, func() { Assert(Not(A(deep_union, "is_star"))) })
 	self.Do(1386, func() { Assert(Not(A(deep_subquery, "is_star"))) })
@@ -1968,8 +1946,8 @@ func test_expressions_TestExprs_test_is_star(self *Case, a Args) Value {
 func test_expressions_TestExprs_test_set_metadata(self *Case, a Args) Value {
 	var ast Value
 	_ = []Value{ast}
-	self.Do(1391, func() { ast = Call(G("sqlglot.parse_one"), "SELECT foo.col FROM foo") })
-	self.Do(1393, func() { M(self, "assertIsNone", A(ast, "_meta")) })
+	self.DoAssign(1391, func() { ast = Call(G("sqlglot.parse_one"), "SELECT foo.col FROM foo") }, &ast)
+	self.Do(1393, func() { Stmt(M(self, "assertIsNone", A(ast, "_meta"))) })
 	self.Do(1396, func() { self.AssertEqual(A(ast, "meta"), NewDict()) })
 	self.Do(1397, func() { self.AssertEqual(A(ast, "_meta"), NewDict()) })
 	self.Do(1399, func() { SetItem(A(ast, "meta"), "some_meta_key", "some_meta_value") })
@@ -1983,63 +1961,63 @@ func test_expressions_TestExprs_test_set_metadata(self *Case, a Args) Value {
 func test_expressions_TestExprs_test_unnest(self *Case, a Args) Value {
 	var ast, second_subquery, innermost_subquery Value
 	_ = []Value{ast, second_subquery, innermost_subquery}
-	self.Do(1407, func() { ast = Call(G("sqlglot.parse_one"), "SELECT (((1)))") })
+	self.DoAssign(1407, func() { ast = Call(G("sqlglot.parse_one"), "SELECT (((1)))") }, &ast)
 	self.Do(1408, func() {
-		M(self, "assertIs", M(Item(A(ast, "selects"), 0), "unnest"), M(ast, "find", A(G("sqlglot.exp"), "Literal")))
+		Stmt(M(self, "assertIs", M(Item(A(ast, "selects"), 0), "unnest"), M(ast, "find", A(G("sqlglot.exp"), "Literal"))))
 	})
-	self.Do(1410, func() { ast = Call(G("sqlglot.parse_one"), "SELECT * FROM (((SELECT * FROM t)))") })
+	self.DoAssign(1410, func() { ast = Call(G("sqlglot.parse_one"), "SELECT * FROM (((SELECT * FROM t)))") }, &ast)
 	self.Do(1411, func() {
-		M(self, "assertIs", M(A(Item(A(ast, "args"), "from_"), "this"), "unnest"), Item(Call(G("list"), M(ast, "find_all", A(G("sqlglot.exp"), "Select"))), 1))
+		Stmt(M(self, "assertIs", M(A(Item(A(ast, "args"), "from_"), "this"), "unnest"), Item(Call(G("list"), M(ast, "find_all", A(G("sqlglot.exp"), "Select"))), 1)))
 	})
-	self.Do(1413, func() { ast = Call(G("sqlglot.parse_one"), "SELECT * FROM ((((SELECT * FROM t))) AS foo)") })
-	self.Do(1414, func() { second_subquery = A(A(Item(A(ast, "args"), "from_"), "this"), "this") })
-	self.Do(1415, func() {
+	self.DoAssign(1413, func() { ast = Call(G("sqlglot.parse_one"), "SELECT * FROM ((((SELECT * FROM t))) AS foo)") }, &ast)
+	self.DoAssign(1414, func() { second_subquery = A(A(Item(A(ast, "args"), "from_"), "this"), "this") }, &second_subquery)
+	self.DoAssign(1415, func() {
 		innermost_subquery = A(Item(Call(G("list"), M(ast, "find_all", A(G("sqlglot.exp"), "Select"))), 1), "parent")
-	})
-	self.Do(1416, func() { M(self, "assertIs", second_subquery, M(innermost_subquery, "unwrap")) })
+	}, &innermost_subquery)
+	self.Do(1416, func() { Stmt(M(self, "assertIs", second_subquery, M(innermost_subquery, "unwrap"))) })
 	return nil
 }
 
 func test_expressions_TestExprs_test_is_type(self *Case, a Args) Value {
 	var ast, dtype Value
 	_ = []Value{ast, dtype}
-	self.Do(1419, func() { ast = Call(G("sqlglot.parse_one"), "CAST(x AS VARCHAR)") })
+	self.DoAssign(1419, func() { ast = Call(G("sqlglot.parse_one"), "CAST(x AS VARCHAR)") }, &ast)
 	self.Do(1420, func() { Assert(M(ast, "is_type", "VARCHAR")) })
 	self.Do(1421, func() { Assert(Not(M(ast, "is_type", "VARCHAR(5)"))) })
 	self.Do(1422, func() { Assert(Not(M(ast, "is_type", "FLOAT"))) })
-	self.Do(1424, func() { ast = Call(G("sqlglot.parse_one"), "CAST(x AS VARCHAR(5))") })
+	self.DoAssign(1424, func() { ast = Call(G("sqlglot.parse_one"), "CAST(x AS VARCHAR(5))") }, &ast)
 	self.Do(1425, func() { Assert(M(ast, "is_type", "VARCHAR")) })
 	self.Do(1426, func() { Assert(M(ast, "is_type", "VARCHAR(5)")) })
 	self.Do(1427, func() { Assert(Not(M(ast, "is_type", "VARCHAR(4)"))) })
 	self.Do(1428, func() { Assert(Not(M(ast, "is_type", "FLOAT"))) })
-	self.Do(1430, func() { ast = Call(G("sqlglot.parse_one"), "CAST(x AS ARRAY<INT>)") })
+	self.DoAssign(1430, func() { ast = Call(G("sqlglot.parse_one"), "CAST(x AS ARRAY<INT>)") }, &ast)
 	self.Do(1431, func() { Assert(M(ast, "is_type", "ARRAY")) })
 	self.Do(1432, func() { Assert(M(ast, "is_type", "ARRAY<INT>")) })
 	self.Do(1433, func() { Assert(Not(M(ast, "is_type", "ARRAY<FLOAT>"))) })
 	self.Do(1434, func() { Assert(Not(M(ast, "is_type", "INT"))) })
-	self.Do(1436, func() { ast = Call(G("sqlglot.parse_one"), "CAST(x AS ARRAY)") })
+	self.DoAssign(1436, func() { ast = Call(G("sqlglot.parse_one"), "CAST(x AS ARRAY)") }, &ast)
 	self.Do(1437, func() { Assert(M(ast, "is_type", "ARRAY")) })
 	self.Do(1438, func() { Assert(Not(M(ast, "is_type", "ARRAY<INT>"))) })
 	self.Do(1439, func() { Assert(Not(M(ast, "is_type", "ARRAY<FLOAT>"))) })
 	self.Do(1440, func() { Assert(Not(M(ast, "is_type", "INT"))) })
-	self.Do(1442, func() { ast = Call(G("sqlglot.parse_one"), "CAST(x AS STRUCT<a INT, b FLOAT>)") })
+	self.DoAssign(1442, func() { ast = Call(G("sqlglot.parse_one"), "CAST(x AS STRUCT<a INT, b FLOAT>)") }, &ast)
 	self.Do(1443, func() { Assert(M(ast, "is_type", "STRUCT")) })
 	self.Do(1444, func() { Assert(M(ast, "is_type", "STRUCT<a INT, b FLOAT>")) })
 	self.Do(1445, func() { Assert(Not(M(ast, "is_type", "STRUCT<a VARCHAR, b INT>"))) })
-	self.Do(1447, func() { dtype = M(A(G("sqlglot.exp"), "DataType"), "build", "foo", Kw("udt", true)) })
+	self.DoAssign(1447, func() { dtype = M(A(G("sqlglot.exp"), "DataType"), "build", "foo", Kw("udt", true)) }, &dtype)
 	self.Do(1448, func() { Assert(M(dtype, "is_type", "foo")) })
 	self.Do(1449, func() { Assert(Not(M(dtype, "is_type", "bar"))) })
-	self.Do(1451, func() { dtype = M(A(G("sqlglot.exp"), "DataType"), "build", "a.b.c", Kw("udt", true)) })
+	self.DoAssign(1451, func() { dtype = M(A(G("sqlglot.exp"), "DataType"), "build", "a.b.c", Kw("udt", true)) }, &dtype)
 	self.Do(1452, func() { Assert(M(dtype, "is_type", "a.b.c")) })
-	self.Do(1454, func() {
+	self.DoAssign(1454, func() {
 		dtype = M(A(G("sqlglot.exp"), "DataType"), "build", "Nullable(Int32)", Kw("dialect", "clickhouse"))
-	})
+	}, &dtype)
 	self.Do(1455, func() { Assert(M(dtype, "is_type", "int")) })
 	self.Do(1456, func() { Assert(Not(M(dtype, "is_type", "int", Kw("check_nullable", true)))) })
 	self.Do(1458, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			M(A(G("sqlglot.exp"), "DataType"), "build", "foo")
+			Stmt(M(A(G("sqlglot.exp"), "DataType"), "build", "foo"))
 		}, G("sqlglot.ParseError"))
 	})
 	return nil
@@ -2048,7 +2026,7 @@ func test_expressions_TestExprs_test_is_type(self *Case, a Args) Value {
 func test_expressions_TestExprs_test_set_meta(self *Case, a Args) Value {
 	var query Value
 	_ = []Value{query}
-	self.Do(1462, func() { query = Call(G("sqlglot.parse_one"), "SELECT * FROM foo /* sqlglot.meta x = 1, y = a, z */") })
+	self.DoAssign(1462, func() { query = Call(G("sqlglot.parse_one"), "SELECT * FROM foo /* sqlglot.meta x = 1, y = a, z */") }, &query)
 	self.Do(1463, func() {
 		self.AssertEqual(A(M(query, "find", A(G("sqlglot.exp"), "Table")), "meta"), NewDict("x", true, "y", "a", "z", true))
 	})
@@ -2057,11 +2035,11 @@ func test_expressions_TestExprs_test_set_meta(self *Case, a Args) Value {
 }
 
 func test_expressions_TestExprs_test_assert_is(self *Case, a Args) Value {
-	self.Do(1467, func() { M(Call(G("sqlglot.parse_one"), "x"), "assert_is", A(G("sqlglot.exp"), "Column")) })
+	self.Do(1467, func() { Stmt(M(Call(G("sqlglot.parse_one"), "x"), "assert_is", A(G("sqlglot.exp"), "Column"))) })
 	self.Do(1469, func() {
 		self.AssertRaisesRegex(func(cm_ Value) {
 			_ = cm_
-			M(Call(G("sqlglot.parse_one"), "x"), "assert_is", A(G("sqlglot.exp"), "Identifier"))
+			Stmt(M(Call(G("sqlglot.parse_one"), "x"), "assert_is", A(G("sqlglot.exp"), "Identifier")))
 		}, G("AssertionError"), `x is not <class 'sqlglot.expressions.core.Identifier'>\.`)
 	})
 	return nil
@@ -2077,23 +2055,23 @@ func test_expressions_TestExprs_test_parse_identifier(self *Case, a Args) Value 
 func test_expressions_TestExprs_test_convert_datetime_time(self *Case, a Args) Value {
 	var time_obj, result, time_with_microseconds, midnight, noon Value
 	_ = []Value{time_obj, result, time_with_microseconds, midnight, noon}
-	self.Do(1479, func() { time_obj = M(G("datetime"), "time", 14, 30, 45) })
-	self.Do(1480, func() { result = M(G("sqlglot.exp"), "convert", time_obj) })
-	self.Do(1482, func() { M(self, "assertIsInstance", result, A(G("sqlglot.exp"), "TsOrDsToTime")) })
-	self.Do(1483, func() { M(self, "assertIsInstance", A(result, "this"), A(G("sqlglot.exp"), "Literal")) })
+	self.DoAssign(1479, func() { time_obj = M(G("datetime"), "time", 14, 30, 45) }, &time_obj)
+	self.DoAssign(1480, func() { result = M(G("sqlglot.exp"), "convert", time_obj) }, &result)
+	self.Do(1482, func() { Stmt(M(self, "assertIsInstance", result, A(G("sqlglot.exp"), "TsOrDsToTime"))) })
+	self.Do(1483, func() { Stmt(M(self, "assertIsInstance", A(result, "this"), A(G("sqlglot.exp"), "Literal"))) })
 	self.Do(1484, func() { self.AssertEqual(M(result, "sql"), "CAST('14:30:45' AS TIME)") })
-	self.Do(1485, func() { M(self, "assertTrue", A(A(result, "this"), "is_string")) })
-	self.Do(1488, func() { time_with_microseconds = M(G("datetime"), "time", 9, 15, 30, 123456) })
-	self.Do(1489, func() { result = M(G("sqlglot.exp"), "convert", time_with_microseconds) })
-	self.Do(1491, func() { M(self, "assertIsInstance", result, A(G("sqlglot.exp"), "TsOrDsToTime")) })
+	self.Do(1485, func() { Stmt(M(self, "assertTrue", A(A(result, "this"), "is_string"))) })
+	self.DoAssign(1488, func() { time_with_microseconds = M(G("datetime"), "time", 9, 15, 30, 123456) }, &time_with_microseconds)
+	self.DoAssign(1489, func() { result = M(G("sqlglot.exp"), "convert", time_with_microseconds) }, &result)
+	self.Do(1491, func() { Stmt(M(self, "assertIsInstance", result, A(G("sqlglot.exp"), "TsOrDsToTime"))) })
 	self.Do(1492, func() { self.AssertEqual(M(result, "sql"), "CAST('09:15:30.123456' AS TIME)") })
-	self.Do(1495, func() { midnight = M(G("datetime"), "time", 0, 0, 0) })
-	self.Do(1496, func() { result = M(G("sqlglot.exp"), "convert", midnight) })
-	self.Do(1498, func() { M(self, "assertIsInstance", result, A(G("sqlglot.exp"), "TsOrDsToTime")) })
+	self.DoAssign(1495, func() { midnight = M(G("datetime"), "time", 0, 0, 0) }, &midnight)
+	self.DoAssign(1496, func() { result = M(G("sqlglot.exp"), "convert", midnight) }, &result)
+	self.Do(1498, func() { Stmt(M(self, "assertIsInstance", result, A(G("sqlglot.exp"), "TsOrDsToTime"))) })
 	self.Do(1499, func() { self.AssertEqual(M(result, "sql"), "CAST('00:00:00' AS TIME)") })
-	self.Do(1502, func() { noon = M(G("datetime"), "time", 12, 0, 0) })
-	self.Do(1503, func() { result = M(G("sqlglot.exp"), "convert", noon) })
-	self.Do(1505, func() { M(self, "assertIsInstance", result, A(G("sqlglot.exp"), "TsOrDsToTime")) })
+	self.DoAssign(1502, func() { noon = M(G("datetime"), "time", 12, 0, 0) }, &noon)
+	self.DoAssign(1503, func() { result = M(G("sqlglot.exp"), "convert", noon) }, &result)
+	self.Do(1505, func() { Stmt(M(self, "assertIsInstance", result, A(G("sqlglot.exp"), "TsOrDsToTime"))) })
 	self.Do(1506, func() { self.AssertEqual(M(result, "sql"), "CAST('12:00:00' AS TIME)") })
 	return nil
 }
@@ -2101,7 +2079,7 @@ func test_expressions_TestExprs_test_convert_datetime_time(self *Case, a Args) V
 func test_expressions_TestExprs_test_hash_large_ast(self *Case, a Args) Value {
 	var expr Value
 	_ = []Value{expr}
-	self.Do(1509, func() { expr = Call(G("sqlglot.parse_one"), Add(Mul("SELECT 1 UNION ALL ", 3000), "SELECT 1")) })
+	self.DoAssign(1509, func() { expr = Call(G("sqlglot.parse_one"), Add(Mul("SELECT 1 UNION ALL ", 3000), "SELECT 1")) }, &expr)
 	self.Do(1510, func() { Assert(Eq(expr, expr)) })
 	return nil
 }
@@ -2112,22 +2090,22 @@ func test_expressions_TestExprs_test_literal_number(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewTuple(1, -1.1, 1.1, 0, "-1", "1", "1.1", "-1.1", "1e6", "inf", "binary_double_nan")) {
 		number = item_
 		self.SubTest(func() {
-			self.Do(1527, func() { literal = M(A(G("sqlglot.exp"), "Literal"), "number", number) })
-			self.Do(1529, func() { M(self, "assertTrue", A(literal, "is_number")) })
+			self.DoAssign(1527, func() { literal = M(A(G("sqlglot.exp"), "Literal"), "number", number) }, &literal)
+			self.Do(1529, func() { Stmt(M(self, "assertTrue", A(literal, "is_number"))) })
 			if Truth(IsInstance(number, G("str"))) {
-				self.Do(1532, func() { is_negative = M(number, "startswith", "-") })
-				self.Do(1533, func() { expected_this = M(number, "lstrip", "-") })
+				self.DoAssign(1532, func() { is_negative = M(number, "startswith", "-") }, &is_negative)
+				self.DoAssign(1533, func() { expected_this = M(number, "lstrip", "-") }, &expected_this)
 			} else {
-				self.Do(1535, func() { is_negative = Lt(number, 0) })
-				self.Do(1536, func() { expected_this = Str(Call(G("abs"), number)) })
+				self.DoAssign(1535, func() { is_negative = Lt(number, 0) }, &is_negative)
+				self.DoAssign(1536, func() { expected_this = Str(Call(G("abs"), number)) }, &expected_this)
 			}
 			if Truth(is_negative) {
-				self.Do(1539, func() { M(self, "assertIsInstance", literal, A(G("sqlglot.exp"), "Neg")) })
-				self.Do(1540, func() { M(self, "assertIsInstance", A(literal, "this"), A(G("sqlglot.exp"), "Literal")) })
-				self.Do(1541, func() { this = A(A(literal, "this"), "this") })
+				self.Do(1539, func() { Stmt(M(self, "assertIsInstance", literal, A(G("sqlglot.exp"), "Neg"))) })
+				self.Do(1540, func() { Stmt(M(self, "assertIsInstance", A(literal, "this"), A(G("sqlglot.exp"), "Literal"))) })
+				self.DoAssign(1541, func() { this = A(A(literal, "this"), "this") }, &this)
 			} else {
-				self.Do(1543, func() { M(self, "assertIsInstance", literal, A(G("sqlglot.exp"), "Literal")) })
-				self.Do(1544, func() { this = A(literal, "this") })
+				self.Do(1543, func() { Stmt(M(self, "assertIsInstance", literal, A(G("sqlglot.exp"), "Literal"))) })
+				self.DoAssign(1544, func() { this = A(literal, "this") }, &this)
 			}
 			self.Do(1546, func() { self.AssertEqual(this, expected_this) })
 		}, F("Test Literal number method for: ", FV{V: Repr(number)}))
@@ -2138,10 +2116,10 @@ func test_expressions_TestExprs_test_literal_number(self *Case, a Args) Value {
 func test_expressions_TestExprs_test_update_positions_empty_meta(self *Case, a Args) Value {
 	var expr1, expr2 Value
 	_ = []Value{expr1, expr2}
-	self.Do(1549, func() { expr1 = M(G("sqlglot.exp"), "Column", Kw("this", "a")) })
-	self.Do(1550, func() { expr2 = M(G("sqlglot.exp"), "Column", Kw("this", "b")) })
-	self.Do(1551, func() { M(A(expr2, "meta"), "clear") })
-	self.Do(1553, func() { M(expr1, "update_positions", expr2) })
+	self.DoAssign(1549, func() { expr1 = M(G("sqlglot.exp"), "Column", Kw("this", "a")) }, &expr1)
+	self.DoAssign(1550, func() { expr2 = M(G("sqlglot.exp"), "Column", Kw("this", "b")) }, &expr2)
+	self.Do(1551, func() { Stmt(M(A(expr2, "meta"), "clear")) })
+	self.Do(1553, func() { Stmt(M(expr1, "update_positions", expr2)) })
 	self.Do(1554, func() { Assert(Eq(A(expr1, "meta"), NewDict())) })
 	return nil
 }
@@ -2170,8 +2148,8 @@ func test_expressions_TestExprs_test_pipe_and_apply(self *Case, a Args) Value {
 			return Call(add_val, expr, val, Kw("squared", squared))
 		})
 	})
-	self.Do(1564, func() { col = M(G("sqlglot.exp"), "column", "age") })
-	self.Do(1565, func() { added = Call(add_val, col, 5, Kw("squared", true)) })
+	self.DoAssign(1564, func() { col = M(G("sqlglot.exp"), "column", "age") }, &col)
+	self.DoAssign(1565, func() { added = Call(add_val, col, 5, Kw("squared", true)) }, &added)
 	self.Do(1567, func() {
 		self.AssertEqual(col, M(col, "apply", Lambda(func(args ...Value) Value {
 			var x Value = nil

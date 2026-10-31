@@ -181,6 +181,9 @@ func parseOpts(a Args, from int) sqlglot.ParserOptions {
 	if v, ok := a.Kwarg("max_errors"); ok {
 		o.MaxErrors = mustInt(v)
 	}
+	if v, ok := a.Kwarg("max_nodes"); ok {
+		o.MaxNodes = mustInt(v)
+	}
 	return o
 }
 
@@ -276,9 +279,7 @@ func init() {
 	m["expressions"] = expModule
 	m["Dialect"] = dialectClassValue
 	m["Dialects"] = dialectsEnum{}
-	m["ErrorLevel"] = &Module{Name: "ErrorLevel", Attrs: map[string]Value{
-		"IGNORE": errs.Ignore, "WARN": errs.Warn, "RAISE": errs.Raise, "IMMEDIATE": errs.Immediate,
-	}}
+	m["ErrorLevel"] = errorLevelEnum{}
 	for _, c := range []*ExcClass{ParseError, TokenError, UnsupportedError, OptimizeError, SchemaError, ExecuteError, SqlglotError} {
 		m[c.Name] = c
 	}
@@ -882,3 +883,27 @@ var jsonpathParse = Func("parse", func(a Args) Value {
 		return e
 	})
 })
+
+// errorLevelEnum is the ErrorLevel enum.
+type errorLevelEnum struct{}
+
+var errorLevels = []errs.ErrorLevel{errs.Ignore, errs.Warn, errs.Raise, errs.Immediate}
+
+// PyAttr implements Attrer.
+func (errorLevelEnum) PyAttr(name string) (Value, bool) {
+	for _, l := range errorLevels {
+		if l.String() == name {
+			return l, true
+		}
+	}
+	return nil, false
+}
+
+// PyIter implements iteration over the members.
+func (errorLevelEnum) PyIter() []Value {
+	out := make([]Value, len(errorLevels))
+	for i, l := range errorLevels {
+		out[i] = l
+	}
+	return out
+}

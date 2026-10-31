@@ -639,7 +639,7 @@ func traverseScope(scope *Scope) []*Scope {
 		return out
 	default:
 		Logger.Warn(fmt.Sprintf("Cannot traverse scope %s with type '%s'", expression.SQL(),
-			"<class 'sqlglot.expressions."+expression.ClassName()+"'>"))
+			expression.Kind().ClassRepr()))
 		return out
 	}
 	return append(out, scope)

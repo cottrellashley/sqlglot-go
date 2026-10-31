@@ -71,7 +71,7 @@ func test_athena_TestAthena_test_tokenize_dml_once(self *Case, a Args) Value {
 			With(M(G("unittest.mock.patch"), "object", G("sqlglot.tokens.Tokenizer"), "tokenize", Kw("autospec", true), Kw("side_effect", A(G("sqlglot.tokens.Tokenizer"), "tokenize"))), func(cm_ Value) {
 				tokenize = cm_
 				self.Do(71, func() { self.ParseOne(sql) })
-				self.Do(72, func() { M(tokenize, "assert_called_once") })
+				self.Do(72, func() { Stmt(M(tokenize, "assert_called_once")) })
 			})
 		}, sql)
 	}
@@ -103,7 +103,7 @@ func test_athena_TestAthena_test_tokenizer_errors(self *Case, a Args) Value {
 			self.Do(95, func() {
 				self.AssertRaises(func(cm_ Value) {
 					_ = cm_
-					M(self, "parse_one", sql)
+					Stmt(M(self, "parse_one", sql))
 				}, G("sqlglot.errors.TokenError"))
 			})
 		}, sql)
@@ -111,7 +111,7 @@ func test_athena_TestAthena_test_tokenizer_errors(self *Case, a Args) Value {
 	self.Do(98, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			M(self, "parse_one", `SELECT '\' +`)
+			Stmt(M(self, "parse_one", `SELECT '\' +`))
 		}, G("sqlglot.errors.ParseError"))
 	})
 	return nil
@@ -120,9 +120,9 @@ func test_athena_TestAthena_test_tokenizer_errors(self *Case, a Args) Value {
 func test_athena_TestAthena_test_func_builder(self *Case, a Args) Value {
 	var args Value
 	_ = []Value{args}
-	self.Do(102, func() {
+	self.DoAssign(102, func() {
 		args = NewTuple(M(A(G("sqlglot.exp"), "Literal"), "string", "-"), M(G("sqlglot.exp"), "column", "a"), M(G("sqlglot.exp"), "column", "b"))
-	})
+	}, &args)
 	self.Do(103, func() {
 		self.AssertEqual(M(M(G("sqlglot.exp"), "func", "CONCAT_WS", Star(args), Kw("dialect", "athena")), "sql", "athena"), "CONCAT_WS('-', a, b)")
 	})
@@ -130,7 +130,7 @@ func test_athena_TestAthena_test_func_builder(self *Case, a Args) Value {
 		self.AssertEqual(M(M(G("sqlglot.exp"), "func", "CONCAT", Star(args), Kw("dialect", "athena")), "sql", "athena"), "CONCAT('-', a, b)")
 	})
 	self.Do(109, func() {
-		M(self, "assertIsInstance", M(G("sqlglot.exp"), "func", "DATE_FORMAT", "a", "'%Y'", Kw("dialect", "athena")), A(G("sqlglot.exp"), "TimeToStr"))
+		Stmt(M(self, "assertIsInstance", M(G("sqlglot.exp"), "func", "DATE_FORMAT", "a", "'%Y'", Kw("dialect", "athena")), A(G("sqlglot.exp"), "TimeToStr")))
 	})
 	self.Do(110, func() {
 		self.AssertEqual(M(M(G("sqlglot.exp"), "cast", self.ParseOne("CAST(x AS VARCHAR)"), "TEXT", Kw("dialect", "athena")), "sql", "athena"), "CAST(x AS VARCHAR)")
@@ -147,7 +147,7 @@ func test_athena_TestAthena_test_max_nodes(self *Case, a Args) Value {
 			self.Do(117, func() {
 				self.AssertRaises(func(cm_ Value) {
 					_ = cm_
-					M(self, "parse_one", sql, Kw("max_nodes", 3))
+					Stmt(M(self, "parse_one", sql, Kw("max_nodes", 3)))
 				}, G("sqlglot.errors.ParseError"))
 			})
 		}, sql)
@@ -158,9 +158,9 @@ func test_athena_TestAthena_test_max_nodes(self *Case, a Args) Value {
 func test_athena_TestAthena_test_qualify(self *Case, a Args) Value {
 	var expression Value
 	_ = []Value{expression}
-	self.Do(122, func() {
+	self.DoAssign(122, func() {
 		expression = Call(G("sqlglot.optimizer.qualify.qualify"), self.ParseOne(`SELECT "MyCol" FROM "MyTable"`), Kw("schema", NewDict("MyTable", NewDict("MyCol", "INT"))), Kw("dialect", "athena"))
-	})
+	}, &expression)
 	self.Do(127, func() {
 		self.AssertEqual(M(expression, "sql", "athena"), `SELECT "mytable"."mycol" AS "mycol" FROM "mytable" AS "mytable"`)
 	})
@@ -233,18 +233,18 @@ func test_athena_TestAthena_test_dml_quoting(self *Case, a Args) Value {
 func test_athena_TestAthena_test_create_table(self *Case, a Args) Value {
 	var table_schema, ct_hive, ct_iceberg Value
 	_ = []Value{table_schema, ct_hive, ct_iceberg}
-	self.Do(275, func() {
+	self.DoAssign(275, func() {
 		table_schema = M(G("sqlglot.exp"), "Schema", Kw("this", M(G("sqlglot.exp"), "to_table", "foo.bar")), Kw("expressions", NewList(M(G("sqlglot.exp"), "ColumnDef", Kw("this", M(G("sqlglot.exp"), "to_identifier", "a")), Kw("kind", M(A(G("sqlglot.exp"), "DataType"), "build", "int"))), M(G("sqlglot.exp"), "ColumnDef", Kw("this", M(G("sqlglot.exp"), "to_identifier", "b")), Kw("kind", M(A(G("sqlglot.exp"), "DataType"), "build", "varchar"))))))
-	})
-	self.Do(284, func() {
+	}, &table_schema)
+	self.DoAssign(284, func() {
 		ct_hive = M(G("sqlglot.exp"), "Create", Kw("this", table_schema), Kw("kind", "TABLE"), Kw("properties", M(G("sqlglot.exp"), "Properties", Kw("expressions", NewList(M(G("sqlglot.exp"), "ExternalProperty"), M(G("sqlglot.exp"), "FileFormatProperty", Kw("this", M(A(G("sqlglot.exp"), "Literal"), "string", "parquet"))), M(G("sqlglot.exp"), "LocationProperty", Kw("this", M(A(G("sqlglot.exp"), "Literal"), "string", "s3://foo"))), M(G("sqlglot.exp"), "PartitionedByProperty", Kw("this", M(G("sqlglot.exp"), "Schema", Kw("expressions", NewList(M(G("sqlglot.exp"), "to_column", "partition_col")))))))))))
-	})
+	}, &ct_hive)
 	self.Do(298, func() {
 		self.AssertEqual(M(ct_hive, "sql", Kw("dialect", self.Dialect()), Kw("identify", true)), "CREATE EXTERNAL TABLE `foo`.`bar` (`a` INT, `b` STRING) STORED AS PARQUET LOCATION 's3://foo' PARTITIONED BY (`partition_col`)")
 	})
-	self.Do(306, func() {
+	self.DoAssign(306, func() {
 		ct_iceberg = M(G("sqlglot.exp"), "Create", Kw("this", table_schema), Kw("kind", "TABLE"), Kw("properties", M(G("sqlglot.exp"), "Properties", Kw("expressions", NewList(M(G("sqlglot.exp"), "FileFormatProperty", Kw("this", M(A(G("sqlglot.exp"), "Literal"), "string", "parquet"))), M(G("sqlglot.exp"), "LocationProperty", Kw("this", M(A(G("sqlglot.exp"), "Literal"), "string", "s3://foo"))), M(G("sqlglot.exp"), "PartitionedByProperty", Kw("this", M(G("sqlglot.exp"), "Schema", Kw("expressions", NewList(M(G("sqlglot.exp"), "to_column", "partition_col"), M(G("sqlglot.exp"), "PartitionedByBucket", Kw("this", M(G("sqlglot.exp"), "to_column", "a")), Kw("expression", M(A(G("sqlglot.exp"), "Literal"), "number", 4)))))))), M(G("sqlglot.exp"), "Property", Kw("this", M(G("sqlglot.exp"), "var", "table_type")), Kw("value", M(A(G("sqlglot.exp"), "Literal"), "string", "iceberg"))))))))
-	})
+	}, &ct_iceberg)
 	self.Do(327, func() {
 		self.AssertEqual(M(ct_iceberg, "sql", Kw("dialect", self.Dialect()), Kw("identify", true)), "CREATE TABLE `foo`.`bar` (`a` INT, `b` STRING) STORED AS PARQUET LOCATION 's3://foo' PARTITIONED BY (`partition_col`, BUCKET(4, `a`)) TBLPROPERTIES ('table_type'='iceberg')")
 	})
@@ -254,18 +254,18 @@ func test_athena_TestAthena_test_create_table(self *Case, a Args) Value {
 func test_athena_TestAthena_test_ctas(self *Case, a Args) Value {
 	var ctas_hive, ctas_iceberg Value
 	_ = []Value{ctas_hive, ctas_iceberg}
-	self.Do(337, func() {
+	self.DoAssign(337, func() {
 		ctas_hive = M(G("sqlglot.exp"), "Create", Kw("this", M(G("sqlglot.exp"), "to_table", "foo.bar")), Kw("kind", "TABLE"), Kw("properties", M(G("sqlglot.exp"), "Properties", Kw("expressions", NewList(M(G("sqlglot.exp"), "FileFormatProperty", Kw("this", M(A(G("sqlglot.exp"), "Literal"), "string", "parquet"))), M(G("sqlglot.exp"), "LocationProperty", Kw("this", M(A(G("sqlglot.exp"), "Literal"), "string", "s3://foo"))), M(G("sqlglot.exp"), "PartitionedByProperty", Kw("this", M(G("sqlglot.exp"), "Schema", Kw("expressions", NewList(M(G("sqlglot.exp"), "to_column", "partition_col", Kw("quoted", true))))))))))), Kw("expression", M(G("sqlglot.exp"), "select", "1")))
-	})
+	}, &ctas_hive)
 	self.Do(353, func() {
 		self.AssertEqual(M(ctas_hive, "sql", Kw("dialect", self.Dialect()), Kw("identify", true)), `CREATE TABLE "foo"."bar" WITH (format='parquet', external_location='s3://foo', partitioned_by=ARRAY['partition_col']) AS SELECT 1`)
 	})
 	self.Do(357, func() {
 		self.AssertEqual(M(ctas_hive, "sql", Kw("dialect", self.Dialect()), Kw("identify", false)), "CREATE TABLE foo.bar WITH (format='parquet', external_location='s3://foo', partitioned_by=ARRAY['partition_col']) AS SELECT 1")
 	})
-	self.Do(362, func() {
+	self.DoAssign(362, func() {
 		ctas_iceberg = M(G("sqlglot.exp"), "Create", Kw("this", M(G("sqlglot.exp"), "to_table", "foo.bar")), Kw("kind", "TABLE"), Kw("properties", M(G("sqlglot.exp"), "Properties", Kw("expressions", NewList(M(G("sqlglot.exp"), "Property", Kw("this", M(G("sqlglot.exp"), "var", "table_type")), Kw("value", M(A(G("sqlglot.exp"), "Literal"), "string", "iceberg"))), M(G("sqlglot.exp"), "LocationProperty", Kw("this", M(A(G("sqlglot.exp"), "Literal"), "string", "s3://foo"))), M(G("sqlglot.exp"), "PartitionedByProperty", Kw("this", M(G("sqlglot.exp"), "Schema", Kw("expressions", NewList(M(G("sqlglot.exp"), "to_column", "partition_col"), M(G("sqlglot.exp"), "PartitionedByBucket", Kw("this", M(G("sqlglot.exp"), "to_column", "a", Kw("quoted", true))), Kw("expression", M(A(G("sqlglot.exp"), "Literal"), "number", 4)))))))))))), Kw("expression", M(G("sqlglot.exp"), "select", "1")))
-	})
+	}, &ctas_iceberg)
 	self.Do(387, func() {
 		self.AssertEqual(M(ctas_iceberg, "sql", Kw("dialect", self.Dialect()), Kw("identify", true)), `CREATE TABLE "foo"."bar" WITH (table_type='iceberg', location='s3://foo', partitioning=ARRAY['partition_col', 'BUCKET(a, 4)']) AS SELECT 1`)
 	})
@@ -278,11 +278,11 @@ func test_athena_TestAthena_test_ctas(self *Case, a Args) Value {
 func test_athena_TestAthena_test_ctas_using_external_function(self *Case, a Args) Value {
 	var create Value
 	_ = []Value{create}
-	self.Do(399, func() {
+	self.DoAssign(399, func() {
 		create = self.ValidateIdentity("CREATE TABLE t WITH (format='PARQUET') AS USING EXTERNAL FUNCTION f(x VARCHAR) RETURNS VARCHAR LAMBDA 'l' SELECT f('a') AS b", Kw("check_command_warning", true))
-	})
-	self.Do(405, func() { M(self, "assertIsInstance", create, A(G("sqlglot.exp"), "Create")) })
-	self.Do(406, func() { M(self, "assertIsInstance", A(create, "expression"), A(G("sqlglot.exp"), "Command")) })
+	}, &create)
+	self.Do(405, func() { Stmt(M(self, "assertIsInstance", create, A(G("sqlglot.exp"), "Create"))) })
+	self.Do(406, func() { Stmt(M(self, "assertIsInstance", A(create, "expression"), A(G("sqlglot.exp"), "Command"))) })
 	self.Do(407, func() { self.AssertEqual(M(A(create, "expression"), "text", "this"), "USING") })
 	self.L(410).ValidateIdentity("CREATE TABLE t WITH (format='PARQUET') AS SELECT 1 AS a")
 	return nil
@@ -291,9 +291,9 @@ func test_athena_TestAthena_test_ctas_using_external_function(self *Case, a Args
 func test_athena_TestAthena_test_parse_partitioned_by_returns_iceberg_transforms(self *Case, a Args) Value {
 	var parsed Value
 	_ = []Value{parsed}
-	self.Do(414, func() {
+	self.DoAssign(414, func() {
 		parsed = self.ParseOne("(a, bucket(4, b), truncate(3, c), month(d))", Kw("into", A(G("sqlglot.exp"), "PartitionedByProperty")))
-	})
+	}, &parsed)
 	self.Do(418, func() { Assert(IsInstance(parsed, A(G("sqlglot.exp"), "PartitionedByProperty"))) })
 	self.Do(419, func() { Assert(IsInstance(A(parsed, "this"), A(G("sqlglot.exp"), "Schema"))) })
 	self.Do(420, func() {

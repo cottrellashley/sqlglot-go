@@ -2,6 +2,7 @@ package exp
 
 import (
 	"fmt"
+	"github.com/cottrellashley/sqlglot-go/errs"
 	"hash/maphash"
 	"iter"
 	"slices"
@@ -718,6 +719,10 @@ func (e *Expr) Meta() map[string]any {
 	return e.meta
 }
 
+// RawMeta returns the metadata map without creating it (nil if it was never created, like
+// Python's _meta).
+func (e *Expr) RawMeta() map[string]any { return e.meta }
+
 // MetaGet returns a metadata value without creating the map.
 func (e *Expr) MetaGet(key string) any {
 	if e.meta == nil {
@@ -805,6 +810,12 @@ func (e *Expr) IsLeaf() bool {
 // Transform visits all nodes (excluding newly created ones) and applies fun, mirroring
 // Expression.transform. If fun returns nil, the node is removed.
 func (e *Expr) Transform(fun func(*Expr) *Expr, copy bool) *Expr {
+	return e.TransformAny(func(n *Expr) any { return fun(n) }, copy)
+}
+
+// TransformAny is Transform for functions that may also return a list of nodes ([]*Expr),
+// which replace the visited node (spliced into list arguments), like Python's transform.
+func (e *Expr) TransformAny(fun func(*Expr) any, copy bool) *Expr {
 	start := e
 	if copy {
 		start = e.Copy()
@@ -816,12 +827,19 @@ func (e *Expr) Transform(fun func(*Expr) *Expr, copy bool) *Expr {
 		stack = stack[:len(stack)-1]
 		parent, argKey, index := node.parent, node.argKey, node.index
 		newNode := fun(node)
+		if x, ok := newNode.(*Expr); ok && x == nil {
+			newNode = nil
+		}
+		same := false
+		if x, ok := newNode.(*Expr); ok && x == node {
+			same = true
+		}
 		if root == nil {
-			root = newNode
-		} else if parent != nil && argKey != "" && newNode != node {
+			root, _ = newNode.(*Expr)
+		} else if parent != nil && argKey != "" && !same {
 			parent.SetAt(argKey, newNode, index, true)
 		}
-		if newNode != node {
+		if !same {
 			continue
 		}
 		stack = node.pushChildrenReversed(stack)
@@ -879,7 +897,7 @@ func (e *Expr) Pop() *Expr {
 // AssertIs panics if the node is not an instance of kind and returns the node otherwise.
 func (e *Expr) AssertIs(kind Kind) *Expr {
 	if !e.Is(kind) {
-		panic(fmt.Sprintf("%s is not %s.", e.SQL(), kind))
+		panic(&errs.AssertionError{Message: fmt.Sprintf("%s is not %s.", e.SQL(), kind.ClassRepr())})
 	}
 	return e
 }
@@ -919,7 +937,7 @@ func (e *Expr) ErrorMessages(args []*Expr) []string {
 var StrictArgKeys bool
 
 func classRepr(k Kind) string {
-	return fmt.Sprintf("<class 'sqlglot.expressions.%s'>", kindTable[k].name)
+	return k.ClassRepr()
 }
 
 // ---------------------------------------------------------------------------------------

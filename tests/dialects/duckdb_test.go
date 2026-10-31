@@ -110,12 +110,12 @@ func test_duckdb_TestDuckDB_test_join_by_type(self *Case, a Args) Value {
 		for _, item_ := range Iter(NewTuple("", "_JOIN")) {
 			suffix = item_
 			self.SubTest(func() {
-				self.Do(38, func() { sql = F("SELECT * FROM a JOIN BY (TYPE ", FV{V: kind}, FV{V: suffix}, ") b ON a.id = b.id") })
-				self.Do(39, func() {
+				self.DoAssign(38, func() { sql = F("SELECT * FROM a JOIN BY (TYPE ", FV{V: kind}, FV{V: suffix}, ") b ON a.id = b.id") }, &sql)
+				self.DoAssign(39, func() {
 					op = IfV(In(kind, NewTuple("right_semi", "right_anti", "mark", "single")), func() Value { return F("JOIN BY (TYPE ", FV{V: M(kind, "upper")}, ")") }, func() Value { return F(FV{V: M(kind, "upper")}, " JOIN") })
-				})
-				self.Do(44, func() { expression = self.ValidateIdentity(sql, F("SELECT * FROM a ", FV{V: op}, " b ON a.id = b.id")) })
-				self.Do(47, func() { join = Item(Item(A(expression, "args"), "joins"), 0) })
+				}, &op)
+				self.DoAssign(44, func() { expression = self.ValidateIdentity(sql, F("SELECT * FROM a ", FV{V: op}, " b ON a.id = b.id")) }, &expression)
+				self.DoAssign(47, func() { join = Item(Item(A(expression, "args"), "joins"), 0) }, &join)
 				self.Do(48, func() { self.AssertEqual(A(join, "side"), side) })
 				self.Do(49, func() { self.AssertEqual(A(join, "kind"), normalized_kind) })
 				self.Do(50, func() { self.AssertEqual(self.ParseOne(M(expression, "sql", "duckdb")), expression) })
@@ -134,16 +134,16 @@ func test_duckdb_TestDuckDB_test_connect_disconnect(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewTuple("CONNECT qk", `CONNECT "remote db"`, "CONNECT 'quack:localhost'", "CONNECT 'postgres:dbname=mydb host=localhost'", "CONNECT 'postgres:dbname=''my db'' host=localhost'")) {
 		sql = item_
 		self.SubTest(func() {
-			self.Do(76, func() { expression = M(self.ValidateIdentity(sql), "assert_is", A(G("sqlglot.exp"), "ConnectTo")) })
+			self.DoAssign(76, func() { expression = M(self.ValidateIdentity(sql), "assert_is", A(G("sqlglot.exp"), "ConnectTo")) }, &expression)
 			self.Do(77, func() { self.AssertEqual(self.ParseOne(M(expression, "sql", "duckdb")), expression) })
 		}, Kw("sql", sql))
 	}
-	self.Do(79, func() { M(self.ValidateIdentity("DISCONNECT"), "assert_is", A(G("sqlglot.exp"), "Disconnect")) })
+	self.Do(79, func() { Stmt(M(self.ValidateIdentity("DISCONNECT"), "assert_is", A(G("sqlglot.exp"), "Disconnect"))) })
 	self.L(80).ValidateIdentity("SELECT connect, disconnect FROM t", "SELECT connect, disconnect FROM t")
-	self.Do(83, func() { statements = self.ParseOne("CONNECT qk") })
-	self.Do(84, func() { M(self, "assertIsInstance", A(statements, "this"), A(G("sqlglot.exp"), "Identifier")) })
+	self.DoAssign(83, func() { statements = self.ParseOne("CONNECT qk") }, &statements)
+	self.Do(84, func() { Stmt(M(self, "assertIsInstance", A(statements, "this"), A(G("sqlglot.exp"), "Identifier"))) })
 	self.Do(85, func() {
-		M(self, "assertIsInstance", A(self.ParseOne("CONNECT 'quack:localhost'"), "this"), A(G("sqlglot.exp"), "Literal"))
+		Stmt(M(self, "assertIsInstance", A(self.ParseOne("CONNECT 'quack:localhost'"), "this"), A(G("sqlglot.exp"), "Literal")))
 	})
 	for _, item_ := range Iter(NewTuple("connect", "disconnect")) {
 		name = item_
@@ -169,13 +169,13 @@ func test_duckdb_TestDuckDB_test_quoted_variables(self *Case, a Args) Value {
 	_ = []Value{name, quoted, expression, placeholder}
 	for _, item_ := range Iter(NewTuple("my var", "1", `my"var`, "select", "MixedCase", "a.b")) {
 		name = item_
-		self.Do(104, func() { quoted = M(M(G("sqlglot.exp"), "to_identifier", name, Kw("quoted", true)), "sql", "duckdb") })
+		self.DoAssign(104, func() { quoted = M(M(G("sqlglot.exp"), "to_identifier", name, Kw("quoted", true)), "sql", "duckdb") }, &quoted)
 		self.SubTest(func() {
-			self.Do(106, func() { expression = self.ValidateIdentity(F("SELECT $", FV{V: quoted}, " + 1")) })
-			self.Do(107, func() { placeholder = M(expression, "find", A(G("sqlglot.exp"), "Placeholder")) })
+			self.DoAssign(106, func() { expression = self.ValidateIdentity(F("SELECT $", FV{V: quoted}, " + 1")) }, &expression)
+			self.DoAssign(107, func() { placeholder = M(expression, "find", A(G("sqlglot.exp"), "Placeholder")) }, &placeholder)
 			self.Do(108, func() { self.AssertEqual(A(placeholder, "name"), name) })
-			self.Do(109, func() { M(self, "assertIsInstance", A(placeholder, "this"), A(G("sqlglot.exp"), "Identifier")) })
-			self.Do(110, func() { M(self, "assertTrue", A(A(placeholder, "this"), "quoted")) })
+			self.Do(109, func() { Stmt(M(self, "assertIsInstance", A(placeholder, "this"), A(G("sqlglot.exp"), "Identifier"))) })
+			self.Do(110, func() { Stmt(M(self, "assertTrue", A(A(placeholder, "this"), "quoted"))) })
 			self.Do(111, func() { self.AssertEqual(self.ParseOne(M(expression, "sql", "duckdb")), expression) })
 			self.Do(112, func() { self.AssertEqual(Hash(M(expression, "copy")), Hash(expression)) })
 		}, Kw("name", name))
@@ -183,7 +183,7 @@ func test_duckdb_TestDuckDB_test_quoted_variables(self *Case, a Args) Value {
 	self.L(114).ValidateIdentity(`SELECT $"my var", $my`)
 	self.L(115).ValidateIdentity("SELECT $1, ?")
 	self.L(116).ValidateIdentity(`SELECT $"my var"[1]`)
-	self.Do(117, func() { expression = self.ParseOne(`SELECT $"my var"`) })
+	self.DoAssign(117, func() { expression = self.ParseOne(`SELECT $"my var"`) }, &expression)
 	self.Do(118, func() {
 		self.AssertEqual(M(M(G("sqlglot.exp"), "replace_placeholders", expression, StarStar(NewDict("my var", 42))), "sql", "duckdb"), "SELECT 42")
 	})
@@ -196,10 +196,10 @@ func test_duckdb_TestDuckDB_test_create_trigger(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewTuple(NewTuple("CREATE TRIGGER audit_t AFTER UPDATE ON t REFERENCING OLD TABLE AS o NEW TABLE AS n FOR EACH STATEMENT INSERT INTO audit SELECT n.id, n.val - o.val FROM o JOIN n ON o.id = n.id", A(G("sqlglot.exp"), "Insert")), NewTuple("CREATE TRIGGER audit_t AFTER INSERT ON t FOR EACH ROW INSERT INTO audit VALUES (NEW.id, NEW.val)", A(G("sqlglot.exp"), "Insert")), NewTuple("CREATE OR REPLACE TRIGGER audit_t AFTER DELETE ON t FOR EACH ROW DELETE FROM audit WHERE id = OLD.id", A(G("sqlglot.exp"), "Delete")), NewTuple(`CREATE TRIGGER IF NOT EXISTS "audit t" BEFORE UPDATE OF val ON main.t FOR EACH STATEMENT UPDATE audit SET val = val + 1`, A(G("sqlglot.exp"), "Update")), NewTuple("CREATE TRIGGER audit_t AFTER INSERT ON t REFERENCING NEW TABLE AS n FOR EACH STATEMENT MERGE INTO audit USING n ON audit.id = n.id WHEN MATCHED THEN UPDATE SET val = n.val WHEN NOT MATCHED THEN INSERT VALUES (n.id, n.val)", A(G("sqlglot.exp"), "Merge")))) {
 		Unpack(item_, &sql, &body_type)
 		self.SubTest(func() {
-			self.Do(154, func() { expression = M(self.ValidateIdentity(sql), "assert_is", A(G("sqlglot.exp"), "Create")) })
-			self.Do(155, func() { M(self, "assertIsNone", M(expression, "find", A(G("sqlglot.exp"), "Command"))) })
+			self.DoAssign(154, func() { expression = M(self.ValidateIdentity(sql), "assert_is", A(G("sqlglot.exp"), "Create")) }, &expression)
+			self.Do(155, func() { Stmt(M(self, "assertIsNone", M(expression, "find", A(G("sqlglot.exp"), "Command")))) })
 			self.Do(156, func() {
-				M(self, "assertIsInstance", Item(A(M(expression, "find", A(G("sqlglot.exp"), "TriggerProperties")), "args"), "execute"), body_type)
+				Stmt(M(self, "assertIsInstance", Item(A(M(expression, "find", A(G("sqlglot.exp"), "TriggerProperties")), "args"), "execute"), body_type))
 			})
 			self.Do(159, func() {
 				self.AssertEqual(self.ParseOne(M(expression, "sql", "duckdb", Kw("pretty", true))), expression)
@@ -208,7 +208,7 @@ func test_duckdb_TestDuckDB_test_create_trigger(self *Case, a Args) Value {
 	}
 	for _, item_ := range Iter(NewTuple("DROP TRIGGER audit_t ON t", "DROP TRIGGER IF EXISTS audit_t ON main.t", `DROP TRIGGER "audit t" ON "main"."t"`)) {
 		sql = item_
-		self.Do(166, func() { M(self.ValidateIdentity(sql), "assert_is", A(G("sqlglot.exp"), "Drop")) })
+		self.Do(166, func() { Stmt(M(self.ValidateIdentity(sql), "assert_is", A(G("sqlglot.exp"), "Drop"))) })
 	}
 	return nil
 }
@@ -218,10 +218,10 @@ func test_duckdb_TestDuckDB_test_create_trigger_command_fallback(self *Case, a A
 	_ = []Value{body, sql}
 	for _, item_ := range Iter(NewTuple("INSERT INTO audit SELECT trim(1, 2, 3)", "INSERT INTO audit SELECT abs(1, 2)")) {
 		body = item_
-		self.Do(173, func() { sql = F("CREATE TRIGGER tr AFTER INSERT ON t FOR EACH STATEMENT ", FV{V: body}) })
+		self.DoAssign(173, func() { sql = F("CREATE TRIGGER tr AFTER INSERT ON t FOR EACH STATEMENT ", FV{V: body}) }, &sql)
 		self.SubTest(func() {
 			self.Do(175, func() {
-				M(self.ValidateIdentity(sql, Kw("check_command_warning", true)), "assert_is", A(G("sqlglot.exp"), "Command"))
+				Stmt(M(self.ValidateIdentity(sql, Kw("check_command_warning", true)), "assert_is", A(G("sqlglot.exp"), "Command")))
 			})
 		}, Kw("sql", sql))
 	}
@@ -237,13 +237,13 @@ func test_duckdb_TestDuckDB_test_nearest_join(self *Case, a Args) Value {
 			approximate = item_
 			for _, item_ := range Iter(NewTuple(NewTuple("DISTANCE", "ARRAY_DISTANCE"), NewTuple("SIMILARITY", "ARRAY_COSINE_SIMILARITY"))) {
 				Unpack(item_, &metric, &function)
-				self.Do(184, func() {
+				self.DoAssign(184, func() {
 					sql = F("SELECT q.id, t.id FROM queries AS q ", FV{V: join}, " items AS t ", FV{V: approximate}, "NEAREST 2 BY ", FV{V: metric}, " ", FV{V: function}, "(q.embedding, t.embedding)")
-				})
+				}, &sql)
 				self.SubTest(func() {
-					self.Do(189, func() { expression = self.ValidateIdentity(sql) })
-					self.Do(190, func() { nearest = M(expression, "find", A(G("sqlglot.exp"), "Nearest")) })
-					self.Do(191, func() { M(self, "assertIsNotNone", nearest) })
+					self.DoAssign(189, func() { expression = self.ValidateIdentity(sql) }, &expression)
+					self.DoAssign(190, func() { nearest = M(expression, "find", A(G("sqlglot.exp"), "Nearest")) }, &nearest)
+					self.Do(191, func() { Stmt(M(self, "assertIsNotNone", nearest)) })
 					self.Do(192, func() {
 						self.AssertEqual(Item(A(nearest, "args"), "count"), M(A(G("sqlglot.exp"), "Literal"), "number", 2))
 					})
@@ -268,7 +268,7 @@ func test_duckdb_TestDuckDB_test_nearest_join(self *Case, a Args) Value {
 			self.Do(238, func() {
 				self.AssertRaises(func(cm_ Value) {
 					_ = cm_
-					M(self, "parse_one", sql)
+					Stmt(M(self, "parse_one", sql))
 				}, G("sqlglot.ParseError"))
 			})
 		}, Kw("sql", sql))
@@ -281,8 +281,8 @@ func test_duckdb_TestDuckDB_test_lambda(self *Case, a Args) Value {
 	_ = []Value{arrow, colon, old_sql, new_sql}
 	for _, item_ := range Iter(NewTuple(NewTuple("x -> x + 1", "LAMBDA x : x + 1"), NewTuple("(x, i) -> x + i", "LAMBDA x, i : x + i"))) {
 		Unpack(item_, &arrow, &colon)
-		self.Do(246, func() { old_sql = F("SELECT LIST_TRANSFORM([1, 2, 3], ", FV{V: arrow}, ")") })
-		self.Do(247, func() { new_sql = F("SELECT LIST_TRANSFORM([1, 2, 3], ", FV{V: colon}, ")") })
+		self.DoAssign(246, func() { old_sql = F("SELECT LIST_TRANSFORM([1, 2, 3], ", FV{V: arrow}, ")") }, &old_sql)
+		self.DoAssign(247, func() { new_sql = F("SELECT LIST_TRANSFORM([1, 2, 3], ", FV{V: colon}, ")") }, &new_sql)
 		self.SubTest(func() {
 			self.Do(249, func() { self.AssertEqual(self.ParseOne(old_sql), self.ParseOne(new_sql)) })
 			self.Do(250, func() {
@@ -315,7 +315,7 @@ func test_duckdb_TestDuckDB_test_reserved_keyword_identifiers(self *Case, a Args
 func test_duckdb_TestDuckDB_test_duckdb(self *Case, a Args) Value {
 	var expr, struct_array_type, join_type, exists, sql, read, unsupported, option Value
 	_ = []Value{expr, struct_array_type, join_type, exists, sql, read, unsupported, option}
-	self.Do(329, func() { M(self.ValidateIdentity("TRUNC(3.14)"), "assert_is", A(G("sqlglot.exp"), "Trunc")) })
+	self.Do(329, func() { Stmt(M(self.ValidateIdentity("TRUNC(3.14)"), "assert_is", A(G("sqlglot.exp"), "Trunc"))) })
 	self.L(330).ValidateAll("TRUNC(3.14159, 2)", Kw("read", NewDict("postgres", "TRUNC(3.14159, 2)", "duckdb", "TRUNC(3.14159, 2)")))
 	self.L(338).ValidateIdentity("SELECT ([1,2,3])[:-:-1]", "SELECT ([1, 2, 3])[:-:-1]")
 	self.L(339).ValidateIdentity("SELECT ([1,2,3,4,5])[4:-:-2]", "SELECT ([1, 2, 3, 4, 5])[4:-:-2]")
@@ -332,18 +332,18 @@ func test_duckdb_TestDuckDB_test_duckdb(self *Case, a Args) Value {
 	self.Do(358, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			Call(G("sqlglot.parse_one"), "1 //", Kw("read", "duckdb"))
+			Stmt(Call(G("sqlglot.parse_one"), "1 //", Kw("read", "duckdb")))
 		}, G("sqlglot.ParseError"))
 	})
-	self.Do(361, func() {
+	self.DoAssign(361, func() {
 		expr = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), self.ValidateIdentity("WITH _data AS (SELECT [{'a': 1, 'b': 2}, {'a': 2, 'b': 3}] AS col) SELECT t.col['b'] FROM _data, UNNEST(_data.col) AS t(col) WHERE t.col['a'] = 1", "WITH _data AS (SELECT [{'a': 1, 'b': 2}, {'a': 2, 'b': 3}] AS col) SELECT t.col['b'] FROM _data JOIN UNNEST(_data.col) AS t(col) ON TRUE WHERE t.col['a'] = 1"))
-	})
+	}, &expr)
 	self.Do(367, func() {
 		self.AssertEqual(M(expr, "sql", Kw("dialect", "bigquery")), "WITH _data AS (SELECT [STRUCT(1 AS a, 2 AS b), STRUCT(2 AS a, 3 AS b)] AS col) SELECT col.b FROM _data, UNNEST(_data.col) AS col WHERE col.a = 1")
 	})
-	self.Do(372, func() {
+	self.DoAssign(372, func() {
 		struct_array_type = M(G("sqlglot.exp"), "maybe_parse", "STRUCT(k TEXT, v STRUCT(v_str TEXT, v_int INT, v_int_arr INT[]))[]", Kw("into", A(G("sqlglot.exp"), "DataType")), Kw("dialect", "duckdb"))
-	})
+	}, &struct_array_type)
 	self.Do(377, func() {
 		self.AssertEqual(M(struct_array_type, "sql", "duckdb"), "STRUCT(k TEXT, v STRUCT(v_str TEXT, v_int INT, v_int_arr INT[]))[]")
 	})
@@ -378,9 +378,9 @@ func test_duckdb_TestDuckDB_test_duckdb(self *Case, a Args) Value {
 	self.L(532).ValidateAll("struct_pack(a := 1, b := x)", Kw("write", NewDict("duckdb", "{'a': 1, 'b': x}", "presto", G("sqlglot.UnsupportedError"))))
 	for _, item_ := range Iter(NewTuple("SEMI", "ANTI")) {
 		join_type = item_
-		self.Do(541, func() {
+		self.DoAssign(541, func() {
 			exists = IfV(Eq(join_type, "SEMI"), func() Value { return "EXISTS" }, func() Value { return "NOT EXISTS" })
-		})
+		}, &exists)
 		self.Do(543, func() {
 			self.ValidateAll(F("SELECT * FROM t1 ", FV{V: join_type}, " JOIN t2 ON t1.x = t2.x"), Kw("write", NewDict("bigquery", F("SELECT * FROM t1 WHERE ", FV{V: exists}, "(SELECT 1 FROM t2 WHERE t1.x = t2.x)"), "clickhouse", F("SELECT * FROM t1 ", FV{V: join_type}, " JOIN t2 ON t1.x = t2.x"), "databricks", F("SELECT * FROM t1 ", FV{V: join_type}, " JOIN t2 ON t1.x = t2.x"), "doris", F("SELECT * FROM t1 WHERE ", FV{V: exists}, "(SELECT 1 FROM t2 WHERE t1.x = t2.x)"), "drill", F("SELECT * FROM t1 WHERE ", FV{V: exists}, "(SELECT 1 FROM t2 WHERE t1.x = t2.x)"), "duckdb", F("SELECT * FROM t1 ", FV{V: join_type}, " JOIN t2 ON t1.x = t2.x"), "hive", F("SELECT * FROM t1 ", FV{V: join_type}, " JOIN t2 ON t1.x = t2.x"), "mysql", F("SELECT * FROM t1 WHERE ", FV{V: exists}, "(SELECT 1 FROM t2 WHERE t1.x = t2.x)"), "oracle", F("SELECT * FROM t1 ", FV{V: join_type}, " JOIN t2 ON t1.x = t2.x"), "postgres", F("SELECT * FROM t1 WHERE ", FV{V: exists}, "(SELECT 1 FROM t2 WHERE t1.x = t2.x)"), "presto", F("SELECT * FROM t1 WHERE ", FV{V: exists}, "(SELECT 1 FROM t2 WHERE t1.x = t2.x)"), "redshift", F("SELECT * FROM t1 WHERE ", FV{V: exists}, "(SELECT 1 FROM t2 WHERE t1.x = t2.x)"), "snowflake", F("SELECT * FROM t1 WHERE ", FV{V: exists}, "(SELECT 1 FROM t2 WHERE t1.x = t2.x)"), "spark", F("SELECT * FROM t1 ", FV{V: join_type}, " JOIN t2 ON t1.x = t2.x"), "sqlite", F("SELECT * FROM t1 WHERE ", FV{V: exists}, "(SELECT 1 FROM t2 WHERE t1.x = t2.x)"), "starrocks", F("SELECT * FROM t1 ", FV{V: join_type}, " JOIN t2 ON t1.x = t2.x"), "teradata", F("SELECT * FROM t1 WHERE ", FV{V: exists}, "(SELECT 1 FROM t2 WHERE t1.x = t2.x)"), "trino", F("SELECT * FROM t1 WHERE ", FV{V: exists}, "(SELECT 1 FROM t2 WHERE t1.x = t2.x)"), "tsql", F("SELECT * FROM t1 WHERE ", FV{V: exists}, "(SELECT 1 FROM t2 WHERE t1.x = t2.x)"))))
 		})
@@ -452,10 +452,10 @@ func test_duckdb_TestDuckDB_test_duckdb(self *Case, a Args) Value {
 	self.L(862).ValidateIdentity("x::timestamp with time zone", "CAST(x AS TIMESTAMPTZ)")
 	self.L(863).ValidateIdentity("CAST(x AS FOO)")
 	self.Do(864, func() {
-		M(Item(A(self.ValidateIdentity("SELECT UNNEST([1, 2])"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "UDTF"))
+		Stmt(M(Item(A(self.ValidateIdentity("SELECT UNNEST([1, 2])"), "selects"), 0), "assert_is", A(G("sqlglot.exp"), "UDTF")))
 	})
 	self.Do(865, func() {
-		M(Item(A(self.ValidateIdentity("'red' IN flags"), "args"), "field"), "assert_is", A(G("sqlglot.exp"), "Column"))
+		Stmt(M(Item(A(self.ValidateIdentity("'red' IN flags"), "args"), "field"), "assert_is", A(G("sqlglot.exp"), "Column")))
 	})
 	self.L(866).ValidateIdentity("'red' IN tbl.flags")
 	self.L(867).ValidateIdentity("CREATE TABLE tbl1 (u UNION(num INT, str TEXT))")
@@ -494,14 +494,14 @@ func test_duckdb_TestDuckDB_test_duckdb(self *Case, a Args) Value {
 	self.L(909).ValidateIdentity("SELECT a ->> 'it''s' FROM t")
 	self.L(910).ValidateIdentity("CREATE TABLE color (name ENUM('RED', 'GREEN', 'BLUE'))")
 	self.L(911).ValidateIdentity("SELECT * FROM foo WHERE bar > $baz AND bla = $bob")
-	self.Do(912, func() { M(self.ValidateIdentity("SUMMARIZE tbl"), "assert_is", A(G("sqlglot.exp"), "Summarize")) })
+	self.Do(912, func() { Stmt(M(self.ValidateIdentity("SUMMARIZE tbl"), "assert_is", A(G("sqlglot.exp"), "Summarize"))) })
 	self.Do(913, func() {
-		M(self.ValidateIdentity("SUMMARIZE SELECT * FROM tbl"), "assert_is", A(G("sqlglot.exp"), "Summarize"))
+		Stmt(M(self.ValidateIdentity("SUMMARIZE SELECT * FROM tbl"), "assert_is", A(G("sqlglot.exp"), "Summarize")))
 	})
 	self.L(914).ValidateIdentity("CREATE TABLE tbl_summary AS SELECT * FROM (SUMMARIZE tbl)")
 	self.L(915).ValidateIdentity("SELECT STAR(tbl, exclude := [foo])")
 	self.Do(916, func() {
-		M(A(M(self.ValidateIdentity("UNION_VALUE(k1 := 1)"), "find", A(G("sqlglot.exp"), "PropertyEQ")), "this"), "assert_is", A(G("sqlglot.exp"), "Identifier"))
+		Stmt(M(A(M(self.ValidateIdentity("UNION_VALUE(k1 := 1)"), "find", A(G("sqlglot.exp"), "PropertyEQ")), "this"), "assert_is", A(G("sqlglot.exp"), "Identifier")))
 	})
 	self.L(919).ValidateIdentity("MERGE INTO people USING (SELECT 1 AS id, 98000.0 AS salary) AS salary_updates USING (id) WHEN MATCHED THEN UPDATE SET salary = salary_updates.salary")
 	self.L(922).ValidateIdentity("MERGE INTO people USING (SELECT 1 AS id, 98000.0 AS salary) AS salary_updates USING (id) WHEN MATCHED THEN UPDATE")
@@ -509,7 +509,7 @@ func test_duckdb_TestDuckDB_test_duckdb(self *Case, a Args) Value {
 	self.L(928).ValidateIdentity("SELECT species, island, COUNT(*) FROM t GROUP BY CUBE (species), CUBE (island)")
 	self.L(931).ValidateIdentity("SELECT species, island, COUNT(*) FROM t GROUP BY ROLLUP (species), ROLLUP (island)")
 	self.Do(934, func() {
-		M(self.ValidateIdentity("SUMMARIZE TABLE 'https://blobs.duckdb.org/data/Star_Trek-Season_1.csv'"), "assert_is", A(G("sqlglot.exp"), "Summarize"))
+		Stmt(M(self.ValidateIdentity("SUMMARIZE TABLE 'https://blobs.duckdb.org/data/Star_Trek-Season_1.csv'"), "assert_is", A(G("sqlglot.exp"), "Summarize")))
 	})
 	self.L(937).ValidateIdentity(`COPY (SELECT * FROM "input.parquet" USING SAMPLE RESERVOIR (5000 ROWS)) TO 'output.parquet' WITH (FORMAT PARQUET, KV_METADATA {'origin': 'Dagster', 'dagster_run_id': '98c85a11-d05c-4935-bfa2-198214c2204'})`)
 	for _, item_ := range Iter(NewTuple("LEFT", "LEFT OUTER", "INNER")) {
@@ -537,7 +537,7 @@ func test_duckdb_TestDuckDB_test_duckdb(self *Case, a Args) Value {
 			self.Do(1006, func() {
 				self.AssertRaisesRegex(func(cm_ Value) {
 					_ = cm_
-					M(Call(G("sqlglot.parse_one"), sql, Kw("read", read)), "sql", "duckdb", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE")))
+					Stmt(M(Call(G("sqlglot.parse_one"), sql, Kw("read", read)), "sql", "duckdb", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE"))))
 				}, G("sqlglot.UnsupportedError"), unsupported)
 			})
 		}, Kw("sql", sql))
@@ -574,10 +574,10 @@ func test_duckdb_TestDuckDB_test_duckdb(self *Case, a Args) Value {
 	self.L(1139).ValidateIdentity("SELECT * FROM cities PIVOT(SUM(population) FOR year IN (2000, 2010, 2020) GROUP BY country)")
 	self.L(1142).ValidateIdentity("SELECT schema_name, function_name, ROW_NUMBER() OVER my_window AS function_rank FROM DUCKDB_FUNCTIONS() WINDOW my_window AS (PARTITION BY schema_name ORDER BY function_name) QUALIFY ROW_NUMBER() OVER my_window < 3")
 	self.Do(1146, func() {
-		M(self.ValidateIdentity("DATE_SUB('YEAR', col, '2020-01-01')"), "assert_is", A(G("sqlglot.exp"), "Anonymous"))
+		Stmt(M(self.ValidateIdentity("DATE_SUB('YEAR', col, '2020-01-01')"), "assert_is", A(G("sqlglot.exp"), "Anonymous")))
 	})
 	self.Do(1147, func() {
-		M(self.ValidateIdentity("DATESUB('YEAR', col, '2020-01-01')"), "assert_is", A(G("sqlglot.exp"), "Anonymous"))
+		Stmt(M(self.ValidateIdentity("DATESUB('YEAR', col, '2020-01-01')"), "assert_is", A(G("sqlglot.exp"), "Anonymous")))
 	})
 	self.L(1148).ValidateIdentity("SELECT SHA256('abc')")
 	self.L(1150).ValidateAll("0b1010", Kw("write", NewDict("", "0 AS b1010")))
@@ -623,7 +623,7 @@ func test_duckdb_TestDuckDB_test_duckdb(self *Case, a Args) Value {
 	self.L(1407).ValidateAll("SELECT DATE_DIFF('day', DATE '2020-01-01', DATE '2020-01-05')", Kw("write", NewDict("duckdb", "SELECT DATE_DIFF('DAY', CAST('2020-01-01' AS DATE), CAST('2020-01-05' AS DATE))", "trino", "SELECT DATE_DIFF('DAY', DATE_TRUNC('DAY', CAST('2020-01-01' AS DATE)), DATE_TRUNC('DAY', CAST('2020-01-05' AS DATE)))")))
 	self.L(1415).ValidateAll("SELECT DATE_DIFF('MONTH', CAST('2026-01-31' AS DATE), CAST('2026-03-01' AS DATE))", Kw("write", NewDict("duckdb", "SELECT DATE_DIFF('MONTH', CAST('2026-01-31' AS DATE), CAST('2026-03-01' AS DATE))", "postgres", "SELECT CAST(EXTRACT(year FROM AGE(DATE_TRUNC('MONTH', CAST(CAST('2026-03-01' AS DATE) AS TIMESTAMP)), DATE_TRUNC('MONTH', CAST(CAST('2026-01-31' AS DATE) AS TIMESTAMP)))) * 12 + EXTRACT(month FROM AGE(DATE_TRUNC('MONTH', CAST(CAST('2026-03-01' AS DATE) AS TIMESTAMP)), DATE_TRUNC('MONTH', CAST(CAST('2026-01-31' AS DATE) AS TIMESTAMP)))) AS BIGINT)")))
 	self.Do(1422, func() {
-		M(self, "assertIsNone", M(A(M(Call(G("sqlglot.parse_one"), "SELECT DATE_DIFF('WEEK', a, b)", Kw("read", "duckdb")), "find", A(G("sqlglot.exp"), "DateDiff")), "args"), "get", "date_part_boundary"))
+		Stmt(M(self, "assertIsNone", M(A(M(Call(G("sqlglot.parse_one"), "SELECT DATE_DIFF('WEEK', a, b)", Kw("read", "duckdb")), "find", A(G("sqlglot.exp"), "DateDiff")), "args"), "get", "date_part_boundary")))
 	})
 	self.L(1427).ValidateAll("WITH 'x' AS (SELECT 1) SELECT * FROM x", Kw("write", NewDict("duckdb", `WITH "x" AS (SELECT 1) SELECT * FROM x`)))
 	self.L(1431).ValidateAll("CREATE TABLE IF NOT EXISTS t (cola INT, colb STRING) USING ICEBERG PARTITIONED BY (colb)", Kw("write", NewDict("duckdb", "CREATE TABLE IF NOT EXISTS t (cola INT, colb TEXT)")))
@@ -721,9 +721,9 @@ func test_duckdb_TestDuckDB_test_duckdb(self *Case, a Args) Value {
 	self.L(1841).ValidateIdentity("a ** b", "POWER(a, b)")
 	self.L(1842).ValidateIdentity("a ~~~ b", "a GLOB b")
 	self.L(1843).ValidateIdentity("a ~~ b", "a LIKE b")
-	self.Do(1844, func() { M(self.ValidateIdentity("a @> b"), "assert_is", A(G("sqlglot.exp"), "ArrayContainsAll")) })
-	self.Do(1845, func() { M(self.ValidateIdentity("a <@ b"), "assert_is", A(G("sqlglot.exp"), "ArrayContainedBy")) })
-	self.Do(1846, func() { M(self.ValidateIdentity("a && b"), "assert_is", A(G("sqlglot.exp"), "ArrayOverlaps")) })
+	self.Do(1844, func() { Stmt(M(self.ValidateIdentity("a @> b"), "assert_is", A(G("sqlglot.exp"), "ArrayContainsAll"))) })
+	self.Do(1845, func() { Stmt(M(self.ValidateIdentity("a <@ b"), "assert_is", A(G("sqlglot.exp"), "ArrayContainedBy"))) })
+	self.Do(1846, func() { Stmt(M(self.ValidateIdentity("a && b"), "assert_is", A(G("sqlglot.exp"), "ArrayOverlaps"))) })
 	self.L(1847).ValidateIdentity("a ^@ b", "STARTS_WITH(a, b)")
 	self.L(1848).ValidateIdentity("a !~~ b", "a NOT LIKE b")
 	self.L(1852).ValidateIdentity("a !~~* b", "a NOT ILIKE b")
@@ -805,14 +805,14 @@ func test_duckdb_TestDuckDB_test_duckdb(self *Case, a Args) Value {
 	self.L(2096).ValidateIdentity("SELECT TODAY()", "SELECT CURRENT_DATE")
 	self.L(2097).ValidateIdentity("SELECT GET_CURRENT_TIME()", "SELECT CURRENT_TIME")
 	self.Do(2098, func() {
-		M(self.ValidateIdentity("CURRENT_LOCALTIMESTAMP()", "LOCALTIMESTAMP"), "assert_is", A(G("sqlglot.exp"), "Localtimestamp"))
+		Stmt(M(self.ValidateIdentity("CURRENT_LOCALTIMESTAMP()", "LOCALTIMESTAMP"), "assert_is", A(G("sqlglot.exp"), "Localtimestamp")))
 	})
 	self.L(2102).ValidateIdentity("SELECT SUM(x) OVER (ORDER BY x GROUPS BETWEEN 1 PRECEDING AND CURRENT ROW) FROM t")
 	self.Do(2106, func() {
-		M(A(Item(A(self.ValidateIdentity("SELECT file[:256] FROM GLOB('*')"), "selects"), 0), "this"), "assert_is", A(G("sqlglot.exp"), "Column"))
+		Stmt(M(A(Item(A(self.ValidateIdentity("SELECT file[:256] FROM GLOB('*')"), "selects"), 0), "this"), "assert_is", A(G("sqlglot.exp"), "Column")))
 	})
 	self.Do(2109, func() {
-		M(A(Item(A(self.ValidateIdentity("SELECT file[256] FROM GLOB('*')"), "selects"), 0), "this"), "assert_is", A(G("sqlglot.exp"), "Column"))
+		Stmt(M(A(Item(A(self.ValidateIdentity("SELECT file[256] FROM GLOB('*')"), "selects"), 0), "this"), "assert_is", A(G("sqlglot.exp"), "Column")))
 	})
 	self.L(2113).ValidateIdentity("SELECT LAST_VALUE(x ORDER BY x IGNORE NULLS) OVER (ORDER BY x) FROM t")
 	self.L(2116).ValidateIdentity("SELECT LAST_VALUE(x ORDER BY x RESPECT NULLS) OVER (ORDER BY x) FROM t")
@@ -827,13 +827,13 @@ func test_duckdb_TestDuckDB_test_array_index(self *Case, a Args) Value {
 	self.Do(2129, func() {
 		self.AssertLogs(func(cm_ Value) {
 			cm = cm_
-			M(self, "validate_all", "SELECT some_arr[1] AS first FROM blah", Kw("read", NewDict("bigquery", "SELECT some_arr[0] AS first FROM blah")), Kw("write", NewDict("bigquery", "SELECT some_arr[0] AS first FROM blah", "duckdb", "SELECT some_arr[1] AS first FROM blah", "presto", "SELECT some_arr[1] AS first FROM blah")))
-			M(self, "validate_identity", "[x.STRING_SPLIT(' ')[i] FOR x IN ['1', '2', 3] IF x.CONTAINS('1')]")
-			M(self, "validate_identity", "SELECT [4, 5, 6] AS l, [x FOR x, i IN l IF i = 2] AS filtered")
-			M(self, "validate_identity", "SELECT LIST_VALUE(1)[i]", "SELECT [1][i]")
-			M(self, "validate_identity", "{'x': LIST_VALUE(1)[i]}", "{'x': [1][i]}")
-			M(self, "validate_identity", "SELECT LIST_APPLY(RANGE(1, 4), i -> {'f1': LIST_VALUE(1, 2, 3)[i], 'f2': LIST_VALUE(1, 2, 3)[i]})", "SELECT LIST_APPLY(RANGE(1, 4), LAMBDA i : {'f1': [1, 2, 3][i], 'f2': [1, 2, 3][i]})")
-			M(self, "assertEqual", A(cm, "output"), NewList("INFO:sqlglot:Applying array index offset (-1)", "INFO:sqlglot:Applying array index offset (1)", "INFO:sqlglot:Applying array index offset (1)", "INFO:sqlglot:Applying array index offset (1)"))
+			Stmt(M(self, "validate_all", "SELECT some_arr[1] AS first FROM blah", Kw("read", NewDict("bigquery", "SELECT some_arr[0] AS first FROM blah")), Kw("write", NewDict("bigquery", "SELECT some_arr[0] AS first FROM blah", "duckdb", "SELECT some_arr[1] AS first FROM blah", "presto", "SELECT some_arr[1] AS first FROM blah"))))
+			Stmt(M(self, "validate_identity", "[x.STRING_SPLIT(' ')[i] FOR x IN ['1', '2', 3] IF x.CONTAINS('1')]"))
+			Stmt(M(self, "validate_identity", "SELECT [4, 5, 6] AS l, [x FOR x, i IN l IF i = 2] AS filtered"))
+			Stmt(M(self, "validate_identity", "SELECT LIST_VALUE(1)[i]", "SELECT [1][i]"))
+			Stmt(M(self, "validate_identity", "{'x': LIST_VALUE(1)[i]}", "{'x': [1][i]}"))
+			Stmt(M(self, "validate_identity", "SELECT LIST_APPLY(RANGE(1, 4), i -> {'f1': LIST_VALUE(1, 2, 3)[i], 'f2': LIST_VALUE(1, 2, 3)[i]})", "SELECT LIST_APPLY(RANGE(1, 4), LAMBDA i : {'f1': [1, 2, 3][i], 'f2': [1, 2, 3][i]})"))
+			Stmt(M(self, "assertEqual", A(cm, "output"), NewList("INFO:sqlglot:Applying array index offset (-1)", "INFO:sqlglot:Applying array index offset (1)", "INFO:sqlglot:Applying array index offset (1)", "INFO:sqlglot:Applying array index offset (1)")))
 		}, G("sqlglot.helper.logger"))
 	})
 	return nil
@@ -842,13 +842,13 @@ func test_duckdb_TestDuckDB_test_array_index(self *Case, a Args) Value {
 func test_duckdb_TestDuckDB_test_spark_array_slice(self *Case, a Args) Value {
 	var source, target, dialect, expression Value
 	_ = []Value{source, target, dialect, expression}
-	self.Do(2169, func() { source = "SELECT SLICE(SPLIT('abcdef', ''), 2, 4) AS chars" })
-	self.Do(2170, func() { target = "SELECT ARRAY_SLICE(STR_SPLIT_REGEX('abcdef', ''), 2, 5) AS chars" })
+	self.DoAssign(2169, func() { source = "SELECT SLICE(SPLIT('abcdef', ''), 2, 4) AS chars" }, &source)
+	self.DoAssign(2170, func() { target = "SELECT ARRAY_SLICE(STR_SPLIT_REGEX('abcdef', ''), 2, 5) AS chars" }, &target)
 	self.Do(2171, func() { self.ValidateAll(target, Kw("read", NewDict("spark", source))) })
 	for _, item_ := range Iter(NewTuple("spark2", "spark", "databricks")) {
 		dialect = item_
 		self.SubTest(func() {
-			self.Do(2175, func() { expression = Call(G("sqlglot.parse_one"), source, Kw("read", dialect)) })
+			self.DoAssign(2175, func() { expression = Call(G("sqlglot.parse_one"), source, Kw("read", dialect)) }, &expression)
 			self.Do(2176, func() { self.AssertEqual(M(expression, "sql", dialect), source) })
 			self.Do(2177, func() { self.AssertEqual(M(expression, "sql", "duckdb"), target) })
 		}, Kw("dialect", dialect))
@@ -1066,9 +1066,9 @@ func test_duckdb_TestDuckDB_test_timestamp_from_parts(self *Case, a Args) Value 
 			})
 			for _, item_ := range Iter(NewTuple(NewTuple("snowflake", source), NewTuple("duckdb", target))) {
 				Unpack(item_, &dialect, &sql)
-				self.Do(2936, func() {
+				self.DoAssign(2936, func() {
 					expression = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), Call(G("sqlglot.parse_one"), sql, Kw("read", dialect)), Kw("dialect", dialect))
-				})
+				}, &expression)
 				self.Do(2937, func() {
 					self.AssertEqual(A(Item(A(expression, "selects"), 0), "type"), M(A(G("sqlglot.exp"), "DataType"), "build", dtype))
 				})
@@ -1119,13 +1119,13 @@ func test_duckdb_TestDuckDB_test_parameter_token(self *Case, a Args) Value {
 func test_duckdb_TestDuckDB_test_iceberg_property_no_warning(self *Case, a Args) Value {
 	var expression, warning Value
 	_ = []Value{expression, warning}
-	self.Do(2985, func() {
+	self.DoAssign(2985, func() {
 		expression = Call(G("sqlglot.parse_one"), "CREATE ICEBERG TABLE t (a INT)", Kw("dialect", "snowflake"))
-	})
+	}, &expression)
 	self.PatchLogMethod(func(m_ Value) {
 		warning = m_
 		self.Do(2988, func() { self.AssertEqual(M(expression, "sql", Kw("dialect", "duckdb")), "CREATE TABLE t (a INT)") })
-		self.Do(2989, func() { M(warning, "assert_not_called") })
+		self.Do(2989, func() { Stmt(M(warning, "assert_not_called")) })
 	}, "warning")
 	return nil
 }
@@ -1133,13 +1133,13 @@ func test_duckdb_TestDuckDB_test_iceberg_property_no_warning(self *Case, a Args)
 func test_duckdb_TestDuckDB_test_non_iceberg_property_still_warns(self *Case, a Args) Value {
 	var expression, cm Value
 	_ = []Value{expression, cm}
-	self.Do(2992, func() {
+	self.DoAssign(2992, func() {
 		expression = Call(G("sqlglot.parse_one"), "CREATE TRANSIENT TABLE t (a INT)", Kw("dialect", "snowflake"))
-	})
+	}, &expression)
 	self.Do(2994, func() {
 		self.AssertLogs(func(cm_ Value) {
 			cm = cm_
-			M(self, "assertEqual", M(expression, "sql", Kw("dialect", "duckdb")), "CREATE TABLE t (a INT)")
+			Stmt(M(self, "assertEqual", M(expression, "sql", Kw("dialect", "duckdb")), "CREATE TABLE t (a INT)"))
 		}, G("sqlglot.generator.logger"))
 	})
 	self.Do(2997, func() {
@@ -1151,22 +1151,22 @@ func test_duckdb_TestDuckDB_test_non_iceberg_property_still_warns(self *Case, a 
 func test_duckdb_TestDuckDB_test_ignore_nulls(self *Case, a Args) Value {
 	var agg_funcs, func_type, func_, ignore_null, windowed_ignore_null, cm Value
 	_ = []Value{agg_funcs, func_type, func_, ignore_null, windowed_ignore_null, cm}
-	self.Do(3005, func() {
+	self.DoAssign(3005, func() {
 		agg_funcs = NewTuple(A(G("sqlglot.exp"), "Sum"), A(G("sqlglot.exp"), "Max"), A(G("sqlglot.exp"), "Min"))
-	})
+	}, &agg_funcs)
 	for _, item_ := range Iter(Add(A(A(G("sqlglot.dialects.duckdb.DuckDB"), "Generator"), "IGNORE_RESPECT_NULLS_WINDOW_FUNCTIONS"), agg_funcs)) {
 		func_type = item_
-		self.Do(3008, func() { func_ = Call(func_type, Kw("this", M(G("sqlglot.exp"), "to_identifier", "col"))) })
-		self.Do(3009, func() { ignore_null = M(G("sqlglot.exp"), "IgnoreNulls", Kw("this", func_)) })
-		self.Do(3010, func() { windowed_ignore_null = M(G("sqlglot.exp"), "Window", Kw("this", ignore_null)) })
+		self.DoAssign(3008, func() { func_ = Call(func_type, Kw("this", M(G("sqlglot.exp"), "to_identifier", "col"))) }, &func_)
+		self.DoAssign(3009, func() { ignore_null = M(G("sqlglot.exp"), "IgnoreNulls", Kw("this", func_)) }, &ignore_null)
+		self.DoAssign(3010, func() { windowed_ignore_null = M(G("sqlglot.exp"), "Window", Kw("this", ignore_null)) }, &windowed_ignore_null)
 		if Truth(In(func_type, A(A(G("sqlglot.dialects.duckdb.DuckDB"), "Generator"), "IGNORE_RESPECT_NULLS_WINDOW_FUNCTIONS"))) {
-			self.Do(3013, func() { M(self, "assertIn", "IGNORE NULLS", M(windowed_ignore_null, "sql", "duckdb")) })
+			self.Do(3013, func() { Stmt(M(self, "assertIn", "IGNORE NULLS", M(windowed_ignore_null, "sql", "duckdb"))) })
 		} else {
 			self.Do(3015, func() {
 				self.AssertLogs(func(cm_ Value) {
 					cm = cm_
-					M(self, "assertEqual", M(ignore_null, "sql", "duckdb"), M(func_, "sql", "duckdb"))
-					M(self, "assertNotIn", "IGNORE NULLS", M(windowed_ignore_null, "sql", "duckdb"))
+					Stmt(M(self, "assertEqual", M(ignore_null, "sql", "duckdb"), M(func_, "sql", "duckdb")))
+					Stmt(M(self, "assertNotIn", "IGNORE NULLS", M(windowed_ignore_null, "sql", "duckdb")))
 				}, G("sqlglot.generator.logger"))
 			})
 			self.Do(3019, func() {
@@ -1256,17 +1256,17 @@ func test_duckdb_TestDuckDB_test_at_sign_to_abs(self *Case, a Args) Value {
 }
 
 func test_duckdb_TestDuckDB_test_show_tables(self *Case, a Args) Value {
-	self.Do(3212, func() { M(self.ValidateIdentity("SHOW TABLES"), "assert_is", A(G("sqlglot.exp"), "Show")) })
+	self.Do(3212, func() { Stmt(M(self.ValidateIdentity("SHOW TABLES"), "assert_is", A(G("sqlglot.exp"), "Show"))) })
 	self.Do(3213, func() {
-		M(self.ValidateIdentity("SHOW TABLES FROM my_schema"), "assert_is", A(G("sqlglot.exp"), "Show"))
+		Stmt(M(self.ValidateIdentity("SHOW TABLES FROM my_schema"), "assert_is", A(G("sqlglot.exp"), "Show")))
 	})
 	self.Do(3214, func() {
-		M(self.ValidateIdentity("SHOW TABLES FROM my_database"), "assert_is", A(G("sqlglot.exp"), "Show"))
+		Stmt(M(self.ValidateIdentity("SHOW TABLES FROM my_database"), "assert_is", A(G("sqlglot.exp"), "Show")))
 	})
 	self.Do(3215, func() {
-		M(self.ValidateIdentity("SHOW TABLES FROM my_database.my_schema"), "assert_is", A(G("sqlglot.exp"), "Show"))
+		Stmt(M(self.ValidateIdentity("SHOW TABLES FROM my_database.my_schema"), "assert_is", A(G("sqlglot.exp"), "Show")))
 	})
-	self.Do(3216, func() { M(self.ValidateIdentity("SHOW ALL TABLES"), "assert_is", A(G("sqlglot.exp"), "Show")) })
+	self.Do(3216, func() { Stmt(M(self.ValidateIdentity("SHOW ALL TABLES"), "assert_is", A(G("sqlglot.exp"), "Show"))) })
 	return nil
 }
 
@@ -1328,7 +1328,7 @@ func test_duckdb_TestDuckDB_test_create_sequence(self *Case, a Args) Value {
 func test_duckdb_TestDuckDB_test_install(self *Case, a Args) Value {
 	var ast Value
 	_ = []Value{ast}
-	self.Do(3280, func() { ast = self.ValidateIdentity("INSTALL httpfs") })
+	self.DoAssign(3280, func() { ast = self.ValidateIdentity("INSTALL httpfs") }, &ast)
 	self.Do(3281, func() { _ = Eq(A(M(ast, "assert_is", A(G("sqlglot.exp"), "Install")), "name"), "httpfs") })
 	self.Do(3282, func() { Assert(IsInstance(A(ast, "this"), A(G("sqlglot.exp"), "Identifier"))) })
 	self.L(3284).ValidateIdentity("INSTALL httpfs FROM community")
@@ -1362,29 +1362,29 @@ func test_duckdb_TestDuckDB_test_udf(self *Case, a Args) Value {
 		}, F("Testing DuckDB's UDF for keyword: ", FV{V: keyword}))
 		self.SubTest(func() {
 			self.Do(3310, func() {
-				M(self.ValidateIdentity(F("CREATE ", FV{V: keyword}, " my_table_function(a, b) AS TABLE SELECT x, y FROM (VALUES (a, b)) AS tbl(x, y)")), "assert_is", A(G("sqlglot.exp"), "Create"))
+				Stmt(M(self.ValidateIdentity(F("CREATE ", FV{V: keyword}, " my_table_function(a, b) AS TABLE SELECT x, y FROM (VALUES (a, b)) AS tbl(x, y)")), "assert_is", A(G("sqlglot.exp"), "Create")))
 			})
 		}, F("Testing DuckDB's table functions with keyword: ", FV{V: keyword}))
 	}
 	self.L(3314).ValidateAll("CREATE OR REPLACE FUNCTION func(a INT, b FLOAT) AS TABLE SELECT a", Kw("write", NewDict("databricks", "CREATE OR REPLACE FUNCTION func(a INT, b FLOAT) RETURNS TABLE RETURN SELECT a", "duckdb", "CREATE OR REPLACE FUNCTION func(a INT, b REAL) AS TABLE SELECT a")))
-	self.Do(3322, func() {
+	self.DoAssign(3322, func() {
 		overloaded = self.ValidateIdentity("CREATE MACRO add_x (a, b) AS a + b, (a, b, c) AS a + b + c")
-	})
-	self.Do(3325, func() { overloads = A(overloaded, "expression") })
-	self.Do(3326, func() { M(self, "assertIsInstance", overloads, A(G("sqlglot.exp"), "MacroOverloads")) })
+	}, &overloaded)
+	self.DoAssign(3325, func() { overloads = A(overloaded, "expression") }, &overloads)
+	self.Do(3326, func() { Stmt(M(self, "assertIsInstance", overloads, A(G("sqlglot.exp"), "MacroOverloads"))) })
 	self.Do(3327, func() { self.AssertEqual(Len(A(overloads, "expressions")), 2) })
-	self.Do(3328, func() { M(self, "assertIsNone", M(A(A(overloaded, "this"), "args"), "get", "expressions")) })
+	self.Do(3328, func() { Stmt(M(self, "assertIsNone", M(A(A(overloaded, "this"), "args"), "get", "expressions"))) })
 	self.L(3330).ValidateIdentity("CREATE OR REPLACE MACRO foo (a) AS a, (a, b) AS a + b, (a, b, c) AS a + b + c")
 	self.L(3333).ValidateIdentity("CREATE MACRO foo (a TINYINT) AS a + 1, (a INT) AS a + 2")
 	self.L(3334).ValidateIdentity("CREATE MACRO foo(a TINYINT) AS a = 127")
 	self.L(3335).ValidateIdentity("CREATE MACRO is_maximal (a TINYINT) AS a = 127, (a INT) AS a = 2147483647")
-	self.Do(3338, func() {
+	self.DoAssign(3338, func() {
 		table_overloaded = self.ValidateIdentity("CREATE MACRO tbl (a) AS TABLE (SELECT a AS x), (a, b) AS TABLE (SELECT a AS x, b AS y)")
-	})
-	self.Do(3341, func() { table_overloads = A(table_overloaded, "expression") })
-	self.Do(3342, func() { M(self, "assertIsInstance", table_overloads, A(G("sqlglot.exp"), "MacroOverloads")) })
+	}, &table_overloaded)
+	self.DoAssign(3341, func() { table_overloads = A(table_overloaded, "expression") }, &table_overloads)
+	self.Do(3342, func() { Stmt(M(self, "assertIsInstance", table_overloads, A(G("sqlglot.exp"), "MacroOverloads"))) })
 	self.Do(3343, func() {
-		M(self, "assertTrue", Call(G("all"), func() Value {
+		Stmt(M(self, "assertTrue", Call(G("all"), func() Value {
 			var o Value
 			_ = []Value{o}
 			var out []Value
@@ -1393,7 +1393,7 @@ func test_duckdb_TestDuckDB_test_udf(self *Case, a Args) Value {
 				out = append(out, M(A(o, "args"), "get", "is_table"))
 			}
 			return &List{V: out}
-		}()))
+		}())))
 	})
 	return nil
 }
@@ -1413,9 +1413,9 @@ func test_duckdb_TestDuckDB_test_approx_percentile(self *Case, a Args) Value {
 	var expr Value
 	_ = []Value{expr}
 	self.L(3397).ValidateAll("SELECT APPROX_QUANTILE(a, 0.5) FROM t", Kw("read", NewDict("snowflake", "SELECT APPROX_PERCENTILE(a, 0.5) FROM t")), Kw("write", NewDict("duckdb", "SELECT APPROX_QUANTILE(a, 0.5) FROM t", "snowflake", "SELECT APPROX_PERCENTILE(a, 0.5) FROM t")))
-	self.Do(3407, func() {
+	self.DoAssign(3407, func() {
 		expr = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), Call(G("sqlglot.parse_one"), "SELECT APPROX_PERCENTILE(CAST(a AS DOUBLE), 0.5) FROM t", Kw("read", "snowflake")))
-	})
+	}, &expr)
 	self.Do(3410, func() {
 		self.AssertEqual(M(expr, "sql", Kw("dialect", "duckdb")), "SELECT CAST(APPROX_QUANTILE(CAST(a AS DOUBLE), 0.5) AS DOUBLE) FROM t")
 	})
@@ -1452,23 +1452,23 @@ func test_duckdb_TestDuckDB_test_map_size(self *Case, a Args) Value {
 func test_duckdb_TestDuckDB_test_map_pick(self *Case, a Args) Value {
 	var sql, annotated Value
 	_ = []Value{sql, annotated}
-	self.Do(3492, func() { sql = "SELECT MAP_PICK(t.t_map, t.t_key) FROM t" })
-	self.Do(3494, func() {
+	self.DoAssign(3492, func() { sql = "SELECT MAP_PICK(t.t_map, t.t_key) FROM t" }, &sql)
+	self.DoAssign(3494, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), Call(G("sqlglot.parse_one"), sql, Kw("dialect", "snowflake")), Kw("schema", NewDict("t", NewDict("t_map", "MAP(VARCHAR, INT)", "t_key", "VARCHAR"))), Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(3499, func() {
 		self.AssertEqual(M(annotated, "sql", Kw("dialect", "duckdb")), "SELECT MAP_FROM_ENTRIES(LIST_FILTER(MAP_ENTRIES(t.t_map), LAMBDA x : x.key IN (t.t_key))) FROM t")
 	})
-	self.Do(3504, func() {
+	self.DoAssign(3504, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), Call(G("sqlglot.parse_one"), sql, Kw("dialect", "snowflake")), Kw("schema", NewDict("t", NewDict("t_map", "MAP(VARCHAR, INT)", "t_key", "ARRAY(VARCHAR)"))), Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(3509, func() {
 		self.AssertEqual(M(annotated, "sql", Kw("dialect", "duckdb")), "SELECT MAP_FROM_ENTRIES(LIST_FILTER(MAP_ENTRIES(t.t_map), LAMBDA x : ARRAY_CONTAINS(t.t_key, x.key))) FROM t")
 	})
-	self.Do(3514, func() { sql = "SELECT MAP_PICK(t.t_map, t.t_key1, t.t_key2) FROM t" })
-	self.Do(3516, func() {
+	self.DoAssign(3514, func() { sql = "SELECT MAP_PICK(t.t_map, t.t_key1, t.t_key2) FROM t" }, &sql)
+	self.DoAssign(3516, func() {
 		annotated = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), Call(G("sqlglot.parse_one"), sql, Kw("dialect", "snowflake")), Kw("schema", NewDict("t", NewDict("t_map", "MAP(VARCHAR, INT)", "t_key1", "VARCHAR", "t_key2", "VARCHAR"))), Kw("dialect", "snowflake"))
-	})
+	}, &annotated)
 	self.Do(3521, func() {
 		self.AssertEqual(M(annotated, "sql", Kw("dialect", "duckdb")), "SELECT MAP_FROM_ENTRIES(LIST_FILTER(MAP_ENTRIES(t.t_map), LAMBDA x : x.key IN (t.t_key1, t.t_key2))) FROM t")
 	})
@@ -1526,9 +1526,9 @@ func test_duckdb_TestDuckDB_test_concat_ws_typed(self *Case, a Args) Value {
 	for _, item_ := range Iter(NewTuple(NewTuple("ARRAY<STRING>", "STRING", "CONCAT_WS(t.sep, ARRAY_TO_STRING(LIST_CONCAT(CAST(t.a AS TEXT[]), [CAST(t.b AS TEXT)]), t.sep))"), NewTuple("ARRAY<STRING>", "ARRAY<STRING>", "CONCAT_WS(t.sep, ARRAY_TO_STRING(LIST_CONCAT(CAST(t.a AS TEXT[]), CAST(t.b AS TEXT[])), t.sep))"), NewTuple("ARRAY<INT>", "INT", "CONCAT_WS(t.sep, ARRAY_TO_STRING(LIST_CONCAT(CAST(t.a AS TEXT[]), [CAST(t.b AS TEXT)]), t.sep))"))) {
 		Unpack(item_, &a_type, &b_type, &expected)
 		self.SubTest(func() {
-			self.Do(3711, func() {
+			self.DoAssign(3711, func() {
 				expression = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), Call(G("sqlglot.parse_one"), "SELECT CONCAT_WS(t.sep, t.a, t.b) FROM t", Kw("read", "spark")), Kw("schema", NewDict("t", NewDict("sep", "STRING", "a", a_type, "b", b_type))), Kw("dialect", "spark"))
-			})
+			}, &expression)
 			self.Do(3716, func() {
 				self.AssertEqual(M(expression, "sql", "duckdb", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE"))), F("SELECT ", FV{V: expected}, " FROM t"))
 			})
@@ -1543,25 +1543,25 @@ func test_duckdb_TestDuckDB_test_concat_ws_unknown_types(self *Case, a Args) Val
 	for _, item_ := range Iter(NewTuple(false, true)) {
 		annotated = item_
 		self.SubTest(func() {
-			self.Do(3724, func() {
+			self.DoAssign(3724, func() {
 				expression = Call(G("sqlglot.parse_one"), "SELECT CONCAT_WS('-', ARRAY('a'), t.b) FROM t", Kw("read", "spark"))
-			})
+			}, &expression)
 			if Truth(annotated) {
-				self.Do(3728, func() {
+				self.DoAssign(3728, func() {
 					expression = Call(G("sqlglot.optimizer.annotate_types.annotate_types"), expression, Kw("dialect", "spark"))
-				})
+				}, &expression)
 			}
 			self.Do(3730, func() {
 				self.AssertLogs(func(cm_ Value) {
 					logs = cm_
-					M(expression, "sql", "duckdb")
+					Stmt(M(expression, "sql", "duckdb"))
 				}, G("sqlglot.generator.logger"))
 			})
-			self.Do(3732, func() { M(self, "assertIn", "CONCAT_WS with unknown argument types", Item(A(logs, "output"), 0)) })
+			self.Do(3732, func() { Stmt(M(self, "assertIn", "CONCAT_WS with unknown argument types", Item(A(logs, "output"), 0))) })
 			self.Do(3734, func() {
 				self.AssertRaisesRegex(func(cm_ Value) {
 					_ = cm_
-					M(expression, "sql", "duckdb", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE")))
+					Stmt(M(expression, "sql", "duckdb", Kw("unsupported_level", A(G("sqlglot.ErrorLevel"), "RAISE"))))
 				}, G("sqlglot.UnsupportedError"), "unknown argument types")
 			})
 		}, Kw("annotated", annotated))

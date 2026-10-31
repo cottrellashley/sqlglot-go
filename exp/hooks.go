@@ -48,9 +48,13 @@ type GenerateOptions struct {
 	NoCopy             bool
 }
 
+// DefaultPretty mirrors sqlglot.pretty: the default of the Pretty generation option.
+var DefaultPretty bool
+
 // DefaultGenerateOptions returns the generator defaults.
 func DefaultGenerateOptions() GenerateOptions {
 	return GenerateOptions{
+		Pretty:           DefaultPretty,
 		Identify:         false,
 		Pad:              2,
 		Indent:           2,

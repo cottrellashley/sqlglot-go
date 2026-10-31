@@ -59,7 +59,7 @@ func test_generator_TestGenerator_test_identify(self *Case, a Args) Value {
 func test_generator_TestGenerator_test_generate_nested_binary(self *Case, a Args) Value {
 	var sql Value
 	_ = []Value{sql}
-	self.Do(59, func() { sql = Add("SELECT 'foo'", Mul(" || 'foo'", 1000)) })
+	self.DoAssign(59, func() { sql = Add("SELECT 'foo'", Mul(" || 'foo'", 1000)) }, &sql)
 	self.Do(60, func() { self.AssertEqual(M(Call(G("sqlglot.parse_one"), sql), "sql", Kw("copy", false)), sql) })
 	return nil
 }
@@ -70,11 +70,11 @@ func test_generator_TestGenerator_test_overlap_operator(self *Case, a Args) Valu
 	for _, item_ := range Iter(NewTuple("&<", "&>")) {
 		op = item_
 		self.SubTest(func() {
-			self.Do(65, func() { input_sql = F("SELECT '[1,10]'::int4range ", FV{V: op}, " '[5,15]'::int4range") })
-			self.Do(66, func() {
+			self.DoAssign(65, func() { input_sql = F("SELECT '[1,10]'::int4range ", FV{V: op}, " '[5,15]'::int4range") }, &input_sql)
+			self.DoAssign(66, func() {
 				expected_sql = F("SELECT CAST('[1,10]' AS INT4RANGE) ", FV{V: op}, " CAST('[5,15]' AS INT4RANGE)")
-			})
-			self.Do(69, func() { ast = Call(G("sqlglot.parse_one"), input_sql, Kw("read", "postgres")) })
+			}, &expected_sql)
+			self.DoAssign(69, func() { ast = Call(G("sqlglot.parse_one"), input_sql, Kw("read", "postgres")) }, &ast)
 			self.Do(70, func() { self.AssertEqual(M(ast, "sql"), expected_sql) })
 			self.Do(71, func() { self.AssertEqual(M(ast, "sql", "postgres"), expected_sql) })
 		}, Kw("op", op))
@@ -93,41 +93,41 @@ func test_generator_TestGenerator_test_pretty_nested_types(self *Case, a Args) V
 			single_line = a.Get(1, "single_line", nil)
 			pretty = a.Get(2, "pretty", nil)
 			max_text_width = a.Get(3, "max_text_width", 10)
-			kwargs = KwDict(a)
-			M(self, "assertEqual", M(datatype, "sql"), single_line)
-			M(self, "assertEqual", M(datatype, "sql", Kw("pretty", true), Kw("max_text_width", max_text_width), StarStar(kwargs)), pretty)
+			kwargs = KwDict(a, "datatype", "single_line", "pretty", "max_text_width")
+			Stmt(M(self, "assertEqual", M(datatype, "sql"), single_line))
+			Stmt(M(self, "assertEqual", M(datatype, "sql", Kw("pretty", true), Kw("max_text_width", max_text_width), StarStar(kwargs)), pretty))
 			return nil
 		})
 	})
-	self.Do(87, func() { type_str = "STRUCT<a INT, b TEXT>" })
+	self.DoAssign(87, func() { type_str = "STRUCT<a INT, b TEXT>" }, &type_str)
 	self.Do(88, func() {
-		Call(assert_pretty_nested, M(A(G("sqlglot.exp"), "DataType"), "build", type_str), type_str, "STRUCT<\n  a INT,\n  b TEXT\n>")
+		Stmt(Call(assert_pretty_nested, M(A(G("sqlglot.exp"), "DataType"), "build", type_str), type_str, "STRUCT<\n  a INT,\n  b TEXT\n>"))
 	})
 	self.Do(95, func() {
-		Call(assert_pretty_nested, M(A(G("sqlglot.exp"), "DataType"), "build", type_str), type_str, "STRUCT<a INT, b TEXT>", Kw("max_text_width", 50))
+		Stmt(Call(assert_pretty_nested, M(A(G("sqlglot.exp"), "DataType"), "build", type_str), type_str, "STRUCT<a INT, b TEXT>", Kw("max_text_width", 50)))
 	})
 	self.Do(103, func() {
-		Call(assert_pretty_nested, M(A(G("sqlglot.exp"), "DataType"), "build", type_str), type_str, "STRUCT<\n  a INT\n  , b TEXT\n>", Kw("leading_comma", true))
+		Stmt(Call(assert_pretty_nested, M(A(G("sqlglot.exp"), "DataType"), "build", type_str), type_str, "STRUCT<\n  a INT\n  , b TEXT\n>", Kw("leading_comma", true)))
 	})
-	self.Do(111, func() { type_str = "ARRAY<DECIMAL(38, 9)>" })
+	self.DoAssign(111, func() { type_str = "ARRAY<DECIMAL(38, 9)>" }, &type_str)
 	self.Do(112, func() {
-		Call(assert_pretty_nested, M(A(G("sqlglot.exp"), "DataType"), "build", type_str), type_str, "ARRAY<\n  DECIMAL(38, 9)\n>")
+		Stmt(Call(assert_pretty_nested, M(A(G("sqlglot.exp"), "DataType"), "build", type_str), type_str, "ARRAY<\n  DECIMAL(38, 9)\n>"))
 	})
-	self.Do(119, func() { type_str = "ARRAY<STRUCT<a INT, b TEXT>>" })
+	self.DoAssign(119, func() { type_str = "ARRAY<STRUCT<a INT, b TEXT>>" }, &type_str)
 	self.Do(120, func() {
-		Call(assert_pretty_nested, M(A(G("sqlglot.exp"), "DataType"), "build", type_str), type_str, "ARRAY<\n  STRUCT<\n    a INT,\n    b TEXT\n  >\n>")
+		Stmt(Call(assert_pretty_nested, M(A(G("sqlglot.exp"), "DataType"), "build", type_str), type_str, "ARRAY<\n  STRUCT<\n    a INT,\n    b TEXT\n  >\n>"))
 	})
-	self.Do(127, func() { type_str = "RANGE<DECIMAL(38, 9)>" })
+	self.DoAssign(127, func() { type_str = "RANGE<DECIMAL(38, 9)>" }, &type_str)
 	self.Do(128, func() {
-		Call(assert_pretty_nested, M(A(G("sqlglot.exp"), "DataType"), "build", type_str), type_str, "RANGE<\n  DECIMAL(38, 9)\n>")
+		Stmt(Call(assert_pretty_nested, M(A(G("sqlglot.exp"), "DataType"), "build", type_str), type_str, "RANGE<\n  DECIMAL(38, 9)\n>"))
 	})
-	self.Do(135, func() { type_str = "LIST<INT, INT, TEXT>" })
+	self.DoAssign(135, func() { type_str = "LIST<INT, INT, TEXT>" }, &type_str)
 	self.Do(136, func() {
-		Call(assert_pretty_nested, M(A(G("sqlglot.exp"), "DataType"), "build", type_str), type_str, "LIST<\n  INT,\n  INT,\n  TEXT\n>")
+		Stmt(Call(assert_pretty_nested, M(A(G("sqlglot.exp"), "DataType"), "build", type_str), type_str, "LIST<\n  INT,\n  INT,\n  TEXT\n>"))
 	})
-	self.Do(143, func() { type_str = "MAP<INT, DECIMAL(38, 9)>" })
+	self.DoAssign(143, func() { type_str = "MAP<INT, DECIMAL(38, 9)>" }, &type_str)
 	self.Do(144, func() {
-		Call(assert_pretty_nested, M(A(G("sqlglot.exp"), "DataType"), "build", type_str), type_str, "MAP<\n  INT,\n  DECIMAL(38, 9)\n>")
+		Stmt(Call(assert_pretty_nested, M(A(G("sqlglot.exp"), "DataType"), "build", type_str), type_str, "MAP<\n  INT,\n  DECIMAL(38, 9)\n>"))
 	})
 	return nil
 }
@@ -135,19 +135,19 @@ func test_generator_TestGenerator_test_pretty_nested_types(self *Case, a Args) V
 func test_generator_TestGenerator_test_unsupported_property_is_dropped(self *Case, a Args) Value {
 	var expression Value
 	_ = []Value{expression}
-	self.Do(151, func() {
+	self.DoAssign(151, func() {
 		expression = Call(G("sqlglot.parse_one"), "CREATE TABLE t (a INT) ROW FORMAT SERDE 's'", Kw("read", "athena"))
-	})
+	}, &expression)
 	self.Do(153, func() {
 		self.AssertLogs(func(cm_ Value) {
 			_ = cm_
-			M(self, "assertEqual", M(expression, "sql", Kw("dialect", "postgres")), "CREATE TABLE t (a INT)")
+			Stmt(M(self, "assertEqual", M(expression, "sql", Kw("dialect", "postgres")), "CREATE TABLE t (a INT)"))
 		}, G("sqlglot.generator.logger"), Kw("level", "WARNING"))
 	})
 	self.Do(156, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			M(expression, "sql", Kw("dialect", "postgres"), Kw("unsupported_level", A(G("sqlglot.errors.ErrorLevel"), "RAISE")))
+			Stmt(M(expression, "sql", Kw("dialect", "postgres"), Kw("unsupported_level", A(G("sqlglot.errors.ErrorLevel"), "RAISE"))))
 		}, G("sqlglot.errors.UnsupportedError"))
 	})
 	return nil

@@ -283,7 +283,7 @@ func (e *Expr) Select(args ...any) *Expr {
 		}
 		return inst
 	case Select:
-		return applyListBuilder(pos, e, "expressions", o, "", InvalidKind)
+		return applyListBuilder(pos, e, "expressions", o, "", AnyExpression)
 	}
 	panic("Query objects must implement `select`")
 }
@@ -489,7 +489,7 @@ func (e *Expr) UpdateTable(expression any, opts ...Option) *Expr {
 // UpdateSet mirrors Update.set_(*expressions).
 func (e *Expr) UpdateSet(args ...any) *Expr {
 	pos, o := splitArgs(args)
-	return applyListBuilder(pos, e, "expressions", o, "", InvalidKind)
+	return applyListBuilder(pos, e, "expressions", o, "", AnyExpression)
 }
 
 // On mirrors Join.on(*expressions).
@@ -778,11 +778,26 @@ func (e *Expr) Modulo(other any) *Expr { return e.binop(Mod, other, false) }
 // Power mirrors expr ** other.
 func (e *Expr) Power(other any) *Expr { return e.binop(Pow, other, false) }
 
+// RFloorDiv mirrors other // expr.
+func (e *Expr) RFloorDiv(other any) *Expr { return e.binop(IntDiv, other, true) }
+
+// RModulo mirrors other % expr.
+func (e *Expr) RModulo(other any) *Expr { return e.binop(Mod, other, true) }
+
+// RPower mirrors other ** expr.
+func (e *Expr) RPower(other any) *Expr { return e.binop(Pow, other, true) }
+
 // BitAnd mirrors expr & other (logical AND in sqlglot).
 func (e *Expr) BitAnd(other any) *Expr { return e.binop(And, other, false) }
 
+// RBitAnd mirrors other & expr.
+func (e *Expr) RBitAnd(other any) *Expr { return e.binop(And, other, true) }
+
 // BitOr mirrors expr | other (logical OR in sqlglot).
 func (e *Expr) BitOr(other any) *Expr { return e.binop(Or, other, false) }
+
+// RBitOr mirrors other | expr.
+func (e *Expr) RBitOr(other any) *Expr { return e.binop(Or, other, true) }
 
 // Negate mirrors -expr.
 func (e *Expr) Negate() *Expr { return New(Neg, "this", wrap(e.Copy(), Binary)) }

@@ -36,8 +36,8 @@ func test_tokens_TestTokens_test_space_keywords(self *Case, a Args) Value {
 	_ = []Value{string_, length, tokens}
 	for _, item_ := range Iter(NewTuple(NewTuple("group bys", 2), NewTuple(" group bys", 2), NewTuple(" group bys ", 2), NewTuple("group by)", 2), NewTuple("group bys)", 3), NewTuple("group \r", 1))) {
 		Unpack(item_, &string_, &length)
-		self.Do(18, func() { tokens = M(Call(G("sqlglot.tokens.Tokenizer")), "tokenize", string_) })
-		self.Do(19, func() { M(self, "assertTrue", In("GROUP", M(A(Item(tokens, 0), "text"), "upper"))) })
+		self.DoAssign(18, func() { tokens = M(Call(G("sqlglot.tokens.Tokenizer")), "tokenize", string_) }, &tokens)
+		self.Do(19, func() { Stmt(M(self, "assertTrue", In("GROUP", M(A(Item(tokens, 0), "text"), "upper")))) })
 		self.Do(20, func() { self.AssertEqual(Len(tokens), length) })
 	}
 	return nil
@@ -46,10 +46,10 @@ func test_tokens_TestTokens_test_space_keywords(self *Case, a Args) Value {
 func test_tokens_TestTokens_test_comment_attachment(self *Case, a Args) Value {
 	var tokenizer, sql_comment, sql, comment Value
 	_ = []Value{tokenizer, sql_comment, sql, comment}
-	self.Do(23, func() { tokenizer = Call(G("sqlglot.tokens.Tokenizer")) })
-	self.Do(24, func() {
+	self.DoAssign(23, func() { tokenizer = Call(G("sqlglot.tokens.Tokenizer")) }, &tokenizer)
+	self.DoAssign(24, func() {
 		sql_comment = NewList(NewTuple("/*comment*/ foo", NewList("comment")), NewTuple("/*comment*/ foo --test", NewList("comment", "test")), NewTuple("--comment\nfoo --test", NewList("comment", "test")), NewTuple("foo --comment", NewList("comment")), NewTuple("foo", NewList()), NewTuple("foo /*comment 1*/ /*comment 2*/", NewList("comment 1", "comment 2")), NewTuple("foo\n-- comment", NewList(" comment")), NewTuple("1 /*/2 */", NewList("/2 ")), NewTuple("1\n/*comment*/;", NewList("comment")))
-	})
+	}, &sql_comment)
 	for _, item_ := range Iter(sql_comment) {
 		Unpack(item_, &sql, &comment)
 		self.Do(37, func() { self.AssertEqual(A(Item(M(tokenizer, "tokenize", sql), 0), "comments"), comment) })
@@ -60,9 +60,9 @@ func test_tokens_TestTokens_test_comment_attachment(self *Case, a Args) Value {
 func test_tokens_TestTokens_test_token_line_col(self *Case, a Args) Value {
 	var tokens Value
 	_ = []Value{tokens}
-	self.Do(40, func() {
+	self.DoAssign(40, func() {
 		tokens = M(Call(G("sqlglot.tokens.Tokenizer")), "tokenize", "SELECT /*\nline break\n*/\n'x\n y',\nx")
-	})
+	}, &tokens)
 	self.Do(49, func() { self.AssertEqual(A(Item(tokens, 0), "line"), 1) })
 	self.Do(50, func() { self.AssertEqual(A(Item(tokens, 0), "col"), 6) })
 	self.Do(51, func() { self.AssertEqual(A(Item(tokens, 1), "line"), 5) })
@@ -71,7 +71,7 @@ func test_tokens_TestTokens_test_token_line_col(self *Case, a Args) Value {
 	self.Do(54, func() { self.AssertEqual(A(Item(tokens, 2), "col"), 4) })
 	self.Do(55, func() { self.AssertEqual(A(Item(tokens, 3), "line"), 6) })
 	self.Do(56, func() { self.AssertEqual(A(Item(tokens, 3), "col"), 1) })
-	self.Do(58, func() { tokens = M(Call(G("sqlglot.tokens.Tokenizer")), "tokenize", "SELECT .") })
+	self.DoAssign(58, func() { tokens = M(Call(G("sqlglot.tokens.Tokenizer")), "tokenize", "SELECT .") }, &tokens)
 	self.Do(60, func() { self.AssertEqual(A(Item(tokens, 1), "line"), 1) })
 	self.Do(61, func() { self.AssertEqual(A(Item(tokens, 1), "col"), 8) })
 	self.Do(63, func() {
@@ -83,7 +83,7 @@ func test_tokens_TestTokens_test_token_line_col(self *Case, a Args) Value {
 	self.Do(65, func() {
 		self.AssertEqual(A(Item(M(Call(G("sqlglot.tokens.Tokenizer")), "tokenize", "'abc'"), 0), "start"), 0)
 	})
-	self.Do(67, func() { tokens = M(Call(G("sqlglot.tokens.Tokenizer")), "tokenize", "SELECT\r\n  1,\r\n  2") })
+	self.DoAssign(67, func() { tokens = M(Call(G("sqlglot.tokens.Tokenizer")), "tokenize", "SELECT\r\n  1,\r\n  2") }, &tokens)
 	self.Do(69, func() { self.AssertEqual(A(Item(tokens, 0), "line"), 1) })
 	self.Do(70, func() { self.AssertEqual(A(Item(tokens, 0), "col"), 6) })
 	self.Do(71, func() { self.AssertEqual(A(Item(tokens, 1), "line"), 2) })
@@ -92,7 +92,7 @@ func test_tokens_TestTokens_test_token_line_col(self *Case, a Args) Value {
 	self.Do(74, func() { self.AssertEqual(A(Item(tokens, 2), "col"), 4) })
 	self.Do(75, func() { self.AssertEqual(A(Item(tokens, 3), "line"), 3) })
 	self.Do(76, func() { self.AssertEqual(A(Item(tokens, 3), "col"), 3) })
-	self.Do(78, func() { tokens = M(Call(G("sqlglot.tokens.Tokenizer")), "tokenize", "  SELECT\n    100") })
+	self.DoAssign(78, func() { tokens = M(Call(G("sqlglot.tokens.Tokenizer")), "tokenize", "  SELECT\n    100") }, &tokens)
 	self.Do(79, func() { self.AssertEqual(A(Item(tokens, 0), "line"), 1) })
 	self.Do(80, func() { self.AssertEqual(A(Item(tokens, 0), "col"), 8) })
 	self.Do(81, func() { self.AssertEqual(A(Item(tokens, 1), "line"), 2) })
@@ -103,8 +103,8 @@ func test_tokens_TestTokens_test_token_line_col(self *Case, a Args) Value {
 func test_tokens_TestTokens_test_crlf(self *Case, a Args) Value {
 	var tokens, simple_query Value
 	_ = []Value{tokens, simple_query}
-	self.Do(85, func() { tokens = M(Call(G("sqlglot.tokens.Tokenizer")), "tokenize", "SELECT a\r\nFROM b") })
-	self.Do(86, func() {
+	self.DoAssign(85, func() { tokens = M(Call(G("sqlglot.tokens.Tokenizer")), "tokenize", "SELECT a\r\nFROM b") }, &tokens)
+	self.DoAssign(86, func() {
 		tokens = func() Value {
 			var token Value
 			_ = []Value{token}
@@ -115,14 +115,14 @@ func test_tokens_TestTokens_test_crlf(self *Case, a Args) Value {
 			}
 			return &List{V: out}
 		}()
-	})
+	}, &tokens)
 	self.Do(88, func() {
 		self.AssertEqual(tokens, NewList(NewTuple(A(G("sqlglot.tokens.TokenType"), "SELECT"), "SELECT"), NewTuple(A(G("sqlglot.tokens.TokenType"), "VAR"), "a"), NewTuple(A(G("sqlglot.tokens.TokenType"), "FROM"), "FROM"), NewTuple(A(G("sqlglot.tokens.TokenType"), "VAR"), "b")))
 	})
 	for _, item_ := range Iter(NewTuple("SELECT 1\r\n", "\r\nSELECT 1")) {
 		simple_query = item_
-		self.Do(99, func() { tokens = M(Call(G("sqlglot.tokens.Tokenizer")), "tokenize", simple_query) })
-		self.Do(100, func() {
+		self.DoAssign(99, func() { tokens = M(Call(G("sqlglot.tokens.Tokenizer")), "tokenize", simple_query) }, &tokens)
+		self.DoAssign(100, func() {
 			tokens = func() Value {
 				var token Value
 				_ = []Value{token}
@@ -133,7 +133,7 @@ func test_tokens_TestTokens_test_crlf(self *Case, a Args) Value {
 				}
 				return &List{V: out}
 			}()
-		})
+		}, &tokens)
 		self.Do(102, func() {
 			self.AssertEqual(tokens, NewList(NewTuple(A(G("sqlglot.tokens.TokenType"), "SELECT"), "SELECT"), NewTuple(A(G("sqlglot.tokens.TokenType"), "NUMBER"), "1")))
 		})
@@ -144,17 +144,17 @@ func test_tokens_TestTokens_test_crlf(self *Case, a Args) Value {
 func test_tokens_TestTokens_test_command(self *Case, a Args) Value {
 	var tokens Value
 	_ = []Value{tokens}
-	self.Do(111, func() { tokens = M(Call(G("sqlglot.tokens.Tokenizer")), "tokenize", "SHOW;") })
+	self.DoAssign(111, func() { tokens = M(Call(G("sqlglot.tokens.Tokenizer")), "tokenize", "SHOW;") }, &tokens)
 	self.Do(112, func() { self.AssertEqual(A(Item(tokens, 0), "token_type"), A(G("sqlglot.tokens.TokenType"), "SHOW")) })
 	self.Do(113, func() {
 		self.AssertEqual(A(Item(tokens, 1), "token_type"), A(G("sqlglot.tokens.TokenType"), "SEMICOLON"))
 	})
-	self.Do(115, func() { tokens = M(Call(G("sqlglot.tokens.Tokenizer")), "tokenize", "EXECUTE") })
+	self.DoAssign(115, func() { tokens = M(Call(G("sqlglot.tokens.Tokenizer")), "tokenize", "EXECUTE") }, &tokens)
 	self.Do(116, func() {
 		self.AssertEqual(A(Item(tokens, 0), "token_type"), A(G("sqlglot.tokens.TokenType"), "EXECUTE"))
 	})
 	self.Do(117, func() { self.AssertEqual(Len(tokens), 1) })
-	self.Do(119, func() { tokens = M(Call(G("sqlglot.tokens.Tokenizer")), "tokenize", "FETCH;SHOW;") })
+	self.DoAssign(119, func() { tokens = M(Call(G("sqlglot.tokens.Tokenizer")), "tokenize", "FETCH;SHOW;") }, &tokens)
 	self.Do(120, func() { self.AssertEqual(A(Item(tokens, 0), "token_type"), A(G("sqlglot.tokens.TokenType"), "FETCH")) })
 	self.Do(121, func() {
 		self.AssertEqual(A(Item(tokens, 1), "token_type"), A(G("sqlglot.tokens.TokenType"), "SEMICOLON"))
@@ -169,11 +169,11 @@ func test_tokens_TestTokens_test_command(self *Case, a Args) Value {
 func test_tokens_TestTokens_test_error_msg(self *Case, a Args) Value {
 	var sql, ctx Value
 	_ = []Value{sql, ctx}
-	self.Do(126, func() { sql = "select /*" })
+	self.DoAssign(126, func() { sql = "select /*" }, &sql)
 	self.Do(127, func() {
 		self.AssertRaisesRegex(func(cm_ Value) {
 			ctx = cm_
-			M(Call(G("sqlglot.tokens.Tokenizer")), "tokenize", sql)
+			Stmt(M(Call(G("sqlglot.tokens.Tokenizer")), "tokenize", sql))
 		}, G("sqlglot.errors.TokenError"), "Error tokenizing 'select /'")
 	})
 	self.Do(131, func() {
@@ -185,11 +185,11 @@ func test_tokens_TestTokens_test_error_msg(self *Case, a Args) Value {
 func test_tokens_TestTokens_test_jinja(self *Case, a Args) Value {
 	var tokenizer, tokens Value
 	_ = []Value{tokenizer, tokens}
-	self.Do(135, func() { tokenizer = M(G("sqlglot.dialects.BigQuery"), "Tokenizer") })
-	self.Do(137, func() {
+	self.DoAssign(135, func() { tokenizer = M(G("sqlglot.dialects.BigQuery"), "Tokenizer") }, &tokenizer)
+	self.DoAssign(137, func() {
 		tokens = M(tokenizer, "tokenize", "\n            SELECT\n               {{ x }},\n               {{- x -}},\n               {# it's a comment #}\n               {% for x in y -%}\n               a {{+ b }}\n               {% endfor %};\n        ")
-	})
-	self.Do(149, func() {
+	}, &tokens)
+	self.DoAssign(149, func() {
 		tokens = func() Value {
 			var token Value
 			_ = []Value{token}
@@ -200,12 +200,12 @@ func test_tokens_TestTokens_test_jinja(self *Case, a Args) Value {
 			}
 			return &List{V: out}
 		}()
-	})
+	}, &tokens)
 	self.Do(151, func() {
 		self.AssertEqual(tokens, NewList(NewTuple(A(G("sqlglot.tokens.TokenType"), "SELECT"), "SELECT"), NewTuple(A(G("sqlglot.tokens.TokenType"), "L_BRACE"), "{"), NewTuple(A(G("sqlglot.tokens.TokenType"), "L_BRACE"), "{"), NewTuple(A(G("sqlglot.tokens.TokenType"), "VAR"), "x"), NewTuple(A(G("sqlglot.tokens.TokenType"), "R_BRACE"), "}"), NewTuple(A(G("sqlglot.tokens.TokenType"), "R_BRACE"), "}"), NewTuple(A(G("sqlglot.tokens.TokenType"), "COMMA"), ","), NewTuple(A(G("sqlglot.tokens.TokenType"), "BLOCK_START"), "{{-"), NewTuple(A(G("sqlglot.tokens.TokenType"), "VAR"), "x"), NewTuple(A(G("sqlglot.tokens.TokenType"), "BLOCK_END"), "-}}"), NewTuple(A(G("sqlglot.tokens.TokenType"), "COMMA"), ","), NewTuple(A(G("sqlglot.tokens.TokenType"), "BLOCK_START"), "{%"), NewTuple(A(G("sqlglot.tokens.TokenType"), "FOR"), "for"), NewTuple(A(G("sqlglot.tokens.TokenType"), "VAR"), "x"), NewTuple(A(G("sqlglot.tokens.TokenType"), "IN"), "in"), NewTuple(A(G("sqlglot.tokens.TokenType"), "VAR"), "y"), NewTuple(A(G("sqlglot.tokens.TokenType"), "BLOCK_END"), "-%}"), NewTuple(A(G("sqlglot.tokens.TokenType"), "VAR"), "a"), NewTuple(A(G("sqlglot.tokens.TokenType"), "BLOCK_START"), "{{+"), NewTuple(A(G("sqlglot.tokens.TokenType"), "VAR"), "b"), NewTuple(A(G("sqlglot.tokens.TokenType"), "R_BRACE"), "}"), NewTuple(A(G("sqlglot.tokens.TokenType"), "R_BRACE"), "}"), NewTuple(A(G("sqlglot.tokens.TokenType"), "BLOCK_START"), "{%"), NewTuple(A(G("sqlglot.tokens.TokenType"), "VAR"), "endfor"), NewTuple(A(G("sqlglot.tokens.TokenType"), "BLOCK_END"), "%}"), NewTuple(A(G("sqlglot.tokens.TokenType"), "SEMICOLON"), ";")))
 	})
-	self.Do(183, func() { tokens = M(tokenizer, "tokenize", "'{{ var('x') }}'") })
-	self.Do(184, func() {
+	self.DoAssign(183, func() { tokens = M(tokenizer, "tokenize", "'{{ var('x') }}'") }, &tokens)
+	self.DoAssign(184, func() {
 		tokens = func() Value {
 			var token Value
 			_ = []Value{token}
@@ -216,7 +216,7 @@ func test_tokens_TestTokens_test_jinja(self *Case, a Args) Value {
 			}
 			return &List{V: out}
 		}()
-	})
+	}, &tokens)
 	self.Do(185, func() {
 		self.AssertEqual(tokens, NewList(NewTuple(A(G("sqlglot.tokens.TokenType"), "STRING"), "{{ var("), NewTuple(A(G("sqlglot.tokens.TokenType"), "VAR"), "x"), NewTuple(A(G("sqlglot.tokens.TokenType"), "STRING"), ") }}")))
 	})
@@ -226,21 +226,21 @@ func test_tokens_TestTokens_test_jinja(self *Case, a Args) Value {
 func test_tokens_TestTokens_test_partial_token_list(self *Case, a Args) Value {
 	var tokenizer, e, partial_tokens Value
 	_ = []Value{tokenizer, e, partial_tokens}
-	self.Do(195, func() { tokenizer = Call(G("sqlglot.tokens.Tokenizer")) })
+	self.DoAssign(195, func() { tokenizer = Call(G("sqlglot.tokens.Tokenizer")) }, &tokenizer)
 	self.Do(197, func() {
 		err1 := Try(func() {
-			M(tokenizer, "tokenize", "foo 'bar")
+			Stmt(M(tokenizer, "tokenize", "foo 'bar"))
 		})
 		if err1 != nil {
 			if Matches(err1, G("sqlglot.errors.TokenError")) {
 				e = err1
-				self.Do(201, func() { M(self, "assertIn", "Error tokenizing 'foo 'ba'", Str(e)) })
+				self.Do(201, func() { Stmt(M(self, "assertIn", "Error tokenizing 'foo 'ba'", Str(e))) })
 			} else {
 				panic(err1)
 			}
 		}
 	})
-	self.Do(203, func() { partial_tokens = A(tokenizer, "tokens") })
+	self.DoAssign(203, func() { partial_tokens = A(tokenizer, "tokens") }, &partial_tokens)
 	self.Do(205, func() { self.AssertEqual(Len(partial_tokens), 1) })
 	self.Do(206, func() {
 		self.AssertEqual(A(Item(partial_tokens, 0), "token_type"), A(G("sqlglot.tokens.TokenType"), "VAR"))
@@ -252,7 +252,7 @@ func test_tokens_TestTokens_test_partial_token_list(self *Case, a Args) Value {
 func test_tokens_TestTokens_test_unicode_identifiers(self *Case, a Args) Value {
 	var tokens Value
 	_ = []Value{tokens}
-	self.Do(210, func() { tokens = M(Call(G("sqlglot.tokens.Tokenizer")), "tokenize", "SELECT café FROM t") })
+	self.DoAssign(210, func() { tokens = M(Call(G("sqlglot.tokens.Tokenizer")), "tokenize", "SELECT café FROM t") }, &tokens)
 	self.Do(211, func() {
 		self.AssertEqual(A(Call(G("next"), func() Value {
 			var t_ Value

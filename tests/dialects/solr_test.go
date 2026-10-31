@@ -26,8 +26,8 @@ var test_solr_TestSolr = &Class{
 
 func test_solr_TestSolr_test_solr(self *Case, a Args) Value {
 	self.L(9).ValidateIdentity("SELECT `default`.column FROM t")
-	self.Do(10, func() { M(self, "failureException", `SELECT "column" FROM t`) })
+	self.Do(10, func() { Stmt(M(self, "failureException", `SELECT "column" FROM t`)) })
 	self.L(11).ValidateIdentity("SELECT column FROM t WHERE column = 'val'")
-	self.Do(12, func() { M(self.ValidateIdentity("a || b", "a OR b"), "assert_is", A(G("sqlglot.exp"), "Or")) })
+	self.Do(12, func() { Stmt(M(self.ValidateIdentity("a || b", "a OR b"), "assert_is", A(G("sqlglot.exp"), "Or"))) })
 	return nil
 }

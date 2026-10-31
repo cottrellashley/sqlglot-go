@@ -37,10 +37,10 @@ var test_errors_TestErrors = &Class{
 func test_errors_TestErrors_test_highlight_sql_single_character(self *Case, a Args) Value {
 	var sql, formatted, start_ctx, highlight, end_ctx Value
 	_ = []Value{sql, formatted, start_ctx, highlight, end_ctx}
-	self.Do(8, func() { sql = "SELECT a FROM t" })
-	self.Do(9, func() {
+	self.DoAssign(8, func() { sql = "SELECT a FROM t" }, &sql)
+	self.DoAssign(9, func() {
 		Unpack(Call(G("sqlglot.errors.highlight_sql"), sql, NewList(NewTuple(7, 7))), &formatted, &start_ctx, &highlight, &end_ctx)
-	})
+	}, &formatted, &start_ctx, &highlight, &end_ctx)
 	self.Do(11, func() { self.AssertEqual(start_ctx, "SELECT ") })
 	self.Do(12, func() { self.AssertEqual(highlight, "a") })
 	self.Do(13, func() { self.AssertEqual(end_ctx, " FROM t") })
@@ -53,10 +53,10 @@ func test_errors_TestErrors_test_highlight_sql_single_character(self *Case, a Ar
 func test_errors_TestErrors_test_highlight_sql_multi_character(self *Case, a Args) Value {
 	var sql, formatted, start_ctx, highlight, end_ctx Value
 	_ = []Value{sql, formatted, start_ctx, highlight, end_ctx}
-	self.Do(17, func() { sql = "SELECT foo FROM table" })
-	self.Do(18, func() {
+	self.DoAssign(17, func() { sql = "SELECT foo FROM table" }, &sql)
+	self.DoAssign(18, func() {
 		Unpack(Call(G("sqlglot.errors.highlight_sql"), sql, NewList(NewTuple(7, 9))), &formatted, &start_ctx, &highlight, &end_ctx)
-	})
+	}, &formatted, &start_ctx, &highlight, &end_ctx)
 	self.Do(20, func() { self.AssertEqual(start_ctx, "SELECT ") })
 	self.Do(21, func() { self.AssertEqual(highlight, "foo") })
 	self.Do(22, func() { self.AssertEqual(end_ctx, " FROM table") })
@@ -69,10 +69,10 @@ func test_errors_TestErrors_test_highlight_sql_multi_character(self *Case, a Arg
 func test_errors_TestErrors_test_highlight_sql_multiple_highlights(self *Case, a Args) Value {
 	var sql, formatted, start_ctx, highlight, end_ctx Value
 	_ = []Value{sql, formatted, start_ctx, highlight, end_ctx}
-	self.Do(26, func() { sql = "SELECT a, b, c FROM table" })
-	self.Do(27, func() {
+	self.DoAssign(26, func() { sql = "SELECT a, b, c FROM table" }, &sql)
+	self.DoAssign(27, func() {
 		Unpack(Call(G("sqlglot.errors.highlight_sql"), sql, NewList(NewTuple(7, 7), NewTuple(10, 10))), &formatted, &start_ctx, &highlight, &end_ctx)
-	})
+	}, &formatted, &start_ctx, &highlight, &end_ctx)
 	self.Do(29, func() { self.AssertEqual(start_ctx, "SELECT ") })
 	self.Do(30, func() { self.AssertEqual(highlight, "a, b") })
 	self.Do(31, func() { self.AssertEqual(end_ctx, ", c FROM table") })
@@ -85,10 +85,10 @@ func test_errors_TestErrors_test_highlight_sql_multiple_highlights(self *Case, a
 func test_errors_TestErrors_test_highlight_sql_at_end(self *Case, a Args) Value {
 	var sql, formatted, start_ctx, highlight, end_ctx Value
 	_ = []Value{sql, formatted, start_ctx, highlight, end_ctx}
-	self.Do(38, func() { sql = "SELECT a FROM t" })
-	self.Do(39, func() {
+	self.DoAssign(38, func() { sql = "SELECT a FROM t" }, &sql)
+	self.DoAssign(39, func() {
 		Unpack(Call(G("sqlglot.errors.highlight_sql"), sql, NewList(NewTuple(14, 14))), &formatted, &start_ctx, &highlight, &end_ctx)
-	})
+	}, &formatted, &start_ctx, &highlight, &end_ctx)
 	self.Do(41, func() { self.AssertEqual(start_ctx, "SELECT a FROM ") })
 	self.Do(42, func() { self.AssertEqual(highlight, "t") })
 	self.Do(43, func() { self.AssertEqual(end_ctx, "") })
@@ -101,10 +101,10 @@ func test_errors_TestErrors_test_highlight_sql_at_end(self *Case, a Args) Value 
 func test_errors_TestErrors_test_highlight_sql_entire_string(self *Case, a Args) Value {
 	var sql, formatted, start_ctx, highlight, end_ctx Value
 	_ = []Value{sql, formatted, start_ctx, highlight, end_ctx}
-	self.Do(47, func() { sql = "SELECT a" })
-	self.Do(48, func() {
+	self.DoAssign(47, func() { sql = "SELECT a" }, &sql)
+	self.DoAssign(48, func() {
 		Unpack(Call(G("sqlglot.errors.highlight_sql"), sql, NewList(NewTuple(0, 7))), &formatted, &start_ctx, &highlight, &end_ctx)
-	})
+	}, &formatted, &start_ctx, &highlight, &end_ctx)
 	self.Do(50, func() { self.AssertEqual(start_ctx, "") })
 	self.Do(51, func() { self.AssertEqual(highlight, "SELECT a") })
 	self.Do(52, func() { self.AssertEqual(end_ctx, "") })
@@ -117,10 +117,10 @@ func test_errors_TestErrors_test_highlight_sql_entire_string(self *Case, a Args)
 func test_errors_TestErrors_test_highlight_sql_adjacent_highlights(self *Case, a Args) Value {
 	var sql, formatted, start_ctx, highlight, end_ctx Value
 	_ = []Value{sql, formatted, start_ctx, highlight, end_ctx}
-	self.Do(56, func() { sql = "SELECT ab FROM t" })
-	self.Do(57, func() {
+	self.DoAssign(56, func() { sql = "SELECT ab FROM t" }, &sql)
+	self.DoAssign(57, func() {
 		Unpack(Call(G("sqlglot.errors.highlight_sql"), sql, NewList(NewTuple(7, 7), NewTuple(8, 8))), &formatted, &start_ctx, &highlight, &end_ctx)
-	})
+	}, &formatted, &start_ctx, &highlight, &end_ctx)
 	self.Do(59, func() { self.AssertEqual(start_ctx, "SELECT ") })
 	self.Do(60, func() { self.AssertEqual(highlight, "ab") })
 	self.Do(61, func() { self.AssertEqual(end_ctx, " FROM t") })
@@ -133,10 +133,10 @@ func test_errors_TestErrors_test_highlight_sql_adjacent_highlights(self *Case, a
 func test_errors_TestErrors_test_highlight_sql_small_context_length(self *Case, a Args) Value {
 	var sql, formatted, start_ctx, highlight, end_ctx Value
 	_ = []Value{sql, formatted, start_ctx, highlight, end_ctx}
-	self.Do(67, func() { sql = "SELECT a, b, c FROM table WHERE x = 1" })
-	self.Do(68, func() {
+	self.DoAssign(67, func() { sql = "SELECT a, b, c FROM table WHERE x = 1" }, &sql)
+	self.DoAssign(68, func() {
 		Unpack(Call(G("sqlglot.errors.highlight_sql"), sql, NewList(NewTuple(7, 7), NewTuple(10, 10)), Kw("context_length", 5)), &formatted, &start_ctx, &highlight, &end_ctx)
-	})
+	}, &formatted, &start_ctx, &highlight, &end_ctx)
 	self.Do(72, func() { self.AssertEqual(start_ctx, "LECT ") })
 	self.Do(73, func() { self.AssertEqual(highlight, "a, b") })
 	self.Do(74, func() { self.AssertEqual(end_ctx, ", c F") })
@@ -149,11 +149,11 @@ func test_errors_TestErrors_test_highlight_sql_small_context_length(self *Case, 
 func test_errors_TestErrors_test_highlight_sql_empty_positions(self *Case, a Args) Value {
 	var sql Value
 	_ = []Value{sql}
-	self.Do(80, func() { sql = "SELECT a FROM t" })
+	self.DoAssign(80, func() { sql = "SELECT a FROM t" }, &sql)
 	self.Do(81, func() {
 		self.AssertRaises(func(cm_ Value) {
 			_ = cm_
-			Call(G("sqlglot.errors.highlight_sql"), sql, NewList())
+			Stmt(Call(G("sqlglot.errors.highlight_sql"), sql, NewList()))
 		}, G("ValueError"))
 	})
 	return nil
@@ -162,10 +162,10 @@ func test_errors_TestErrors_test_highlight_sql_empty_positions(self *Case, a Arg
 func test_errors_TestErrors_test_highlight_sql_partial_overlap(self *Case, a Args) Value {
 	var sql, formatted, start_ctx, highlight, end_ctx Value
 	_ = []Value{sql, formatted, start_ctx, highlight, end_ctx}
-	self.Do(85, func() { sql = "SELECT foo FROM table" })
-	self.Do(86, func() {
+	self.DoAssign(85, func() { sql = "SELECT foo FROM table" }, &sql)
+	self.DoAssign(86, func() {
 		Unpack(Call(G("sqlglot.errors.highlight_sql"), sql, NewList(NewTuple(7, 9), NewTuple(8, 10))), &formatted, &start_ctx, &highlight, &end_ctx)
-	})
+	}, &formatted, &start_ctx, &highlight, &end_ctx)
 	self.Do(91, func() { self.AssertEqual(start_ctx, "SELECT ") })
 	self.Do(92, func() { self.AssertEqual(highlight, "foo ") })
 	self.Do(93, func() { self.AssertEqual(end_ctx, "FROM table") })
@@ -178,10 +178,10 @@ func test_errors_TestErrors_test_highlight_sql_partial_overlap(self *Case, a Arg
 func test_errors_TestErrors_test_highlight_sql_full_overlap(self *Case, a Args) Value {
 	var sql, formatted, start_ctx, highlight, end_ctx Value
 	_ = []Value{sql, formatted, start_ctx, highlight, end_ctx}
-	self.Do(100, func() { sql = "SELECT foobar FROM table" })
-	self.Do(101, func() {
+	self.DoAssign(100, func() { sql = "SELECT foobar FROM table" }, &sql)
+	self.DoAssign(101, func() {
 		Unpack(Call(G("sqlglot.errors.highlight_sql"), sql, NewList(NewTuple(7, 12), NewTuple(9, 11))), &formatted, &start_ctx, &highlight, &end_ctx)
-	})
+	}, &formatted, &start_ctx, &highlight, &end_ctx)
 	self.Do(106, func() { self.AssertEqual(start_ctx, "SELECT ") })
 	self.Do(107, func() { self.AssertEqual(highlight, "foobar") })
 	self.Do(108, func() { self.AssertEqual(end_ctx, " FROM table") })
@@ -194,10 +194,10 @@ func test_errors_TestErrors_test_highlight_sql_full_overlap(self *Case, a Args) 
 func test_errors_TestErrors_test_highlight_sql_identical_positions(self *Case, a Args) Value {
 	var sql, formatted, start_ctx, highlight, end_ctx Value
 	_ = []Value{sql, formatted, start_ctx, highlight, end_ctx}
-	self.Do(112, func() { sql = "SELECT a FROM t" })
-	self.Do(113, func() {
+	self.DoAssign(112, func() { sql = "SELECT a FROM t" }, &sql)
+	self.DoAssign(113, func() {
 		Unpack(Call(G("sqlglot.errors.highlight_sql"), sql, NewList(NewTuple(7, 7), NewTuple(7, 7))), &formatted, &start_ctx, &highlight, &end_ctx)
-	})
+	}, &formatted, &start_ctx, &highlight, &end_ctx)
 	self.Do(115, func() { self.AssertEqual(start_ctx, "SELECT ") })
 	self.Do(116, func() { self.AssertEqual(highlight, "a") })
 	self.Do(117, func() { self.AssertEqual(end_ctx, " FROM t") })
@@ -210,10 +210,10 @@ func test_errors_TestErrors_test_highlight_sql_identical_positions(self *Case, a
 func test_errors_TestErrors_test_highlight_sql_reversed_positions(self *Case, a Args) Value {
 	var sql, formatted, start_ctx, highlight, end_ctx Value
 	_ = []Value{sql, formatted, start_ctx, highlight, end_ctx}
-	self.Do(121, func() { sql = "SELECT a, b FROM table" })
-	self.Do(122, func() {
+	self.DoAssign(121, func() { sql = "SELECT a, b FROM table" }, &sql)
+	self.DoAssign(122, func() {
 		Unpack(Call(G("sqlglot.errors.highlight_sql"), sql, NewList(NewTuple(10, 10), NewTuple(7, 7))), &formatted, &start_ctx, &highlight, &end_ctx)
-	})
+	}, &formatted, &start_ctx, &highlight, &end_ctx)
 	self.Do(124, func() { self.AssertEqual(start_ctx, "SELECT ") })
 	self.Do(125, func() { self.AssertEqual(highlight, "a, b") })
 	self.Do(126, func() { self.AssertEqual(end_ctx, " FROM table") })
@@ -226,10 +226,10 @@ func test_errors_TestErrors_test_highlight_sql_reversed_positions(self *Case, a 
 func test_errors_TestErrors_test_highlight_sql_zero_context_length(self *Case, a Args) Value {
 	var sql, formatted, start_ctx, highlight, end_ctx Value
 	_ = []Value{sql, formatted, start_ctx, highlight, end_ctx}
-	self.Do(133, func() { sql = "SELECT a, b FROM table" })
-	self.Do(134, func() {
+	self.DoAssign(133, func() { sql = "SELECT a, b FROM table" }, &sql)
+	self.DoAssign(134, func() {
 		Unpack(Call(G("sqlglot.errors.highlight_sql"), sql, NewList(NewTuple(7, 7)), Kw("context_length", 0)), &formatted, &start_ctx, &highlight, &end_ctx)
-	})
+	}, &formatted, &start_ctx, &highlight, &end_ctx)
 	self.Do(136, func() { self.AssertEqual(start_ctx, "") })
 	self.Do(137, func() { self.AssertEqual(end_ctx, "") })
 	self.Do(138, func() { self.AssertEqual(highlight, "a") })

@@ -31,9 +31,9 @@ var test_jsonpath_TestJsonpath = &Class{
 func test_jsonpath_TestJsonpath_test_jsonpath(self *Case, a Args) Value {
 	var expected_expressions Value
 	_ = []Value{expected_expressions}
-	self.Do(15, func() {
+	self.DoAssign(15, func() {
 		expected_expressions = NewList(M(G("sqlglot.exp"), "JSONPathRoot"), M(G("sqlglot.exp"), "JSONPathKey", Kw("this", M(G("sqlglot.exp"), "JSONPathWildcard"))), M(G("sqlglot.exp"), "JSONPathKey", Kw("this", "a")), M(G("sqlglot.exp"), "JSONPathSubscript", Kw("this", 0)), M(G("sqlglot.exp"), "JSONPathKey", Kw("this", "x")), M(G("sqlglot.exp"), "JSONPathUnion", Kw("expressions", NewList(M(G("sqlglot.exp"), "JSONPathWildcard"), "y", 1))), M(G("sqlglot.exp"), "JSONPathKey", Kw("this", "z")), M(G("sqlglot.exp"), "JSONPathSelector", Kw("this", M(G("sqlglot.exp"), "JSONPathFilter", Kw("this", "(@.a == 'b'), 1:")))), M(G("sqlglot.exp"), "JSONPathSubscript", Kw("this", M(G("sqlglot.exp"), "JSONPathSlice", Kw("start", 1), Kw("end", 5), Kw("step", nil)))), M(G("sqlglot.exp"), "JSONPathUnion", Kw("expressions", NewList(1, M(G("sqlglot.exp"), "JSONPathFilter", Kw("this", "@.a"))))), M(G("sqlglot.exp"), "JSONPathSelector", Kw("this", M(G("sqlglot.exp"), "JSONPathScript", Kw("this", "@.x)")))))
-	})
+	}, &expected_expressions)
 	self.Do(28, func() {
 		self.AssertEqual(Call(G("sqlglot.jsonpath.parse"), "$.*.a[0]['x'][*, 'y', 1].z[?(@.a == 'b'), 1:][1:5][1,?@.a][(@.x)]"), M(G("sqlglot.exp"), "JSONPath", Kw("expressions", expected_expressions)))
 	})
@@ -49,7 +49,7 @@ func test_jsonpath_TestJsonpath_test_unclosed_filter_raises_parse_error(self *Ca
 			self.Do(38, func() {
 				self.AssertRaises(func(cm_ Value) {
 					_ = cm_
-					Call(G("sqlglot.jsonpath.parse"), selector)
+					Stmt(Call(G("sqlglot.jsonpath.parse"), selector))
 				}, G("sqlglot.errors.ParseError"))
 			})
 		}, selector)
@@ -93,19 +93,19 @@ func test_jsonpath_TestJsonpath_test_cts_file(self *Case, a Args) Value {
 	_ = []Value{file, tests, overrides, test, selector, path, expected}
 	With(Call(G("open"), M(A(G("os"), "path"), "join", G("tests.helpers.FIXTURES_DIR"), "jsonpath", "cts.json"), Kw("encoding", "utf-8")), func(cm_ Value) {
 		file = cm_
-		self.Do(63, func() { tests = Item(M(G("json"), "load", file), "tests") })
+		self.DoAssign(63, func() { tests = Item(M(G("json"), "load", file), "tests") }, &tests)
 	})
-	self.Do(66, func() {
+	self.DoAssign(66, func() {
 		overrides = NewDict("$.☺", `$["☺"]`, "$['a',1]", `$["a",1]`, "$[*,'a']", `$[*,"a"]`, "$..['a','d']", `$..["a","d"]`, "$[1, ?@.a=='b', 1:]", "$[1,?@.a=='b', 1:]", `$["a"]`, "$.a", `$["c"]`, "$.c", "$['a']", "$.a", "$['c']", "$.c", "$[' ']", `$[" "]`, `$['\'']`, `$["'"]`, `$['\\']`, `$["\\"]`, `$['\/']`, `$["\/"]`, `$['\b']`, `$["\b"]`, `$['\f']`, `$["\f"]`, `$['\n']`, `$["\n"]`, `$['\r']`, `$["\r"]`, `$['\t']`, `$["\t"]`, `$['\u263A']`, `$["\u263A"]`, `$['\u263a']`, `$["\u263a"]`, `$['\uD834\uDD1E']`, `$["\uD834\uDD1E"]`, `$['\uD83D\uDE00']`, `$["\uD83D\uDE00"]`, "$['']", `$[""]`, "$[? @.a]", "$[?@.a]", "$[?\n@.a]", "$[?@.a]", "$[?\t@.a]", "$[?@.a]", "$[?\r@.a]", "$[?@.a]", "$[? (@.a)]", "$[?(@.a)]", "$[?\n(@.a)]", "$[?(@.a)]", "$[?\t(@.a)]", "$[?(@.a)]", "$[?\r(@.a)]", "$[?(@.a)]", "$[ ?@.a]", "$[?@.a]", "$[\n?@.a]", "$[?@.a]", "$[\t?@.a]", "$[?@.a]", "$[\r?@.a]", "$[?@.a]", "$ ['a']", "$.a", "$\n['a']", "$.a", "$\t['a']", "$.a", "$\r['a']", "$.a", "$['a'] ['b']", "$.a.b", "$['a'] \n['b']", "$.a.b", "$['a'] \t['b']", "$.a.b", "$['a'] \r['b']", "$.a.b", "$ .a", "$.a", "$\n.a", "$.a", "$\t.a", "$.a", "$\r.a", "$.a", "$[ 'a']", "$.a", "$[\n'a']", "$.a", "$[\t'a']", "$.a", "$[\r'a']", "$.a", "$['a' ]", "$.a", "$['a'\n]", "$.a", "$['a'\t]", "$.a", "$['a'\r]", "$.a", "$['a' ,'b']", `$["a","b"]`, "$['a'\n,'b']", `$["a","b"]`, "$['a'\t,'b']", `$["a","b"]`, "$['a'\r,'b']", `$["a","b"]`, "$['a', 'b']", `$["a","b"]`, "$['a',\n'b']", `$["a","b"]`, "$['a',\t'b']", `$["a","b"]`, "$['a',\r'b']", `$["a","b"]`, "$[1 :5:2]", "$[1:5:2]", "$[1\n:5:2]", "$[1:5:2]", "$[1\t:5:2]", "$[1:5:2]", "$[1\r:5:2]", "$[1:5:2]", "$[1: 5:2]", "$[1:5:2]", "$[1:\n5:2]", "$[1:5:2]", "$[1:\t5:2]", "$[1:5:2]", "$[1:\r5:2]", "$[1:5:2]", "$[1:5 :2]", "$[1:5:2]", "$[1:5\n:2]", "$[1:5:2]", "$[1:5\t:2]", "$[1:5:2]", "$[1:5\r:2]", "$[1:5:2]", "$[1:5: 2]", "$[1:5:2]", "$[1:5:\n2]", "$[1:5:2]", "$[1:5:\t2]", "$[1:5:2]", "$[1:5:\r2]", "$[1:5:2]")
-	})
+	}, &overrides)
 	for _, item_ := range Iter(tests) {
 		test = item_
-		self.Do(149, func() { selector = Item(test, "selector") })
+		self.DoAssign(149, func() { selector = Item(test, "selector") }, &selector)
 		self.SubTest(func() {
 			if Truth(M(test, "get", "invalid_selector")) {
 				self.Do(153, func() {
 					err1 := Try(func() {
-						Call(G("sqlglot.jsonpath.parse"), selector)
+						Stmt(Call(G("sqlglot.jsonpath.parse"), selector))
 					})
 					if err1 != nil {
 						if Matches(err1, NewTuple(G("sqlglot.errors.ParseError"), G("sqlglot.errors.TokenError"))) {
@@ -115,8 +115,8 @@ func test_jsonpath_TestJsonpath_test_cts_file(self *Case, a Args) Value {
 					}
 				})
 			} else {
-				self.Do(158, func() { path = Call(G("sqlglot.jsonpath.parse"), selector) })
-				self.Do(159, func() { expected = M(M(overrides, "get", selector, selector), "replace", "'", "''") })
+				self.DoAssign(158, func() { path = Call(G("sqlglot.jsonpath.parse"), selector) }, &path)
+				self.DoAssign(159, func() { expected = M(M(overrides, "get", selector, selector), "replace", "'", "''") }, &expected)
 				self.Do(160, func() { self.AssertEqual(M(path, "sql"), F("'", FV{V: expected}, "'")) })
 			}
 		}, F(FV{V: M(selector, "strip")}, " /* ", FV{V: Item(test, "name")}, " */"))
