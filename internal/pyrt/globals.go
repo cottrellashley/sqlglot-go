@@ -773,6 +773,18 @@ func (c *ConfigV) PyCall(a Args) Value {
 	d := c.cls.NewInstance()
 	switch c.part {
 	case "Tokenizer":
+		if dv := a.Get(0, "dialect", nil); dv != nil {
+			// the class's token tables with the dialect-level settings of another dialect
+			other, err := sqlglot.GetDialect(dialectArg(dv))
+			check(err)
+			cfg := c.cls.Tokenizer.Clone()
+			cfg.NumbersCanBeUnderscoreSeparated = other.Tokenizer.NumbersCanBeUnderscoreSeparated
+			cfg.IdentifiersCanStartWithDigit = other.Tokenizer.IdentifiersCanStartWithDigit
+			cfg.UnescapedSequences = other.Tokenizer.UnescapedSequences
+			cfg.ByteStringsAreBytes = other.Tokenizer.ByteStringsAreBytes
+			cfg.Finalize()
+			return &TokenizerV{T: tokens.New(cfg)}
+		}
 		return &TokenizerV{T: d.NewTokenizer()}
 	case "Parser":
 		o := parseOpts(a, -1)
@@ -924,4 +936,21 @@ func (errorLevelEnum) PyIter() []Value {
 		out[i] = l
 	}
 	return out
+}
+
+// PySetAttr implements setting token attributes.
+func (t *TokenV) PySetAttr(name string, v Value) bool {
+	switch name {
+	case "text":
+		t.T.Text = Str(v)
+	case "comments":
+		var cs []string
+		for _, c := range Iter(v) {
+			cs = append(cs, Str(c))
+		}
+		t.T.Comments = cs
+	default:
+		return false
+	}
+	return true
 }

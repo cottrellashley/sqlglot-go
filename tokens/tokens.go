@@ -1372,3 +1372,33 @@ func isIdentifierStart(r rune) bool {
 
 // Ok reports whether the token is a real token (Python truthiness: not the SENTINEL).
 func (t *Token) Ok() bool { return t != nil && t.Type != Sentinel }
+
+func (c *Config) ensureFinalized() {
+	if !c.finalized {
+		c.Finalize()
+	}
+}
+
+// QuoteDelims returns the string quote delimiters (Tokenizer._QUOTES, start -> end).
+func (c *Config) QuoteDelims() map[string]string {
+	c.ensureFinalized()
+	return maps.Clone(c.quotes)
+}
+
+// FormatStringDelims returns the format string delimiters (Tokenizer._FORMAT_STRINGS,
+// start -> end).
+func (c *Config) FormatStringDelims() map[string]string {
+	c.ensureFinalized()
+	out := make(map[string]string, len(c.formatStrings))
+	for k, v := range c.formatStrings {
+		out[k] = v.end
+	}
+	return out
+}
+
+// CommentDelims returns the comment delimiters (Tokenizer._COMMENTS, start -> end, where a nil
+// end is a line comment).
+func (c *Config) CommentDelims() map[string]*string {
+	c.ensureFinalized()
+	return maps.Clone(c.comments)
+}

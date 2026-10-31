@@ -5,6 +5,7 @@ package pyrt
 import (
 	sqlglot "github.com/cottrellashley/sqlglot-go"
 	"github.com/cottrellashley/sqlglot-go/exp"
+	"github.com/cottrellashley/sqlglot-go/tokens"
 )
 
 var lineageNodes = map[*sqlglot.LineageNode]*LineageNodeV{}
@@ -182,6 +183,46 @@ func init() {
 			n, err := sqlglot.Lineage(col, sql, schema, o)
 			check(err)
 			return lineageNodeValue(n)
+		})
+	})
+}
+
+func tokensArg(v Value) []*tokens.Token {
+	var out []*tokens.Token
+	for _, t := range Iter(v) {
+		tv, ok := norm(t).(*TokenV)
+		if !ok {
+			Raise(TypeError, "expected tokens, got %s", TypeName(t))
+		}
+		out = append(out, tv.T)
+	}
+	return out
+}
+
+func init() {
+	sqlglotModule.Attrs["anonymize"] = Func("anonymize", func(a Args) Value {
+		return Guard(func() Value {
+			var input any
+			if s, ok := norm(a.Pos[0]).(string); ok {
+				input = s
+			} else {
+				input = tokensArg(a.Pos[0])
+			}
+			toks, err := sqlglot.Anonymize(input, dialectArg(a.Get(1, "dialect", nil)))
+			check(err)
+			if l, ok := norm(a.Pos[0]).(*List); ok {
+				// the Python function mutates and returns the given list
+				l.V = tokenList(toks).V
+				return l
+			}
+			return tokenList(toks)
+		})
+	})
+	sqlglotModule.Attrs["render"] = Func("render", func(a Args) Value {
+		return Guard(func() Value {
+			out, err := sqlglot.Render(Str(a.Pos[0]), tokensArg(a.Pos[1]), dialectArg(a.Get(2, "dialect", nil)))
+			check(err)
+			return out
 		})
 	})
 }
