@@ -111,6 +111,12 @@ type ExecuteError struct{ Message string }
 func (e *ExecuteError) Error() string { return e.Message }
 func (*ExecuteError) sqlglotError()   {}
 
+// SqlglotErr is a general sqlglot error (Python's SqlglotError base class).
+type SqlglotErr struct{ Message string }
+
+func (e *SqlglotErr) Error() string { return e.Message }
+func (*SqlglotErr) sqlglotError()   {}
+
 // ValueError reports an invalid argument value, where sqlglot raises ValueError (for example
 // when an expression builder gets inconsistent arguments).
 type ValueError struct{ Message string }

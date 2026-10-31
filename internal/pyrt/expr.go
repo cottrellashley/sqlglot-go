@@ -78,6 +78,8 @@ func goErr(err error) *PyErr {
 		return &PyErr{Class: AssertionError, Msg: err.Error(), Go: err}
 	case *errs.ValueError:
 		return &PyErr{Class: ValueError, Msg: err.Error(), Go: err}
+	case *errs.SqlglotErr:
+		return &PyErr{Class: SqlglotError, Msg: err.Error(), Go: err}
 	}
 	msg := err.Error()
 	if m := unknownDialectRe.FindStringSubmatch(msg); m != nil {

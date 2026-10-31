@@ -280,6 +280,10 @@ func init() {
 	})
 	m["exp"] = expModule
 	m["expressions"] = expModule
+	// submodules whose names resolve by their last component
+	for _, sub := range []string{"errors", "helper", "time", "transforms", "schema", "serde", "jsonpath"} {
+		m[sub] = sqlglotModule
+	}
 	m["Dialect"] = dialectClassValue
 	m["Dialects"] = dialectsEnum{}
 	m["ErrorLevel"] = errorLevelEnum{}
