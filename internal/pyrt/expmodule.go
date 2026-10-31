@@ -37,6 +37,7 @@ func expFn(name string, f func(a Args) Value) {
 func init() {
 	m := expModule.Attrs
 	m["DType"] = dtypeModule
+	m["ALL_FUNCTIONS"] = fromGo(exp.AllFunctions())
 	m["TABLE_PARTS"] = norm(exp.TableParts)
 	m["COLUMN_PARTS"] = norm(exp.ColumnParts)
 	m["SQLGLOT_META"] = exp.SQLGlotMeta

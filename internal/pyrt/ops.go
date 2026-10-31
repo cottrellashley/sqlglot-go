@@ -203,6 +203,7 @@ func Ne(a, b Value) bool { return !Eq(a, b) }
 // Is is `a is b`.
 func Is(a, b Value) bool {
 	a, b = norm(a), norm(b)
+	checkSkipped(a, b)
 	if a == nil || b == nil {
 		return a == nil && b == nil
 	}

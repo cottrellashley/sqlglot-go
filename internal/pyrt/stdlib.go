@@ -11,6 +11,7 @@ import (
 	"math/big"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -301,8 +302,10 @@ func init() {
 			msgs = append(msgs, Str(Item(Item(c, 0), 0)))
 		}
 		output := strings.Join(msgs, "\n")
-		if !strings.Contains(output, Str(a.Pos[0])) {
-			failLog("Expected '%s' not in %s", Str(a.Pos[0]), output)
+		want := Str(a.Pos[0])
+		// Python records the unformatted message ("... %s ..."); Go logs formatted ones
+		if !strings.Contains(output, want) && !(strings.Contains(want, "%") && percentTemplateRe(want).MatchString(output)) {
+			failLog("Expected '%s' not in %s", want, output)
 		}
 		return nil
 	})
@@ -386,7 +389,10 @@ type PatchCM struct {
 }
 
 // PyEnter implements the context manager protocol.
-func (p *PatchCM) PyEnter() Value { p.set(p.value); return p.value }
+func (p *PatchCM) PyEnter() Value {
+	p.set(p.value)
+	return p.value
+}
 
 // PyExit implements the context manager protocol.
 func (p *PatchCM) PyExit() { p.restore() }
@@ -394,6 +400,18 @@ func (p *PatchCM) PyExit() { p.restore() }
 func init() {
 	globals["patch"] = Func("patch", func(a Args) Value {
 		target := Str(a.Pos[0])
+		if strings.HasSuffix(target, ".logger") {
+			// the whole logger: the context value is the mock logger
+			var restore func()
+			cm := &PatchCM{}
+			cm.set = func(Value) {
+				var m Value
+				m, restore = (&Case{}).PatchLogger()
+				cm.value = m
+			}
+			cm.restore = func() { restore() }
+			return cm
+		}
 		switch target {
 		case "sqlglot.pretty":
 			prev := exp.DefaultPretty
@@ -443,4 +461,13 @@ func init() {
 		}),
 	}}
 	globals["datetime"] = datetimeModule
+}
+
+// percentTemplateRe matches the messages produced by a %-format template.
+func percentTemplateRe(template string) *regexp.Regexp {
+	parts := regexp.MustCompile(`%[-+ #0]*\d*(?:\.\d+)?[sdrifx]`).Split(template, -1)
+	for i, p := range parts {
+		parts[i] = regexp.QuoteMeta(p)
+	}
+	return regexp.MustCompile("(?s)" + strings.Join(parts, ".*"))
 }

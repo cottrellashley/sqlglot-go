@@ -18,6 +18,7 @@ type CopyBudget struct {
 	minCopyBudget int
 	remaining     int
 	initialized   bool
+	disabled      bool
 }
 
 // Default copy budget settings (CopyBudget.MAX_COPY_FACTOR and MIN_COPY_BUDGET).
@@ -26,13 +27,19 @@ const (
 	MinCopyBudget = 1000
 )
 
-// NewCopyBudget creates a copy budget; maxCopyFactor <= 0 disables it.
-func NewCopyBudget(e *exp.Expr, maxCopyFactor, minCopyBudget int) *CopyBudget {
-	return &CopyBudget{expression: e, maxCopyFactor: maxCopyFactor, minCopyBudget: minCopyBudget}
+var defaultMaxCopyFactor = MaxCopyFactor
+
+// NewCopyBudget creates a copy budget; a nil maxCopyFactor disables it (max_copy_factor=None).
+func NewCopyBudget(e *exp.Expr, maxCopyFactor *int, minCopyBudget int) *CopyBudget {
+	b := &CopyBudget{expression: e, minCopyBudget: minCopyBudget, disabled: maxCopyFactor == nil}
+	if maxCopyFactor != nil {
+		b.maxCopyFactor = *maxCopyFactor
+	}
+	return b
 }
 
 func (b *CopyBudget) consume(outerScope, innerScope *Scope, alias string) bool {
-	if b.maxCopyFactor <= 0 {
+	if b.disabled {
 		return true
 	}
 	if !b.initialized {
@@ -68,10 +75,11 @@ func (b *CopyBudget) consume(outerScope, innerScope *Scope, alias string) bool {
 // MergeSubqueriesOptions are the keyword arguments of merge_subqueries.
 type MergeSubqueriesOptions struct {
 	LeaveTablesIsolated bool
-	// MaxCopyFactor and MinCopyBudget configure the copy budget (zero values mean the
-	// defaults); NoCopyBudget disables it (max_copy_factor=None).
-	MaxCopyFactor int
-	MinCopyBudget int
+	// MaxCopyFactor and MinCopyBudget configure the copy budget, which caps how much merging
+	// may grow the statement (nil means MaxCopyFactor and MinCopyBudget); NoCopyBudget disables
+	// it (max_copy_factor=None).
+	MaxCopyFactor *int
+	MinCopyBudget *int
 	NoCopyBudget  bool
 }
 
@@ -79,17 +87,18 @@ type MergeSubqueriesOptions struct {
 // merges CTEs if they are selected from only once.
 func MergeSubqueries(e *exp.Expr, o MergeSubqueriesOptions) *exp.Expr {
 	scopes := TraverseScope(e)
-	factor, minBudget := o.MaxCopyFactor, o.MinCopyBudget
-	if factor == 0 {
-		factor = MaxCopyFactor
+	factor, minBudget := MaxCopyFactor, MinCopyBudget
+	if o.MaxCopyFactor != nil {
+		factor = *o.MaxCopyFactor
 	}
-	if minBudget == 0 {
-		minBudget = MinCopyBudget
+	if o.MinCopyBudget != nil {
+		minBudget = *o.MinCopyBudget
 	}
-	if o.NoCopyBudget {
-		factor = 0
+	var factorArg *int
+	if !o.NoCopyBudget {
+		factorArg = &factor
 	}
-	budget := NewCopyBudget(e, factor, minBudget)
+	budget := NewCopyBudget(e, factorArg, minBudget)
 	e, mergedCtes := MergeCtes(e, o.LeaveTablesIsolated, scopes, budget)
 	if mergedCtes {
 		scopes = TraverseScope(e)
@@ -118,7 +127,7 @@ type cteSelection struct {
 // MergeCtes merges CTEs selected from only once.
 func MergeCtes(e *exp.Expr, leaveTablesIsolated bool, scopes []*Scope, budget *CopyBudget) (*exp.Expr, bool) {
 	if budget == nil {
-		budget = NewCopyBudget(e, MaxCopyFactor, MinCopyBudget)
+		budget = NewCopyBudget(e, &defaultMaxCopyFactor, MinCopyBudget)
 	}
 	if scopes == nil {
 		scopes = TraverseScope(e)
@@ -166,7 +175,7 @@ func MergeCtes(e *exp.Expr, leaveTablesIsolated bool, scopes []*Scope, budget *C
 // MergeDerivedTables merges derived tables into their outer queries.
 func MergeDerivedTables(e *exp.Expr, leaveTablesIsolated bool, scopes []*Scope, budget *CopyBudget) *exp.Expr {
 	if budget == nil {
-		budget = NewCopyBudget(e, MaxCopyFactor, MinCopyBudget)
+		budget = NewCopyBudget(e, &defaultMaxCopyFactor, MinCopyBudget)
 	}
 	if scopes == nil {
 		scopes = TraverseScope(e)

@@ -658,8 +658,14 @@ func ensureColumnMapping(mapping any) *SchemaMapping {
 			m.Set(strings.TrimSpace(s), nil)
 		}
 		return m
+	case []any:
+		m := NewOrderedMap[any]()
+		for _, s := range x {
+			m.Set(strings.TrimSpace(fmt.Sprint(s)), nil)
+		}
+		return m
 	}
-	panic(fmt.Errorf("Invalid mapping provided: %T", mapping))
+	panic(errs.Valuef("Invalid mapping provided: %T", mapping))
 }
 
 // dictDepth mirrors helper.dict_depth.

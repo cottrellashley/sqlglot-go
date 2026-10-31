@@ -1001,6 +1001,10 @@ func typeSet(s exp.TypeSet) *Set {
 }
 
 var dtypeModule = &Module{Name: "DType", Get: func(name string) (Value, bool) {
+	// member names equal the values, except for USERDEFINED = "USER-DEFINED"
+	if name == "USERDEFINED" {
+		return exp.DTypeUserdefined, true
+	}
 	for _, d := range exp.AllDTypes {
 		if dtypeName(d) == name {
 			return d, true
@@ -1013,7 +1017,12 @@ func dtypeName(d exp.DType) string { return string(d) }
 
 func dtypeAttr(d exp.DType, name string) Value {
 	switch name {
-	case "value", "name":
+	case "value":
+		return string(d)
+	case "name":
+		if d == exp.DTypeUserdefined {
+			return "USERDEFINED"
+		}
 		return string(d)
 	case "into_expr":
 		return Func(name, func(a Args) Value {

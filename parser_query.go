@@ -79,6 +79,15 @@ func (p *Parser) parseTableSample(asModifier bool) *exp.Expr {
 		"bucket_denominator", bucketDenominator, "bucket_field", bucketField, "percent", percent, "size", size, "seed", seed)
 }
 
+// pivotsArg is the value of a "pivots" argument: None (unset) when there are no pivots, like
+// Python's `list(...) or None`.
+func pivotsArg(pivots []*exp.Expr) any {
+	if len(pivots) == 0 {
+		return nil
+	}
+	return pivots
+}
+
 func (p *Parser) parsePivots() []*exp.Expr {
 	if p.Curr.Type != tokens.Pivot && p.Curr.Type != tokens.Unpivot {
 		return nil

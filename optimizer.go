@@ -39,8 +39,8 @@ type OptimizeOptions struct {
 	CanonicalizeTableAliases  bool
 	OnQualify                 func(table *exp.Expr)
 	LeaveTablesIsolated       bool
-	MaxCopyFactor             int
-	MinCopyBudget             int
+	MaxCopyFactor             *int
+	MinCopyBudget             *int
 	NoCopyBudget              bool
 	Journal                   *Journal
 	DNF                       bool

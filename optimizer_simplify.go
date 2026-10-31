@@ -4,6 +4,7 @@ package sqlglot
 
 import (
 	"fmt"
+	"github.com/cottrellashley/sqlglot-go/errs"
 	"math/big"
 	"slices"
 	"sort"
@@ -2029,8 +2030,10 @@ func (g *simplifyGen) dispatch(e *exp.Expr) bool {
 					name = strings.ToUpper(name)
 				}
 			} else {
-				panic(fmt.Errorf("Anonymous.this expects a str or an Identifier, got '%s'.", this.ClassName()))
+				panic(errs.Valuef("Anonymous.this expects a str or an Identifier, got '%s'.", this.ClassName()))
 			}
+		default:
+			panic(errs.Valuef("Anonymous.this expects a str or an Identifier, got '%s'.", pyTypeName(this)))
 		}
 		g.push(")", e.Arg("expressions"), "(", name)
 	case exp.Between:
@@ -2167,4 +2170,23 @@ func (g *simplifyGen) args(e *exp.Expr, argIndex int) bool {
 		return true
 	}
 	return false
+}
+
+// pyTypeName is the Python type name of a Go argument value (for messages).
+func pyTypeName(v any) string {
+	switch v.(type) {
+	case nil:
+		return "NoneType"
+	case bool:
+		return "bool"
+	case int, int64, *big.Int:
+		return "int"
+	case float64:
+		return "float"
+	case string:
+		return "str"
+	case []*exp.Expr, []any:
+		return "list"
+	}
+	return fmt.Sprintf("%T", v)
 }

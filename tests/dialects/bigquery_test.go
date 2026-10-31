@@ -1561,8 +1561,8 @@ func test_bigquery_TestBigQuery_test_declare(self *Case, a Args) Value {
 }
 
 func test_bigquery_TestBigQuery_test_week(self *Case, a Args) Value {
-	var week_trunc, day, bq_unit, duckdb_sql Value
-	_ = []Value{week_trunc, day, bq_unit, duckdb_sql}
+	var week_trunc, day, bq_unit, duckdb_sql, nested1 Value
+	_ = []Value{week_trunc, day, bq_unit, duckdb_sql, nested1}
 	self.L(3731).ValidateIdentity("DATE_TRUNC(date, WEEK(MONDAY))")
 	self.L(3732).ValidateIdentity("LAST_DAY(DATETIME '2008-11-10 15:30:00', WEEK(SUNDAY))", "LAST_DAY(CAST('2008-11-10 15:30:00' AS DATETIME), WEEK)")
 	self.L(3736).ValidateIdentity("DATE_DIFF('2017-12-18', '2017-12-17', WEEK(SATURDAY))")
@@ -1590,9 +1590,15 @@ func test_bigquery_TestBigQuery_test_week(self *Case, a Args) Value {
 	self.DoAssign(3896, func() {
 		week_trunc = NewDict("MONDAY", NewTuple("WEEK(MONDAY)", "DATE_TRUNC('WEEK', date)"), "TUESDAY", NewTuple("WEEK(TUESDAY)", "CAST(DATE_TRUNC('WEEK', date + INTERVAL '-1' DAY) + INTERVAL '1' DAY AS DATE)"), "WEDNESDAY", NewTuple("WEEK(WEDNESDAY)", "CAST(DATE_TRUNC('WEEK', date + INTERVAL '-2' DAY) + INTERVAL '2' DAY AS DATE)"), "THURSDAY", NewTuple("WEEK(THURSDAY)", "CAST(DATE_TRUNC('WEEK', date + INTERVAL '-3' DAY) + INTERVAL '3' DAY AS DATE)"), "FRIDAY", NewTuple("WEEK(FRIDAY)", "CAST(DATE_TRUNC('WEEK', date + INTERVAL '-4' DAY) + INTERVAL '4' DAY AS DATE)"), "SATURDAY", NewTuple("WEEK(SATURDAY)", "CAST(DATE_TRUNC('WEEK', date + INTERVAL '-5' DAY) + INTERVAL '5' DAY AS DATE)"), "SUNDAY", NewTuple("WEEK", "CAST(DATE_TRUNC('WEEK', date + INTERVAL '1' DAY) + INTERVAL '-1' DAY AS DATE)"))
 	}, &week_trunc)
-	self.Do(3923, func() {
-		NP("%s", `nested unpacking: for day, (bq_unit, duckdb_sql) in week_trunc.items(): with self.subTest( f"Testing transpilation of DATE_TRUNC from Bigquery to Duckdb for unit: {day}" ): self.validate_all( f"SELECT DATE_TRUNC(date, `)
-	})
+	for _, item_ := range Iter(M(week_trunc, "items")) {
+		Unpack(item_, &day, &nested1)
+		Unpack(nested1, &bq_unit, &duckdb_sql)
+		self.SubTest(func() {
+			self.Do(3927, func() {
+				self.ValidateAll(F("SELECT DATE_TRUNC(date, WEEK(", FV{V: day}, "))"), Kw("write", NewDict("bigquery", F("SELECT DATE_TRUNC(date, ", FV{V: bq_unit}, ")"), "duckdb", F("SELECT ", FV{V: duckdb_sql}))))
+			})
+		}, F("Testing transpilation of DATE_TRUNC from Bigquery to Duckdb for unit: ", FV{V: day}))
+	}
 	self.L(3936).ValidateAll("SELECT DATE_DIFF('2024-06-15', '2024-01-08', WEEK(MONDAY))", Kw("write", NewDict("bigquery", "SELECT DATE_DIFF('2024-06-15', '2024-01-08', WEEK(MONDAY))", "duckdb", "SELECT DATE_DIFF('WEEK', DATE_TRUNC('WEEK', CAST('2024-01-08' AS DATE)), DATE_TRUNC('WEEK', CAST('2024-06-15' AS DATE)))")))
 	self.L(3943).ValidateAll("SELECT DATE_DIFF('2026-01-15', '2024-01-08', WEEK(SUNDAY))", Kw("write", NewDict("bigquery", "SELECT DATE_DIFF('2026-01-15', '2024-01-08', WEEK)", "duckdb", "SELECT DATE_DIFF('WEEK', DATE_TRUNC('WEEK', CAST('2024-01-08' AS DATE) + INTERVAL '1' DAY), DATE_TRUNC('WEEK', CAST('2026-01-15' AS DATE) + INTERVAL '1' DAY))")))
 	self.L(3950).ValidateAll("SELECT DATE_DIFF('2024-01-15', '2022-04-28', WEEK(SATURDAY))", Kw("write", NewDict("bigquery", "SELECT DATE_DIFF('2024-01-15', '2022-04-28', WEEK(SATURDAY))", "duckdb", "SELECT DATE_DIFF('WEEK', DATE_TRUNC('WEEK', CAST('2022-04-28' AS DATE) + INTERVAL '-5' DAY), DATE_TRUNC('WEEK', CAST('2024-01-15' AS DATE) + INTERVAL '-5' DAY))")))

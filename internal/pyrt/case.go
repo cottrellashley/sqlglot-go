@@ -80,9 +80,21 @@ func RunClass(t *testing.T, c *Class) {
 	if d, ok := c.attr("dialect"); ok && d != nil && !DialectAvailable(Str(d)) {
 		t.Skipf("dialect %q is not ported yet", Str(d))
 	}
+	// setUpClass runs once; the attributes it sets are shared by the test methods
+	classAttrs := map[string]Value{}
+	if m, ok := c.method("setUpClass"); ok {
+		cls := &Case{T: t, Class: c, attrs: classAttrs}
+		func() {
+			defer cls.recoverTop()
+			m(cls, Args{})
+		}()
+	}
 	for _, name := range c.allTests() {
 		t.Run(name, func(t *testing.T) {
 			self := &Case{T: t, Class: c, attrs: map[string]Value{}}
+			for k, v := range classAttrs {
+				self.attrs[k] = v
+			}
 			defer self.recoverTop()
 			if m, ok := c.method("setUp"); ok {
 				m(self, Args{})
@@ -113,6 +125,10 @@ func (s *Case) report(r any) {
 			s.skipped++
 			s.statementSkipped = true
 			s.T.Logf("%s: skipped: dialect %q is not ported", s.where(), x.Msg)
+		case x.Class == SkipStatementError:
+			s.skipped++
+			s.statementSkipped = true
+			s.T.Logf("%s: skipped: %s", s.where(), x.Msg)
 		case x.Class == AssertionError && x.LogCheck && s.statementSkipped:
 			s.skipped++
 			s.T.Logf("%s: skipped: checks the logs of a statement that needed a dialect that is not ported (%s)", s.where(), x.Msg)
@@ -279,6 +295,8 @@ func (s *Case) builtinMethod(name string) func(a Args) Value {
 		return func(a Args) Value { return s.assertDuckDBSQL(a) }
 	case "assertEqual", "assertEquals":
 		return func(a Args) Value { s.assertEqual(a); return nil }
+	case "addClassCleanup", "addCleanup":
+		return func(a Args) Value { return nil }
 	case "assertRaises", "assertRaisesRegex":
 		// the call form: self.assertRaises(exc, callable, *args, **kwargs)
 		return func(a Args) Value {

@@ -53,6 +53,16 @@ PYTHON_ONLY = {
         "python-only: converts namedtuples, plain objects and pytz datetimes; see TestConvertValue in exp/convert_test.go",
     ("tests/test_expressions.py", "TestExprs.test_convert_python39"):
         "python-only: converts zoneinfo datetimes; see TestConvertValue in exp/convert_test.go",
+    ("tests/test_optimizer.py", "TestOptimizer.test_unnest_type_trace_is_memoized"):
+        "python-only: counts calls of a private Resolver method with patch.object",
+    ("tests/test_optimizer.py", "TestOptimizer.test_annotate_types_caches_positional_aliases"):
+        "python-only: counts calls of MappingSchema.column_names with patch.object",
+    ("tests/test_optimizer.py", "TestOptimizer.test_resolver_column_context"):
+        "python-only: monkeypatches Resolver.get_table with patch.object",
+    ("tests/test_optimizer.py", "TestOptimizer.test_qualify_skips_unneeded_annotation"):
+        "python-only: patches the TypeAnnotator class to inspect its private state",
+    ("tests/test_optimizer.py", "TestOptimizer.test_annotate_types_caches_schema_lookups"):
+        "python-only: inspects the private lookup cache of MappingSchema",
     ("tests/test_serde.py", "TestSerde.test_custom_expression"):
         "python-only: subclasses exp.Expression at module level; see TestSerdeRegisteredKind in exp/serde_test.go",
     ("tests/test_schema.py", "TestSchema.test_custom_schema"):
@@ -470,16 +480,23 @@ class Converter:
             if len(stars) > 1:
                 raise NotPortedErr("starred assignment")
             names = []
+            nested = []
             for e in target.elts:
                 if isinstance(e, ast.Starred):
                     e = e.value
                 if isinstance(e, ast.Name):
                     names.append("&" + ctx.declare(e.id))
+                elif isinstance(e, (ast.Tuple, ast.List)):
+                    tmp = ctx.declare(ctx.fresh("nested"))
+                    names.append("&" + tmp)
+                    nested.append(self.assign_target(e, tmp, ctx))
                 else:
                     raise NotPortedErr("nested unpacking")
             if stars:
-                return f"UnpackStar({value}, {stars[0]}, {', '.join(names)})"
-            return f"Unpack({value}, {', '.join(names)})"
+                code = f"UnpackStar({value}, {stars[0]}, {', '.join(names)})"
+            else:
+                code = f"Unpack({value}, {', '.join(names)})"
+            return "; ".join([code] + nested)
         if isinstance(target, ast.Attribute):
             return f"SetA({self.expr(target.value, ctx)}, {go_str(target.attr)}, {value})"
         if isinstance(target, ast.Subscript):
@@ -757,7 +774,10 @@ class Converter:
         binds = []
         plist = args.posonlyargs + args.args
         defaults = [None] * (len(plist) - len(args.defaults)) + list(args.defaults)
-        start = 1 if plist and plist[0].arg == "self" else 0
+        start = 1 if plist and plist[0].arg in ("self", "cls") and ctx.kind in ("method", "helper") else 0
+        if start and plist[0].arg == "cls":
+            # classmethods run on the test case object, which holds the class attributes
+            ctx.locals["cls"] = "self"
         for i, (p, d) in enumerate(zip(plist[start:], defaults[start:])):
             go = ctx.declare(p.arg)
             dflt = self.expr(d, ctx) if d is not None else "nil"
@@ -784,9 +804,9 @@ class Converter:
             if n not in saved:
                 ctx.declare(n)
         binds = self.params(node.args, ctx)
+        body = self.body(node.body, ctx, True)
         new = [v for k, v in ctx.locals.items() if k not in saved]
         decl = f"var {', '.join(new)} Value; _ = []Value{{{', '.join(new)}}}" if new else ""
-        body = self.body(node.body, ctx, True)
         lines = ["Func(" + go_str(node.name) + ", func(a Args) Value {"]
         if decl:
             lines.append(decl)
@@ -805,14 +825,14 @@ class Converter:
         reason = PYTHON_ONLY.get((self.relpath, f"{cls_name}.{node.name}"))
         if reason:
             return out + [f"M(self, \"skipTest\", {go_str(reason)})", "return nil", "}"]
-        names = list(ctx.locals.values())
+        skip = self.decorators(node, ctx)
+        body = self.body(node.body, ctx)
+        # declared after converting the body, which may introduce temporaries
+        names = [n for n in ctx.locals.values() if n != "self"]
         if names:
             out.append(f"var {', '.join(names)} Value")
             out.append(f"_ = []Value{{{', '.join(names)}}}")
-        out += binds
-        skip = self.decorators(node, ctx)
-        out += skip
-        body = self.body(node.body, ctx)
+        out += binds + skip
         out += body + self.tail(body) + ["}"]
         return out
 
@@ -820,6 +840,8 @@ class Converter:
         out = []
         for d in node.decorator_list:
             src = ast.unparse(d)
+            if src in ("classmethod", "staticmethod"):
+                continue
             if src in ("unittest.skip", "skip") or src.startswith(("unittest.skip(", "skip(")):
                 reason = d.args[0] if isinstance(d, ast.Call) and d.args else ast.Constant("skipped")
                 out.append(f"M(self, \"skipTest\", {self.expr(reason, ctx)})")
@@ -856,12 +878,12 @@ class Converter:
         for n in assigned_names(node.body):
             ctx.declare(n)
         binds = self.params(node.args, ctx)
+        body = self.body(node.body, ctx, True)
         names = list(ctx.locals.values())
         gov = self.module_names[node.name]
         out = [f"var {gov} Value = Func({go_str(node.name)}, func(a Args) Value {{"]
         if names:
             out += [f"var {', '.join(names)} Value", f"_ = []Value{{{', '.join(names)}}}"]
-        body = self.body(node.body, ctx, True)
         out += binds + body + self.tail(body) + ["})"]
         return out
 

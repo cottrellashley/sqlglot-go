@@ -156,6 +156,21 @@ func SetA(v Value, name string, val Value) {
 			return
 		case "meta":
 			NotPorted("setting Expr.meta")
+		case "args":
+			// node.args = {...}: only reordering the existing arguments is supported
+			d, ok := norm(val).(*Dict)
+			if !ok {
+				NotPorted("setting Expr.args to a %s", TypeName(val))
+			}
+			var keys []string
+			for i, k := range d.keys {
+				if !Is(d.vals[i], fromGo(x.Arg(Str(k)))) && !Eq(d.vals[i], fromGo(x.Arg(Str(k)))) {
+					NotPorted("setting Expr.args with new values")
+				}
+				keys = append(keys, Str(k))
+			}
+			x.ReorderArgs(keys)
+			return
 		}
 		x.Set(name, toGo(val))
 		return

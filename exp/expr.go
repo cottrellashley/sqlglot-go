@@ -719,6 +719,26 @@ func (e *Expr) Meta() map[string]any {
 	return e.meta
 }
 
+// ReorderArgs reorders the arguments so that the given keys come first, in that order (Python
+// code that rebuilds node.args with the same items in another order).
+func (e *Expr) ReorderArgs(keys []string) {
+	out := make([]Arg, 0, len(e.args))
+	used := make([]bool, len(e.args))
+	for _, k := range keys {
+		if i := e.argPos(k); i >= 0 && !used[i] {
+			used[i] = true
+			out = append(out, e.args[i])
+		}
+	}
+	for i, a := range e.args {
+		if !used[i] {
+			out = append(out, a)
+		}
+	}
+	e.args = out
+	e.invalidateHash()
+}
+
 // RawMeta returns the metadata map without creating it (nil if it was never created, like
 // Python's _meta).
 func (e *Expr) RawMeta() map[string]any { return e.meta }

@@ -144,6 +144,9 @@ func G(name string) Value {
 			return v
 		}
 	}
+	if name == "sqlglot" {
+		return sqlglotModule
+	}
 	if v, ok := sqlglotModule.lookup(last); ok {
 		return v
 	}
@@ -312,6 +315,9 @@ func init() {
 			if v := a.Get(1, "visible", nil); v != nil {
 				o.Visible = toSchemaMapping(v)
 			}
+			if u := a.Get(4, "udf_mapping", nil); u != nil {
+				o.UDFMapping = toSchemaMapping(u)
+			}
 			var schema any
 			if s := a.Get(0, "schema", nil); s != nil {
 				schema = toSchemaMapping(s)
@@ -411,6 +417,14 @@ func (s *SchemaV) PyAttr(name string) (Value, bool) {
 		}), true
 	case "depth":
 		return Func(name, func(a Args) Value { return s.S.Depth() }), true
+	case "get_udf_type":
+		return Func(name, func(a Args) Value {
+			return Guard(func() Value {
+				t, err := s.S.GetUDFType(toGo(a.Pos[0]), dialectArg(a.Get(1, "dialect", nil)), boolPtr(a.Get(2, "normalize", nil)))
+				check(err)
+				return t
+			})
+		}), true
 	case "has_column":
 		return Func(name, func(a Args) Value {
 			return Guard(func() Value {

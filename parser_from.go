@@ -57,7 +57,7 @@ func (p *Parser) parseSubquery(this *exp.Expr, parseAlias bool) *exp.Expr {
 	if parseAlias {
 		alias = p.ParseTableAlias(nil)
 	}
-	return p.Expr(exp.Subquery, "this", this, "pivots", pivots, "alias", alias, "sample", p.ParseTableSample(false))
+	return p.Expr(exp.Subquery, "this", this, "pivots", pivotsArg(pivots), "alias", alias, "sample", p.ParseTableSample(false))
 }
 
 func (p *Parser) implicitUnnestsToExplicit(this *exp.Expr) *exp.Expr {
@@ -466,7 +466,7 @@ func (p *Parser) parseJoin(skipJoinToken, parseBracket bool, aliasTokens *tokens
 			this.Set("joins", nil)
 		}
 	}
-	kw.Set("pivots", p.ParsePivots())
+	kw.Set("pivots", pivotsArg(p.ParsePivots()))
 
 	var comments []string
 	comments = append(comments, joinComments...)

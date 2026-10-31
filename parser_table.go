@@ -275,7 +275,7 @@ func (p *Parser) parseTable(o TableOpts) *exp.Expr {
 	}
 	if subquery := p.ParseSelect(SelectOpts{Table: true, NoConsumePipe: !o.ConsumePipe}); subquery != nil {
 		if !exp.Truthy(subquery.Arg("pivots")) {
-			subquery.Set("pivots", p.ParsePivots())
+			subquery.Set("pivots", pivotsArg(p.ParsePivots()))
 		}
 		if o.Joins {
 			for _, join := range p.ParseJoins() {
@@ -344,7 +344,7 @@ func (p *Parser) parseTable(o TableOpts) *exp.Expr {
 		this.Set("hints", nil)
 	}
 	if !exp.Truthy(this.Arg("pivots")) {
-		this.Set("pivots", p.ParsePivots())
+		this.Set("pivots", pivotsArg(p.ParsePivots()))
 	}
 	if !p.D.AliasPostTablesample {
 		this.Set("sample", p.ParseTableSample(false))

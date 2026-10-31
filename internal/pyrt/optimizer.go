@@ -309,11 +309,13 @@ func init() {
 			if v := a.Get(2, "max_copy_factor", nil); v == nil {
 				o.NoCopyBudget = true
 			} else {
-				o.MaxCopyFactor = mustInt(v)
+				n := mustInt(v)
+				o.MaxCopyFactor = &n
 			}
 		}
 		if v := a.Get(3, "min_copy_budget", nil); v != nil {
-			o.MinCopyBudget = mustInt(v)
+			n := mustInt(v)
+			o.MinCopyBudget = &n
 		}
 		return sqlglot.MergeSubqueries(exprArg(a, 0, "expression", nil), o)
 	})
@@ -554,3 +556,57 @@ func (s *ScopeV) PyAttr(name string) (Value, bool) {
 
 // PyHash makes scopes usable as dict keys (by identity).
 func (s *ScopeV) PyHash() string { return fmt.Sprintf("scope:%p", s) }
+
+// TypeAnnotatorV is an optimizer TypeAnnotator.
+type TypeAnnotatorV struct{ A *sqlglot.TypeAnnotator }
+
+func schemaOf(v Value) sqlglot.Schema {
+	s, err := sqlglot.EnsureSchema(toSchema(v), nil)
+	check(err)
+	return s
+}
+
+// PyAttr implements Attrer.
+func (t *TypeAnnotatorV) PyAttr(name string) (Value, bool) {
+	a := t.A
+	switch name {
+	case "annotate":
+		return Func(name, func(args Args) Value {
+			return Guard(func() Value {
+				return a.Annotate(exprArg(args, 0, "expression", nil), truthArg(args, 1, "annotate_scope", true))
+			})
+		}), true
+	case "annotate_scope":
+		return Func(name, func(args Args) Value {
+			return Guard(func() Value { a.AnnotateScope(scopeArg(args.Pos[0])); return nil })
+		}), true
+	case "clear":
+		return Func(name, func(Args) Value { a.Clear(); return nil }), true
+	case "_annotate_binary":
+		return Func(name, func(args Args) Value {
+			return Guard(func() Value { return a.AnnotateBinary(exprArg(args, 0, "expression", nil)) })
+		}), true
+	case "_annotate_div":
+		return Func(name, func(args Args) Value {
+			return Guard(func() Value { return a.AnnotateDiv(exprArg(args, 0, "expression", nil)) })
+		}), true
+	case "schema":
+		if ms, ok := a.Schema.(*sqlglot.MappingSchema); ok {
+			return &SchemaV{ms}, true
+		}
+	}
+	return nil, false
+}
+
+func init() {
+	optimizerNS["TypeAnnotator"] = Func("TypeAnnotator", func(a Args) Value {
+		return Guard(func() Value {
+			if a.Get(1, "expression_metadata", nil) != nil || a.Get(2, "coerces_to", nil) != nil || a.Get(3, "binary_coercions", nil) != nil {
+				NotPorted("TypeAnnotator with custom metadata or coercions")
+			}
+			return &TypeAnnotatorV{sqlglot.NewTypeAnnotator(schemaOf(a.Get(0, "schema", nil)), nil, nil, nil,
+				truthArg(a, 4, "overwrite_types", true))}
+		})
+	})
+	sqlglotModule.Attrs["TypeAnnotator"] = optimizerNS["TypeAnnotator"]
+}

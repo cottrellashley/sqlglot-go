@@ -695,8 +695,8 @@ func test_clickhouse_TestClickhouse_test_nothing_type(self *Case, a Args) Value 
 }
 
 func test_clickhouse_TestClickhouse_test_json_type(self *Case, a Args) Value {
-	var data_types, i, data_type, data_types_non_idempotent, dt_in, dt_out Value
-	_ = []Value{data_types, i, data_type, data_types_non_idempotent, dt_in, dt_out}
+	var data_types, i, data_type, data_types_non_idempotent, dt_in, dt_out, nested1 Value
+	_ = []Value{data_types, i, data_type, data_types_non_idempotent, dt_in, dt_out, nested1}
 	self.DoAssign(1288, func() {
 		data_types = NewList("JSON", "JSON(col1 String, SKIP col2)", "JSON(col1 String, SKIP REGEXP 'col[0-9]+')", "JSON(col1 String, max_dynamic_paths = 2)", "JSON(col1.nested String, SKIP col2.nested)")
 	}, &data_types)
@@ -707,9 +707,15 @@ func test_clickhouse_TestClickhouse_test_json_type(self *Case, a Args) Value {
 		}, F("Casting to ClickHouse JSON[", FV{V: i}, "]"))
 	}
 	self.DoAssign(1299, func() { data_types_non_idempotent = NewList(NewTuple("JSON()", "JSON")) }, &data_types_non_idempotent)
-	self.Do(1302, func() {
-		NP("%s", `nested unpacking: for i, (dt_in, dt_out) in enumerate(data_types_non_idempotent): with self.subTest(f"Casting to ClickHouse JSON[{i}]"): self.validate_identity( f"SELECT CAST(val as {dt_in})", write_sql=f"SELECT CAST(v`)
-	})
+	for _, item_ := range Iter(Call(G("enumerate"), data_types_non_idempotent)) {
+		Unpack(item_, &i, &nested1)
+		Unpack(nested1, &dt_in, &dt_out)
+		self.SubTest(func() {
+			self.Do(1304, func() {
+				self.ValidateIdentity(F("SELECT CAST(val as ", FV{V: dt_in}, ")"), Kw("write_sql", F("SELECT CAST(val AS ", FV{V: dt_out}, ")")))
+			})
+		}, F("Casting to ClickHouse JSON[", FV{V: i}, "]"))
+	}
 	self.L(1309).ValidateIdentity("SELECT CAST(val AS JSON(\n                col1 String,\n                skip col2,\n                max_dynamic_paths=2\n            ))", "SELECT CAST(val AS JSON(col1 String, SKIP col2, max_dynamic_paths = 2))")
 	self.L(1318).ValidateIdentity("SELECT CAST(val AS JSON(col1 String, col2 JSON(colA String, SKIP colB)))")
 	return nil
