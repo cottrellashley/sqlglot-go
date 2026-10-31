@@ -12,3 +12,8 @@ for f in "$REF"/tests/dialects/test_*.py; do
 	name=$(basename "$f" .py)
 	conv "tests/dialects/$name.py" "$ROOT/tests/dialects/${name#test_}_test.go" dialects_test
 done
+# Core suites (the ones for modules that exist in Go).
+for name in test_build test_errors test_expressions test_generator test_helper test_jsonpath test_parser \
+	test_schema test_serde test_time test_tokens test_transforms test_transpile test_typing; do
+	conv "tests/$name.py" "$ROOT/tests/core/${name#test_}_test.go" core_test
+done

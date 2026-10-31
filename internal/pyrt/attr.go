@@ -184,6 +184,8 @@ func toGo(v Value) any {
 		return m
 	case *Set:
 		return seqToGo(x.Items())
+	case BytesV:
+		return []byte(x)
 	}
 	return norm(v)
 }
@@ -709,6 +711,14 @@ func errAttr(e *PyErr, name string) Value {
 		return &List{}
 	case "__class__":
 		return e.Class
+	case "start", "end":
+		if te, ok := e.Go.(*errs.TokenError); ok && te.HasPos {
+			if name == "start" {
+				return te.Start
+			}
+			return te.End
+		}
+		return nil
 	}
 	Raise(AttributeError, "'%s' object has no attribute '%s'", e.Class.Name, name)
 	return nil

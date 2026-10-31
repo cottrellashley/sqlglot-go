@@ -3,6 +3,7 @@ package helper
 
 import (
 	"fmt"
+	"github.com/cottrellashley/sqlglot-go/internal/pydec"
 	"math/big"
 	"regexp"
 	"sort"
@@ -135,13 +136,42 @@ func IsFloat(text string) bool {
 	return true
 }
 
-// ToInt mirrors to_int: converts an integral decimal string to an int, or returns false.
-func ToInt(value string) (*big.Int, bool) {
-	r, ok := new(big.Rat).SetString(strings.TrimSpace(value))
-	if !ok || !r.IsInt() {
+// ToInt mirrors to_int: converts an integral decimal string to an int, or returns false if
+// it is not a finite integral number.
+func ToInt(value string) (*big.Int, bool) { return ToIntDigits(value, 4300) }
+
+// ToIntDigits mirrors to_int(value, max_digits): like ToInt, but also rejects numbers with
+// maxDigits or more integer digits. Unlike big.Int or big.Rat parsing, it never materializes
+// a huge int from a short exponent like 1e1000000.
+func ToIntDigits(value string, maxDigits int) (*big.Int, bool) {
+	d, ok := pydec.Parse(value)
+	if !ok {
 		return nil, false
 	}
-	return r.Num(), true
+	if d.Coef.Sign() == 0 {
+		return new(big.Int), true
+	}
+	digits := len(d.Coef.String())
+	if d.Exp+digits-1 >= maxDigits {
+		return nil, false
+	}
+	n := new(big.Int).Set(d.Coef)
+	if d.Exp >= 0 {
+		n.Mul(n, new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(d.Exp)), nil))
+	} else {
+		if -d.Exp >= digits {
+			return nil, false
+		}
+		q, r := new(big.Int).QuoRem(n, new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(-d.Exp)), nil), new(big.Int))
+		if r.Sign() != 0 {
+			return nil, false
+		}
+		n = q
+	}
+	if d.Neg {
+		n.Neg(n)
+	}
+	return n, true
 }
 
 var isoDateRe = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$|^\d{8}$|^\d{4}-W\d{2}(-\d)?$`)

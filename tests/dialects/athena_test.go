@@ -67,9 +67,13 @@ func test_athena_TestAthena_test_tokenize_dml_once(self *Case, a Args) Value {
 	_ = []Value{sql, tokenize}
 	for _, item_ := range Iter(NewTuple("SELECT 1", "/* leading comment */ SELECT 1", "WITH t AS (SELECT 1) SELECT * FROM t", "INSERT INTO foo (id) VALUES (1)", "UPDATE foo SET id = 3 WHERE id = 7", "DELETE FROM foo WHERE id > 10")) {
 		sql = item_
-		self.Do(65, func() {
-			NP("%s", `context manager: with ( self.subTest(sql), patch.object( Tokenizer, "tokenize", autospec=True, side_effect=Tokenizer.tokenize ) as tokenize, ): self.parse_one(sql) tokenize.assert_called_once()`)
-		})
+		self.SubTest(func() {
+			With(M(G("unittest.mock.patch"), "object", G("sqlglot.tokens.Tokenizer"), "tokenize", Kw("autospec", true), Kw("side_effect", A(G("sqlglot.tokens.Tokenizer"), "tokenize"))), func(cm_ Value) {
+				tokenize = cm_
+				self.Do(71, func() { self.ParseOne(sql) })
+				self.Do(72, func() { M(tokenize, "assert_called_once") })
+			})
+		}, sql)
 	}
 	return nil
 }
@@ -79,9 +83,13 @@ func test_athena_TestAthena_test_tokenize_trino_fallback(self *Case, a Args) Val
 	_ = []Value{sql, tokenize}
 	for _, item_ := range Iter(NewTuple(`CREATE TABLE t AS SELECT '\' AS x`, `CREATE VIEW v AS SELECT '\' AS x`)) {
 		sql = item_
-		self.Do(79, func() {
-			NP("%s", `context manager: with ( self.subTest(sql), patch.object( Tokenizer, "tokenize", autospec=True, side_effect=Tokenizer.tokenize ) as tokenize, ): self.validate_identity(sql) self.assertEqual(tokenize.call_count, 2)`)
-		})
+		self.SubTest(func() {
+			With(M(G("unittest.mock.patch"), "object", G("sqlglot.tokens.Tokenizer"), "tokenize", Kw("autospec", true), Kw("side_effect", A(G("sqlglot.tokens.Tokenizer"), "tokenize"))), func(cm_ Value) {
+				tokenize = cm_
+				self.Do(85, func() { self.ValidateIdentity(sql) })
+				self.Do(86, func() { self.AssertEqual(A(tokenize, "call_count"), 2) })
+			})
+		}, sql)
 	}
 	return nil
 }

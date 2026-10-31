@@ -176,3 +176,23 @@ func init() {
 		return out
 	})
 }
+
+func init() {
+	typeAttrs[ExprType] = map[string]Value{
+		"load": Func("load", func(a Args) Value {
+			return Guard(func() Value {
+				var payloads []map[string]any
+				for _, p := range Iter(a.Pos[0]) {
+					m, ok := toGo(p).(map[string]any)
+					if !ok {
+						Raise(TypeError, "expected a list of dicts")
+					}
+					payloads = append(payloads, m)
+				}
+				e, err := exp.Load(payloads)
+				check(err)
+				return e
+			})
+		}),
+	}
+}

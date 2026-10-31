@@ -169,6 +169,9 @@ type Dict struct {
 	keys  []Value
 	vals  []Value
 	index map[string]int
+	// onSet and onDelete mirror changes into a Go value the dict is a view of (e.g. meta).
+	onSet    func(k, v Value)
+	onDelete func(k Value)
 }
 
 // NewDict builds a dict from alternating keys and values (StarStar items are merged).
@@ -192,6 +195,9 @@ func NewDict(kv ...Value) *Dict {
 
 // Set assigns d[k] = v.
 func (d *Dict) Set(k, v Value) {
+	if d.onSet != nil {
+		d.onSet(k, v)
+	}
 	h := HashKey(k)
 	if i, ok := d.index[h]; ok {
 		d.vals[i] = v
@@ -216,6 +222,9 @@ func (d *Dict) Delete(k Value) bool {
 	i, ok := d.index[h]
 	if !ok {
 		return false
+	}
+	if d.onDelete != nil {
+		d.onDelete(k)
 	}
 	d.keys = append(d.keys[:i], d.keys[i+1:]...)
 	d.vals = append(d.vals[:i], d.vals[i+1:]...)
@@ -287,6 +296,8 @@ var (
 	RecursionError      = &ExcClass{"RecursionError", RuntimeError}
 	ZeroDivisionError   = &ExcClass{"ZeroDivisionError", Exception}
 	StopIteration       = &ExcClass{"StopIteration", Exception}
+	OSError             = &ExcClass{"OSError", Exception}
+	FileNotFoundError   = &ExcClass{"FileNotFoundError", OSError}
 	SqlglotError        = &ExcClass{"SqlglotError", Exception}
 	UnsupportedError    = &ExcClass{"UnsupportedError", SqlglotError}
 	ParseError          = &ExcClass{"ParseError", SqlglotError}
@@ -390,6 +401,8 @@ func TypeName(v Value) string {
 		return "type"
 	case *Fn:
 		return "function"
+	case BytesV:
+		return "bytes"
 	case *Module:
 		return "module"
 	case *PyErr:

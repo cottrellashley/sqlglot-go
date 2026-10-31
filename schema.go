@@ -479,8 +479,8 @@ func (s *MappingSchema) normalizeSchema(schema *SchemaMapping) *SchemaMapping {
 		if columns.Len() == 0 {
 			schemaErrorf("Table %s must have at least one column", strings.Join(keys[:len(keys)-1], "."))
 		}
-		if first, ok := columns.Values()[0].(*SchemaMapping); ok {
-			schemaErrorf(errorMsg, strings.Join(append(append([]string{}, keys...), flattenSchema(first, dictDepth(first)-1)[0]...), "."),
+		if _, ok := columns.Values()[0].(*SchemaMapping); ok {
+			schemaErrorf(errorMsg, strings.Join(append(append([]string{}, keys...), flattenSchema(columns, dictDepth(columns)-1)[0]...), "."),
 				len(flattened[0]))
 		}
 		var normalizedKeys []string

@@ -98,3 +98,53 @@ func TestCustomDialectSettings(t *testing.T) {
 		t.Fatal("expected an error for an unsupported setting")
 	}
 }
+
+// TestRegisterKind is the Go equivalent of test_generator.py's test_fallback_function_sql and
+// test_fallback_function_var_args_sql, which subclass exp.Func inline.
+func TestRegisterKind(t *testing.T) {
+	specialUdf := exp.RegisterKind(exp.KindSpec{
+		Name:  "SpecialUdfTest",
+		Args:  []exp.ArgSpec{{Key: "a", Required: true}, {Key: "b"}},
+		Bases: []exp.Kind{exp.Func},
+	})
+	specialUdfVarArgs := exp.RegisterKind(exp.KindSpec{
+		Name:     "SpecialUdfVarArgsTest",
+		Args:     []exp.ArgSpec{{Key: "a", Required: true}, {Key: "expressions"}},
+		Bases:    []exp.Kind{exp.Func},
+		SQLNames: []string{"SPECIAL_UDF"},
+		VarLen:   true,
+	})
+	if !specialUdf.IsA(exp.Func) || !specialUdf.IsA(exp.Condition) || specialUdf.String() != "SpecialUdfTest" {
+		t.Fatalf("bad kind %v", specialUdf)
+	}
+
+	for _, tc := range []struct {
+		kind exp.Kind
+		name string
+		sql  string
+		want string
+	}{
+		{specialUdf, "SPECIAL_UDF_TEST", "SELECT SPECIAL_UDF_TEST(a) FROM x", "SELECT SPECIAL_UDF_TEST(a) FROM x"},
+		{specialUdfVarArgs, "SPECIAL_UDF", "SELECT SPECIAL_UDF(a, b, c, d + 1) FROM x", "SELECT SPECIAL_UDF(a, b, c, d + 1) FROM x"},
+	} {
+		c := snowflake.New()
+		c.Parser.Functions[tc.name] = sqlglot.FromArgList(tc.kind)
+		e, err := sqlglot.ParseOne(tc.sql, c)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if e.Find(tc.kind) == nil {
+			t.Fatalf("%s: no %v node in %s", tc.sql, tc.kind, e.Repr())
+		}
+		if got := e.SQL(); got != tc.want {
+			t.Fatalf("got %q, want %q", got, tc.want)
+		}
+		if got, err := e.Generate("duckdb"); err != nil || got != tc.want {
+			t.Fatalf("duckdb: got %q (%v), want %q", got, err, tc.want)
+		}
+	}
+
+	if got := exp.New(specialUdfVarArgs, "a", exp.NewColumn("a"), "expressions", []*exp.Expr{exp.NewColumn("b")}).SQL(); got != "SPECIAL_UDF(a, b)" {
+		t.Fatalf("got %q", got)
+	}
+}

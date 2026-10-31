@@ -1073,7 +1073,7 @@ const (
 	numKinds
 )
 
-var kindTable = [numKinds]kindInfo{
+var kindTable = [kindCap]kindInfo{
 	AIAgg:                               {name: "AIAgg", key: "aiagg", args: []ArgSpec{{"this", true}, {"expression", true}}, bases: []Kind{AggFunc, Func, Condition}, isFunc: true, sqlNames: []string{"AI_AGG"}},
 	AIClassify:                          {name: "AIClassify", key: "aiclassify", args: []ArgSpec{{"this", true}, {"categories", true}, {"config", false}}, bases: []Kind{Func, Condition}, isFunc: true, sqlNames: []string{"AI_CLASSIFY"}},
 	AIEmbed:                             {name: "AIEmbed", key: "aiembed", args: []ArgSpec{{"expressions", true}}, bases: []Kind{Func, Condition}, isFunc: true, sqlNames: []string{"AI_EMBED"}, varLen: true},

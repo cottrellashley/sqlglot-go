@@ -896,12 +896,12 @@ func EliminateJoinMarks(e *exp.Expr) *exp.Expr {
 		}
 		// knockout: we do not support left correlation (see point 2)
 		if scope.IsCorrelatedSubquery() {
-			panic(fmt.Errorf("Correlated queries are not supported"))
+			panic(&errs.AssertionError{Message: "Correlated queries are not supported"})
 		}
 		// make sure we have AND of ORs to have clear join terms
 		where = Normalize(where.This(), false, 128)
 		if !Normalized(where, false) {
-			panic(fmt.Errorf("Cannot normalize JOIN predicates"))
+			panic(&errs.AssertionError{Message: "Cannot normalize JOIN predicates"})
 		}
 		joinsOns := NewOrderedMap[[]*exp.Expr]()
 		conds := []*exp.Expr{where}
@@ -923,7 +923,7 @@ func EliminateJoinMarks(e *exp.Expr) *exp.Expr {
 				continue
 			}
 			if len(leftJoinTable) > 1 {
-				panic(fmt.Errorf("Cannot combine JOIN predicates from different tables"))
+				panic(&errs.AssertionError{Message: "Cannot combine JOIN predicates from different tables"})
 			}
 			for _, col := range joinCols {
 				col.Set("join_mark", false)
@@ -981,7 +981,7 @@ func EliminateJoinMarks(e *exp.Expr) *exp.Expr {
 				}
 			}
 			if len(onlyOld) < 1 {
-				panic(fmt.Errorf("Cannot determine which table to use in the new FROM clause"))
+				panic(&errs.AssertionError{Message: "Cannot determine which table to use in the new FROM clause"})
 			}
 			j, _ := oldJoins.Get(onlyOld[0])
 			query.Set("from_", exp.New(exp.From, "this", j.This()))

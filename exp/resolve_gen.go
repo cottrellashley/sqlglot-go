@@ -3,7 +3,7 @@
 package exp
 
 // implName maps each kind to the class implementing `name` (InvalidKind = Expression default).
-var implName = [numKinds]Kind{
+var implName = [kindCap]Kind{
 	Anonymous:         Anonymous,
 	Cast:              Cast,
 	DataTypeParam:     DataTypeParam,
@@ -22,7 +22,7 @@ var implName = [numKinds]Kind{
 }
 
 // implOutputName maps each kind to the class implementing `output_name` (InvalidKind = Expression default).
-var implOutputName = [numKinds]Kind{
+var implOutputName = [kindCap]Kind{
 	Agg:               Agg,
 	Alias:             Alias,
 	Bracket:           Bracket,
@@ -45,13 +45,13 @@ var implOutputName = [numKinds]Kind{
 }
 
 // implAliasOrName maps each kind to the class implementing `alias_or_name` (InvalidKind = Expression default).
-var implAliasOrName = [numKinds]Kind{
+var implAliasOrName = [kindCap]Kind{
 	From: From,
 	Join: Join,
 }
 
 // implIsStar maps each kind to the class implementing `is_star` (InvalidKind = Expression default).
-var implIsStar = [numKinds]Kind{
+var implIsStar = [kindCap]Kind{
 	Dot:          Dot,
 	Except:       SetOperation,
 	Intersect:    SetOperation,
@@ -62,7 +62,7 @@ var implIsStar = [numKinds]Kind{
 }
 
 // implSelects maps each kind to the class implementing `selects` (InvalidKind = Expression default).
-var implSelects = [numKinds]Kind{
+var implSelects = [kindCap]Kind{
 	CTE:                DerivedTable,
 	Create:             DDL,
 	DDL:                DDL,
@@ -94,7 +94,7 @@ var implSelects = [numKinds]Kind{
 }
 
 // implNamedSelects maps each kind to the class implementing `named_selects` (InvalidKind = Expression default).
-var implNamedSelects = [numKinds]Kind{
+var implNamedSelects = [kindCap]Kind{
 	CTE:                Selectable,
 	Create:             DDL,
 	DDL:                DDL,
@@ -126,7 +126,7 @@ var implNamedSelects = [numKinds]Kind{
 }
 
 // implParts maps each kind to the class implementing `parts` (InvalidKind = Expression default).
-var implParts = [numKinds]Kind{
+var implParts = [kindCap]Kind{
 	Column:       Column,
 	Dot:          Dot,
 	Pseudocolumn: Column,
@@ -134,7 +134,7 @@ var implParts = [numKinds]Kind{
 }
 
 // implToPy maps each kind to the class implementing `to_py` (InvalidKind = Expression default).
-var implToPy = [numKinds]Kind{
+var implToPy = [kindCap]Kind{
 	Boolean: Boolean,
 	Literal: Literal,
 	Neg:     Neg,
@@ -142,7 +142,7 @@ var implToPy = [numKinds]Kind{
 }
 
 // implIsType maps each kind to the class implementing `is_type` (InvalidKind = Expression default).
-var implIsType = [numKinds]Kind{
+var implIsType = [kindCap]Kind{
 	Cast:             Cast,
 	DataType:         DataType,
 	IntervalSpan:     DataType,
@@ -153,12 +153,12 @@ var implIsType = [numKinds]Kind{
 }
 
 // implUnnest maps each kind to the class implementing `unnest` (InvalidKind = Expression default).
-var implUnnest = [numKinds]Kind{
+var implUnnest = [kindCap]Kind{
 	Subquery: Subquery,
 }
 
 // implCtes maps each kind to the class implementing `ctes` (InvalidKind = Expression default).
-var implCtes = [numKinds]Kind{
+var implCtes = [kindCap]Kind{
 	Create:       DDL,
 	DDL:          DDL,
 	Except:       Query,
@@ -172,7 +172,7 @@ var implCtes = [numKinds]Kind{
 }
 
 // implKind maps each kind to the class implementing `kind` (InvalidKind = Expression default).
-var implKind = [numKinds]Kind{
+var implKind = [kindCap]Kind{
 	Alter:                    Alter,
 	BinaryColumnConstraint:   ColumnConstraint,
 	ColumnConstraint:         ColumnConstraint,
@@ -189,7 +189,7 @@ var implKind = [numKinds]Kind{
 }
 
 // implUnit maps each kind to the class implementing `unit` (InvalidKind = Expression default).
-var implUnit = [numKinds]Kind{
+var implUnit = [kindCap]Kind{
 	DateAdd:        TimeUnit,
 	DateBin:        TimeUnit,
 	DateDiff:       TimeUnit,
@@ -217,7 +217,7 @@ var implUnit = [numKinds]Kind{
 }
 
 // implSelect maps each kind to the class implementing `select` (InvalidKind = Expression default).
-var implSelect = [numKinds]Kind{
+var implSelect = [kindCap]Kind{
 	Except:       SetOperation,
 	Intersect:    SetOperation,
 	Query:        Query,
@@ -228,7 +228,7 @@ var implSelect = [numKinds]Kind{
 }
 
 // implWhere maps each kind to the class implementing `where` (InvalidKind = Expression default).
-var implWhere = [numKinds]Kind{
+var implWhere = [kindCap]Kind{
 	Delete:       Delete,
 	Except:       Query,
 	Intersect:    Query,
@@ -241,7 +241,7 @@ var implWhere = [numKinds]Kind{
 }
 
 // implWith maps each kind to the class implementing `with_` (InvalidKind = Expression default).
-var implWith = [numKinds]Kind{
+var implWith = [kindCap]Kind{
 	Except:       Query,
 	Insert:       Insert,
 	Intersect:    Query,
@@ -254,15 +254,18 @@ var implWith = [numKinds]Kind{
 }
 
 // implFrom maps each kind to the class implementing `from_` (InvalidKind = Expression default).
-var implFrom = [numKinds]Kind{
+var implFrom = [kindCap]Kind{
 	Select: Select,
 	Update: Update,
 }
 
 // implIsin maps each kind to the class implementing `isin` (InvalidKind = Expression default).
-var implIsin = [numKinds]Kind{
+var implIsin = [kindCap]Kind{
 	Tuple: Tuple,
 }
 
 // implIsNumber maps each kind to the class implementing `is_number` (InvalidKind = Expression default).
-var implIsNumber = [numKinds]Kind{}
+var implIsNumber = [kindCap]Kind{}
+
+// implTables lists the resolution tables, so that registered kinds inherit their entries.
+var implTables = []*[kindCap]Kind{&implName, &implOutputName, &implAliasOrName, &implIsStar, &implSelects, &implNamedSelects, &implParts, &implToPy, &implIsType, &implUnnest, &implCtes, &implKind, &implUnit, &implSelect, &implWhere, &implWith, &implFrom, &implIsin, &implIsNumber}

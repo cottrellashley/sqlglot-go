@@ -241,6 +241,28 @@ func (s *Case) builtinMethod(name string) func(a Args) Value {
 		return func(a Args) Value { return s.assertDuckDBSQL(a) }
 	case "assertEqual", "assertEquals":
 		return func(a Args) Value { s.assertEqual(a); return nil }
+	case "assertRaises", "assertRaisesRegex":
+		// the call form: self.assertRaises(exc, callable, *args, **kwargs)
+		return func(a Args) Value {
+			n := 2
+			if name == "assertRaisesRegex" {
+				n = 3
+			}
+			if len(a.Pos) < n {
+				NotPorted("%s without a callable outside a with statement", name)
+			}
+			call := append([]Value{}, a.Pos[n:]...)
+			for _, kw := range a.KW {
+				call = append(call, kw)
+			}
+			cm := &RaisesCM{}
+			if s.assertRaises(cm, func(Value) { Call(a.Pos[n-1], call...) }, a.Pos[0]) && n == 3 {
+				if !regexp.MustCompile(Str(a.Pos[1])).MatchString(cm.Exc.Msg) {
+					fail("%q does not match %q", Str(a.Pos[1]), cm.Exc.Msg)
+				}
+			}
+			return nil
+		}
 	case "assertNotEqual":
 		return func(a Args) Value {
 			if Eq(a.Pos[0], a.Pos[1]) {

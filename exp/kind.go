@@ -36,8 +36,17 @@ type kindInfo struct {
 	required  []string
 }
 
-// NumKinds is the number of expression kinds (including InvalidKind).
+// NumKinds is the number of built-in expression kinds (including InvalidKind).
 const NumKinds = int(numKinds)
+
+// MaxRegisteredKinds bounds the number of kinds that RegisterKind can add.
+const MaxRegisteredKinds = 1024
+
+// kindCap is the capacity of the kind tables: the built-in kinds plus the registered ones.
+const kindCap = numKinds + MaxRegisteredKinds
+
+// nextKind is the Kind that the next RegisterKind call hands out.
+var nextKind = numKinds
 
 var (
 	kindByKey  = map[string]Kind{}
@@ -75,7 +84,7 @@ func init() {
 
 // String returns the Python class name of the kind (e.g. "Select").
 func (k Kind) String() string {
-	if k == InvalidKind || int(k) >= NumKinds {
+	if k == InvalidKind || k >= nextKind {
 		return "Invalid"
 	}
 	return kindTable[k].name
@@ -162,8 +171,8 @@ func AllFunctions() []Kind { return allFunctions }
 
 // AllKinds returns every kind.
 func AllKinds() []Kind {
-	out := make([]Kind, 0, NumKinds-1)
-	for k := Kind(1); k < numKinds; k++ {
+	out := make([]Kind, 0, int(nextKind)-1)
+	for k := Kind(1); k < nextKind; k++ {
 		out = append(out, k)
 	}
 	return out
@@ -181,7 +190,7 @@ func camelToSnake(name string) string {
 }
 
 // KindSet is a set of kinds (a bitset; the zero value is empty and it is copied by value).
-type KindSet [(int(numKinds) + 63) / 64]uint64
+type KindSet [(int(kindCap) + 63) / 64]uint64
 
 // NewKindSet builds a KindSet from kinds.
 func NewKindSet(kinds ...Kind) KindSet {
@@ -239,7 +248,7 @@ func (s KindSet) Without(kinds ...Kind) KindSet {
 // Kinds lists the members.
 func (s *KindSet) Kinds() []Kind {
 	var out []Kind
-	for k := Kind(1); k < numKinds; k++ {
+	for k := Kind(1); k < nextKind; k++ {
 		if s.Has(k) {
 			out = append(out, k)
 		}
@@ -250,7 +259,7 @@ func (s *KindSet) Kinds() []Kind {
 // Len returns the number of members.
 func (s *KindSet) Len() int {
 	n := 0
-	for k := Kind(1); k < numKinds; k++ {
+	for k := Kind(1); k < nextKind; k++ {
 		if s.Has(k) {
 			n++
 		}

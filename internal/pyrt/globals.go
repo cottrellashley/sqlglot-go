@@ -105,6 +105,12 @@ func G(name string) Value {
 			return &Module{Name: name, Attrs: map[string]Value{"Generator": baseConfig("Generator")}}
 		case name == "sqlglot.tokens":
 			return &Module{Name: name, Attrs: map[string]Value{"Tokenizer": baseConfig("Tokenizer")}}
+		case name == "sqlglot.tokens.Tokenizer", name == "sqlglot.Tokenizer":
+			return baseConfig("Tokenizer")
+		case name == "sqlglot.parser.Parser", name == "sqlglot.Parser":
+			return baseConfig("Parser")
+		case name == "sqlglot.generator.Generator", name == "sqlglot.Generator":
+			return baseConfig("Generator")
 		case parts[0] == "sqlglot" && len(parts) == 4 && (parts[1] == "parsers" || parts[1] == "generators" || parts[1] == "tokenizers"):
 			// e.g. sqlglot.parsers.snowflake.SnowflakeParser
 			if c, err := sqlglot.GetDialectClass(parts[2]); err == nil {
@@ -125,6 +131,12 @@ func G(name string) Value {
 		if name == "sqlglot.dialects.duckdb.WS_CONTROL_CHARS_TO_DUCK" {
 			return wsControlCharsToDuck()
 		}
+		if name == "sqlglot.expressions.core" {
+			return expModule
+		}
+		if name == "sqlglot.jsonpath.parse" {
+			return jsonpathParse
+		}
 		if name == "tests.helpers.is_compiled" {
 			return Func("is_compiled", func(a Args) Value { return false })
 		}
@@ -134,6 +146,12 @@ func G(name string) Value {
 	}
 	if v, ok := sqlglotModule.lookup(last); ok {
 		return v
+	}
+	// sqlglot re-exports most expression builders (sqlglot.to_table, sqlglot.Expression, ...)
+	if strings.HasPrefix(name, "sqlglot.") {
+		if v, ok := expModule.lookup(last); ok {
+			return v
+		}
 	}
 	NotPorted("global name %q", name)
 	return nil
@@ -303,7 +321,22 @@ func init() {
 		})
 	})
 	m["ensure_schema"] = Func("ensure_schema", func(a Args) Value {
-		return Guard(func() Value { return toSchema(a.Pos[0]) })
+		return Guard(func() Value {
+			if s, ok := norm(a.Get(0, "schema", nil)).(*SchemaV); ok {
+				return s
+			}
+			o := sqlglot.MappingSchemaOptions{Dialect: dialectArg(a.Get(-1, "dialect", nil))}
+			if n, ok := a.Kwarg("normalize"); ok && !Truth(n) {
+				o.NoNormalize = true
+			}
+			var schema any
+			if v := a.Get(0, "schema", nil); v != nil {
+				schema = toSchemaMapping(v)
+			}
+			ms, err := sqlglot.NewMappingSchema(schema, o)
+			check(err)
+			return &SchemaV{ms}
+		})
 	})
 }
 
@@ -377,6 +410,38 @@ func (s *SchemaV) PyAttr(name string) (Value, bool) {
 		}), true
 	case "depth":
 		return Func(name, func(a Args) Value { return s.S.Depth() }), true
+	case "has_column":
+		return Func(name, func(a Args) Value {
+			return Guard(func() Value {
+				ok, err := s.S.HasColumn(toGo(a.Pos[0]), toGo(a.Pos[1]), dialectArg(a.Get(2, "dialect", nil)), boolPtr(a.Get(3, "normalize", nil)))
+				check(err)
+				return ok
+			})
+		}), true
+	case "find":
+		return Func(name, func(a Args) Value {
+			return Guard(func() Value {
+				t, _ := norm(a.Pos[0]).(*exp.Expr)
+				m, err := s.S.Find(t, Truth(a.Get(1, "raise_on_missing", true)), Truth(a.Get(2, "ensure_data_types", false)))
+				check(err)
+				if m == nil {
+					return nil
+				}
+				return fromGo(m)
+			})
+		}), true
+	case "empty":
+		return s.S.Empty(), true
+	case "mapping":
+		return fromGo(s.S.Mapping), true
+	case "supported_table_args":
+		return Guard(func() Value {
+			args, err := s.S.SupportedTableArgs()
+			check(err)
+			return norm(args)
+		}), true
+	case "copy":
+		return Func(name, func(a Args) Value { return &SchemaV{s.S.Copy()} }), true
 	}
 	return nil, false
 }
@@ -666,20 +731,120 @@ func baseConfig(part string) Value {
 func (c *DialectClassV) pyAttrConfig(name string) (Value, bool) {
 	switch name {
 	case "Generator":
-		return &ConfigV{reflect.ValueOf(c.C.Generator).Elem(), c.C.Generator.Extra}, true
+		return &ConfigV{reflect.ValueOf(c.C.Generator).Elem(), c.C.Generator.Extra, c.C, name}, true
 	case "Parser":
-		return &ConfigV{reflect.ValueOf(c.C.Parser).Elem(), c.C.Parser.Extra}, true
+		return &ConfigV{reflect.ValueOf(c.C.Parser).Elem(), c.C.Parser.Extra, c.C, name}, true
 	case "Tokenizer":
-		return &ConfigV{reflect.ValueOf(c.C.Tokenizer).Elem(), nil}, true
+		return &ConfigV{reflect.ValueOf(c.C.Tokenizer).Elem(), nil, c.C, name}, true
 	}
 	return nil, false
 }
 
-// ConfigV exposes the class attributes of a parser/generator/tokenizer configuration.
+// ConfigV exposes the class attributes of a parser/generator/tokenizer configuration; calling
+// it creates a tokenizer or parser instance.
 type ConfigV struct {
 	v     reflect.Value
 	extra map[string]any
+	cls   *sqlglot.DialectClass
+	part  string
 }
+
+// PyCall instantiates the tokenizer or parser.
+func (c *ConfigV) PyCall(a Args) Value {
+	d := c.cls.NewInstance()
+	switch c.part {
+	case "Tokenizer":
+		return &TokenizerV{T: d.NewTokenizer()}
+	case "Parser":
+		o := parseOpts(a, -1)
+		if l := a.Get(0, "error_level", nil); l != nil {
+			o.ErrorLevel = l.(errs.ErrorLevel)
+		}
+		if v := a.Get(-1, "max_nodes", nil); v != nil {
+			o.MaxNodes = mustInt(v)
+		}
+		return &ParserV{P: d.NewParser(o)}
+	}
+	NotPorted("instantiating %s", c.part)
+	return nil
+}
+
+// TokenizerV is a tokenizer instance.
+type TokenizerV struct{ T *tokens.Tokenizer }
+
+func tokenList(toks []*tokens.Token) *List {
+	out := make([]Value, len(toks))
+	for i, t := range toks {
+		out[i] = &TokenV{t}
+	}
+	return &List{out}
+}
+
+// PyAttr implements Attrer.
+func (t *TokenizerV) PyAttr(name string) (Value, bool) {
+	switch name {
+	case "tokenize":
+		return Func(name, func(a Args) Value {
+			return Guard(func() Value {
+				toks, err := t.T.Tokenize(Str(a.Pos[0]))
+				check(err)
+				return tokenList(toks)
+			})
+		}), true
+	case "tokens":
+		return tokenList(t.T.Tokens()), true
+	case "sql":
+		return string(t.T.SQL()), true
+	}
+	return nil, false
+}
+
+// ParserV is a parser instance.
+type ParserV struct{ P *sqlglot.Parser }
+
+// PyAttr implements Attrer.
+func (p *ParserV) PyAttr(name string) (Value, bool) {
+	switch name {
+	case "expression":
+		return Func(name, func(a Args) Value {
+			return Guard(func() Value { return p.P.Expression(norm(a.Pos[0]).(*exp.Expr)) })
+		}), true
+	case "validate_expression":
+		return Func(name, func(a Args) Value {
+			return Guard(func() Value { return p.P.ValidateExpression(norm(a.Pos[0]).(*exp.Expr), nil) })
+		}), true
+	case "parse":
+		return Func(name, func(a Args) Value {
+			return Guard(func() Value {
+				var toks []*tokens.Token
+				for _, t := range Iter(a.Pos[0]) {
+					toks = append(toks, norm(t).(*TokenV).T)
+				}
+				sql := ""
+				if v := a.Get(1, "sql", nil); v != nil {
+					sql = Str(v)
+				}
+				es, err := p.P.Parse(toks, sql)
+				check(err)
+				return norm(es)
+			})
+		}), true
+	case "errors":
+		out := make([]Value, len(p.P.Errors))
+		for i, e := range p.P.Errors {
+			out[i] = goErr(e)
+		}
+		return &List{out}, true
+	case "error_level":
+		return p.P.ErrorLevel, true
+	case "max_errors":
+		return p.P.MaxErrors, true
+	}
+	return nil, false
+}
+
+// String implements fmt.Stringer (repr(token)).
+func (t *TokenV) String() string { return t.T.String() }
 
 // PyAttr implements Attrer.
 func (c *ConfigV) PyAttr(name string) (Value, bool) {
@@ -707,3 +872,13 @@ func classField(v reflect.Value, name string) (Value, bool) {
 	}
 	return fromGo(f.Interface()), true
 }
+
+var jsonpathParse = Func("parse", func(a Args) Value {
+	return Guard(func() Value {
+		d, err := sqlglot.GetDialect(dialectArg(a.Get(1, "dialect", nil)))
+		check(err)
+		e, err := sqlglot.ParseJSONPath(Str(a.Pos[0]), d)
+		check(err)
+		return e
+	})
+})

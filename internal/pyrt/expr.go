@@ -74,6 +74,8 @@ func goErr(err error) *PyErr {
 		return &PyErr{Class: SchemaError, Msg: err.Error(), Go: err}
 	case *errs.ExecuteError:
 		return &PyErr{Class: ExecuteError, Msg: err.Error(), Go: err}
+	case *errs.AssertionError:
+		return &PyErr{Class: AssertionError, Msg: err.Error(), Go: err}
 	}
 	msg := err.Error()
 	if m := unknownDialectRe.FindStringSubmatch(msg); m != nil {
@@ -414,6 +416,14 @@ func exprAttr(e *exp.Expr, name string) Value {
 		return e.IsKind(exp.DataType)
 
 	// methods
+	case "dump":
+		return exprMethod(e, name, func(a Args) Value {
+			var out []Value
+			for _, p := range e.Dump() {
+				out = append(out, fromGo(p))
+			}
+			return &List{out}
+		})
 	case "sql":
 		return exprMethod(e, name, func(a Args) Value {
 			sql, err := e.Generate(genOptions(a, 0)...)
@@ -554,8 +564,6 @@ func exprAttr(e *exp.Expr, name string) Value {
 		return exprMethod(e, name, func(a Args) Value { return e.Root() })
 	case "to_s":
 		return exprMethod(e, name, func(a Args) Value { return e.ToS() })
-	case "dump":
-		return exprMethod(e, name, func(a Args) Value { NotPorted("Expr.dump"); return nil })
 	case "add_comments":
 		return exprMethod(e, name, func(a Args) Value {
 			var cs []string
@@ -745,12 +753,15 @@ func toOptions(xs []any) []exp.Option {
 	return out
 }
 
+// metaDict is a live view of the expression's meta mapping.
 func metaDict(e *exp.Expr) Value {
 	m := e.Meta()
 	d := NewDict()
 	for _, k := range sortedKeys(m) {
 		d.Set(k, fromGo(m[k]))
 	}
+	d.onSet = func(k, v Value) { e.Meta()[Str(k)] = toGo(v) }
+	d.onDelete = func(k Value) { delete(e.Meta(), Str(k)) }
 	return d
 }
 
@@ -791,6 +802,12 @@ func fromGo(v any) Value {
 		return int(x)
 	case float32:
 		return float64(x)
+	case *sqlglot.OrderedMap[any]:
+		d := NewDict()
+		for k, val := range x.All() {
+			d.Set(k, fromGo(val))
+		}
+		return d
 	}
 	// maps with string keys become dicts (sorted keys), other slices lists
 	rv := reflect.ValueOf(v)

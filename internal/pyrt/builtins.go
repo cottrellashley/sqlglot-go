@@ -24,8 +24,14 @@ func (t *BuiltinType) PyAttr(name string) (Value, bool) {
 	if name == "__name__" {
 		return t.Name, true
 	}
+	if v, ok := typeAttrs[t][name]; ok {
+		return v, true
+	}
 	return nil, false
 }
+
+// typeAttrs holds class attributes (static methods) of builtin types.
+var typeAttrs = map[*BuiltinType]map[string]Value{}
 
 var builtins = map[string]Value{}
 
@@ -139,7 +145,7 @@ func init() {
 	builtins["True"] = true
 	builtins["False"] = false
 	for _, c := range []*ExcClass{Exception, BaseException, ValueError, TypeError, KeyError, IndexError, AttributeError,
-		AssertionError, NotImplementedError, RuntimeError, RecursionError, ZeroDivisionError, StopIteration} {
+		AssertionError, NotImplementedError, RuntimeError, RecursionError, ZeroDivisionError, StopIteration, OSError, FileNotFoundError} {
 		builtins[c.Name] = c
 	}
 

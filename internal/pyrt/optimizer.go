@@ -426,7 +426,6 @@ func sourcesDict(m *sqlglot.OrderedMap[sqlglot.Source]) *Dict {
 	return d
 }
 
-
 // PyAttr implements Attrer.
 func (s *ScopeV) PyAttr(name string) (Value, bool) {
 	sc := s.S

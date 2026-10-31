@@ -4,6 +4,7 @@ package sqlglot
 
 import (
 	"fmt"
+	"math/big"
 	"strings"
 
 	"github.com/cottrellashley/sqlglot-go/exp"
@@ -528,7 +529,7 @@ func (g *Generator) jsonPathPart(part any) string {
 			}
 			return transform(g, x)
 		}
-	case int:
+	case int, *big.Int:
 		return fmt.Sprint(x)
 	case string:
 		if g.QuoteJSONPathKeyUsingBrackets && g.C.JsonPathSingleQuoteEscape {

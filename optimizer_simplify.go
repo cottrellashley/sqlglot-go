@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/cottrellashley/sqlglot-go/exp"
+	"github.com/cottrellashley/sqlglot-go/helper"
 	"github.com/cottrellashley/sqlglot-go/internal/pydate"
 	"github.com/cottrellashley/sqlglot-go/internal/pydec"
 )
@@ -439,15 +440,11 @@ func pyToInt(v any) (int, bool) {
 			return int(x.Int64()), true
 		}
 	case string:
-		d, ok := pydec.Parse(x)
-		if !ok {
+		n, ok := helper.ToInt(x)
+		if !ok || !n.IsInt64() {
 			return 0, false
 		}
-		r := d.Rat()
-		if !r.IsInt() || !r.Num().IsInt64() {
-			return 0, false
-		}
-		return int(r.Num().Int64()), true
+		return int(n.Int64()), true
 	case exp.Decimal:
 		if x.Rat.IsInt() && x.Rat.Num().IsInt64() {
 			return int(x.Rat.Num().Int64()), true

@@ -4,6 +4,7 @@ package sqlglot
 
 import (
 	"fmt"
+	"math/big"
 	"strconv"
 	"strings"
 
@@ -157,6 +158,10 @@ func ParseJSONPath(path string, d *Dialect) (result *exp.Expr, err error) {
 		if number != "" {
 			n, err := strconv.Atoi(number)
 			if err != nil {
+				// Python ints are unbounded
+				if b, ok := new(big.Int).SetString(number, 10); ok {
+					return b
+				}
 				panic(jsonPathError{fmt.Errorf("invalid literal for int() with base 10: '%s'", number)})
 			}
 			return n

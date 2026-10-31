@@ -112,7 +112,7 @@ with open(os.path.join(OUT, "exp", "kinds_gen.go"), "w") as f:
     for n in names:
         f.write(f"\t{n}\n")
     f.write("\tnumKinds\n)\n\n")
-    f.write("var kindTable = [numKinds]kindInfo{\n")
+    f.write("var kindTable = [kindCap]kindInfo{\n")
     for c in classes:
         n = kind_name(c)
         mro = [b for b in c.__mro__[1:] if b in index]
@@ -162,10 +162,12 @@ with open(os.path.join(OUT, "exp", "resolve_gen.go"), "w") as f:
                     break
         go = "impl" + camel(meth)
         f.write(f"// {go} maps each kind to the class implementing `{meth}` (InvalidKind = Expression default).\n")
-        f.write(f"var {go} = [numKinds]Kind{{\n")
+        f.write(f"var {go} = [kindCap]Kind{{\n")
         for k, v in entries:
             f.write(f"\t{k}: {v},\n")
         f.write("}\n\n")
+    f.write("// implTables lists the resolution tables, so that registered kinds inherit their entries.\n")
+    f.write("var implTables = []*[kindCap]Kind{" + ", ".join("&impl" + camel(m) for m in POLY) + "}\n")
 print("resolution tables written")
 
 subprocess.run(["gofmt", "-w", os.path.join(OUT, "exp"), os.path.join(OUT, "tokens")], check=True)

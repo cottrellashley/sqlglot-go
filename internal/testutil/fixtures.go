@@ -65,7 +65,8 @@ type FixturePair struct {
 	Expected string
 }
 
-func extractMeta(sql string) (string, map[string]string) {
+// ExtractMeta mirrors _extract_meta: it splits the leading "# key: value" lines off sql.
+func ExtractMeta(sql string) (string, map[string]string) {
 	meta := map[string]string{}
 	lines := strings.Split(sql, "\n")
 	i := 0
@@ -84,7 +85,7 @@ func LoadSQLFixturePairs(filename string) []FixturePair {
 	var out []FixturePair
 	for i := 0; i < len(statements); i += 2 {
 		if i+1 < len(statements) {
-			sql, meta := extractMeta(strings.TrimSpace(statements[i]))
+			sql, meta := ExtractMeta(strings.TrimSpace(statements[i]))
 			out = append(out, FixturePair{Meta: meta, SQL: sql, Expected: strings.TrimSpace(statements[i+1])})
 		}
 	}

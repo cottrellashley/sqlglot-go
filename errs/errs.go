@@ -111,6 +111,12 @@ type ExecuteError struct{ Message string }
 func (e *ExecuteError) Error() string { return e.Message }
 func (*ExecuteError) sqlglotError()   {}
 
+// AssertionError reports a failed invariant check, where sqlglot uses an assert statement
+// (for example a transform that cannot handle its input).
+type AssertionError struct{ Message string }
+
+func (e *AssertionError) Error() string { return e.Message }
+
 // Unsupportedf builds an UnsupportedError.
 func Unsupportedf(format string, args ...any) *UnsupportedError {
 	return &UnsupportedError{Message: fmt.Sprintf(format, args...)}

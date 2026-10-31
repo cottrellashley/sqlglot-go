@@ -888,6 +888,13 @@ func (e *Expr) AssertIs(kind Kind) *Expr {
 func (e *Expr) ErrorMessages(args []*Expr) []string {
 	var errors []string
 	info := &kindTable[e.kind]
+	if StrictArgKeys {
+		for _, a := range e.args {
+			if _, ok := info.argIndex[a.Key]; !ok {
+				panic(fmt.Errorf("TypeError: Unexpected keyword: '%s' for %s", a.Key, classRepr(e.kind)))
+			}
+		}
+	}
 	for _, k := range info.required {
 		v := e.Arg(k)
 		if v == nil {
@@ -905,6 +912,11 @@ func (e *Expr) ErrorMessages(args []*Expr) []string {
 	}
 	return errors
 }
+
+// StrictArgKeys mirrors sqlglot's UNITTEST mode: when set, ErrorMessages panics with a
+// "TypeError: Unexpected keyword" error if an expression has an argument that its kind does not
+// declare. The test suites enable it to catch misspelled argument keys.
+var StrictArgKeys bool
 
 func classRepr(k Kind) string {
 	return fmt.Sprintf("<class 'sqlglot.expressions.%s'>", kindTable[k].name)

@@ -47,6 +47,16 @@ PYTHON_ONLY = {
         "python-only: patches Snowflake.parser_class with a Python subclass; see TestPatchDialectParser in dialect_extension_test.go",
     ("tests/dialects/test_dialect.py", "TestDialect.test_custom_dialect"):
         "python-only: subclasses Dialect and SnowflakeParser inline; see TestCustomDialect in dialect_extension_test.go",
+    ("tests/test_serde.py", "TestSerde.test_custom_expression"):
+        "python-only: subclasses exp.Expression at module level; see TestSerdeRegisteredKind in exp/serde_test.go",
+    ("tests/test_schema.py", "TestSchema.test_custom_schema"):
+        "python-only: subclasses Schema inline; see TestCustomSchema in schema_test.go",
+    ("tests/test_typing.py", "TestTyping.test_no_redundant_expression_metadata"):
+        "python-only: lints the Python sources of sqlglot.typing (module files and bytecode)",
+    ("tests/test_generator.py", "TestGenerator.test_fallback_function_sql"):
+        "python-only: subclasses exp.Func inline; see TestRegisterKind in dialect_extension_test.go",
+    ("tests/test_generator.py", "TestGenerator.test_fallback_function_var_args_sql"):
+        "python-only: subclasses exp.Func inline; see TestRegisterKind in dialect_extension_test.go",
 }
 
 # self.<method>(...) calls with a dedicated Go method on *pyrt.Case
@@ -227,6 +237,8 @@ class Converter:
             if "." not in r and "e" not in r:
                 r += ".0"
             return r
+        if isinstance(v, bytes):
+            return f"Bytes({go_str(v.decode('latin-1'))})"
         raise NotPortedErr(f"constant {type(v).__name__}")
 
     def e_Name(self, node, ctx):
@@ -448,14 +460,19 @@ class Converter:
         if isinstance(target, ast.Name):
             return f"{ctx.declare(target.id)} = {value}"
         if isinstance(target, (ast.Tuple, ast.List)):
-            if any(isinstance(e, ast.Starred) for e in target.elts):
+            stars = [i for i, e in enumerate(target.elts) if isinstance(e, ast.Starred)]
+            if len(stars) > 1:
                 raise NotPortedErr("starred assignment")
             names = []
             for e in target.elts:
+                if isinstance(e, ast.Starred):
+                    e = e.value
                 if isinstance(e, ast.Name):
                     names.append("&" + ctx.declare(e.id))
                 else:
                     raise NotPortedErr("nested unpacking")
+            if stars:
+                return f"UnpackStar({value}, {stars[0]}, {', '.join(names)})"
             return f"Unpack({value}, {', '.join(names)})"
         if isinstance(target, ast.Attribute):
             return f"SetA({self.expr(target.value, ctx)}, {go_str(target.attr)}, {value})"
@@ -671,7 +688,10 @@ class Converter:
             bind = [f"{as_}m_"] if as_ else ["_ = m_"]
             call = f"self.PatchLogMethod(func(m_ Value) {{\n" + "\n".join(bind + body) + f"\n}}, {go_str(patch)})"
             return self.wrap(call, node, ctx, raw) if raw else [call]
-        raise NotPortedErr("context manager")
+        body = inner(raw)
+        bind = [f"{as_}cm_"] if as_ else ["_ = cm_"]
+        call = f"With({self.expr(cm, ctx)}, func(cm_ Value) {{\n" + "\n".join(bind + body) + "\n})"
+        return self.wrap(call, node, ctx, raw) if raw else [call]
 
     def logger_patch(self, cm):
         """Returns the logger level patched by mock.patch(...logger.<level>) / patch.object(logger, level)."""
@@ -891,6 +911,7 @@ class Converter:
         return None
 
     def convert_class(self, cls):
+        class_names = []
         attrs = []
         methods = []
         funcs = []
@@ -907,10 +928,16 @@ class Converter:
                 except NotPortedErr as e:
                     value = self.np(node, str(e))
                 attrs.append(f"{go_str(node.targets[0].id)}: {value},")
+                # later statements of the class body can refer to the attribute by name
+                if node.targets[0].id not in self.module_names:
+                    self.module_names[node.targets[0].id] = value
+                    class_names.append(node.targets[0].id)
             elif isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant):
                 pass
             else:
                 self.not_ported += 1
+        for name in class_names:
+            del self.module_names[name]
         base = self.base_of(cls)
         out = [f"var {self.class_var(cls.name)} = &Class{{",
                f"Name: {go_str(cls.name)},",

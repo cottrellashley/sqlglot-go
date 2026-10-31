@@ -30,7 +30,7 @@ func toS(node any, verbose bool, level int, reprStr bool) string {
 			if a.Value == nil && !verbose {
 				continue
 			}
-			if l, ok := a.Value.([]*Expr); ok && len(l) == 0 && !verbose {
+			if isEmptyList(a.Value) && !verbose {
 				continue
 			}
 			args = append(args, kv{a.Key, a.Value})
@@ -65,6 +65,16 @@ func toS(node any, verbose bool, level int, reprStr bool) string {
 		}
 		return "[" + s + "]"
 	case []string:
+		items := make([]string, len(n))
+		for i, x := range n {
+			items[i] = toS(x, verbose, level+1, false)
+		}
+		s := strings.Join(items, delim)
+		if s != "" {
+			s = indent + s
+		}
+		return "[" + s + "]"
+	case []any:
 		items := make([]string, len(n))
 		for i, x := range n {
 			items[i] = toS(x, verbose, level+1, false)
@@ -161,3 +171,16 @@ var _ = strconv.Itoa
 
 // PyRepr mirrors Python's repr() of a string.
 func PyRepr(s string) string { return pyRepr(s) }
+
+// isEmptyList reports whether v is an empty list value (Python's `v == []`).
+func isEmptyList(v any) bool {
+	switch l := v.(type) {
+	case []*Expr:
+		return len(l) == 0
+	case []any:
+		return len(l) == 0
+	case []string:
+		return len(l) == 0
+	}
+	return false
+}
