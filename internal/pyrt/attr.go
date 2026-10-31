@@ -29,6 +29,32 @@ func A(v Value, name string) Value {
 		Raise(AttributeError, "module '%s' has no attribute '%s'", x.Name, name)
 	case *exp.Expr:
 		return exprAttr(x, name)
+	case exp.NaiveDatetime:
+		switch name {
+		case "date":
+			return Func(name, func(Args) Value { return exp.DateValue{Year: x.Year(), Month: int(x.Month()), Day: x.Day()} })
+		case "year":
+			return x.Year()
+		case "month":
+			return int(x.Month())
+		case "day":
+			return x.Day()
+		case "hour":
+			return x.Hour()
+		case "minute":
+			return x.Minute()
+		case "second":
+			return x.Second()
+		}
+	case exp.DateValue:
+		switch name {
+		case "year":
+			return x.Year
+		case "month":
+			return x.Month
+		case "day":
+			return x.Day
+		}
 	case exp.Kind:
 		return kindAttr(x, name)
 	case exp.DType:
@@ -735,6 +761,15 @@ func errAttr(e *PyErr, name string) Value {
 		return &List{}
 	case "__class__":
 		return e.Class
+	case "__cause__":
+		var cause error
+		if u, ok := e.Go.(interface{ Unwrap() error }); ok {
+			cause = u.Unwrap()
+		}
+		if cause == nil {
+			return nil
+		}
+		return goErr(cause)
 	case "start", "end":
 		if te, ok := e.Go.(*errs.TokenError); ok && te.HasPos {
 			if name == "start" {

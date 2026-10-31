@@ -63,6 +63,24 @@ PYTHON_ONLY = {
         "python-only: patches the TypeAnnotator class to inspect its private state",
     ("tests/test_optimizer.py", "TestOptimizer.test_annotate_types_caches_schema_lookups"):
         "python-only: inspects the private lookup cache of MappingSchema",
+    ("tests/test_executor.py", "TestExecutor.test_py_dialect"):
+        "python-only: checks the Python source generated for expressions (the Go executor compiles them to closures)",
+    ("tests/test_executor.py", "TestExecutor.test_optimized_tpch"):
+        "needs DuckDB: compares the optimized TPC-H queries' results with DuckDB's",
+    ("tests/test_executor.py", "TestExecutor.test_execute_tpch"):
+        "needs DuckDB: compares the TPC-H query results with DuckDB's",
+    ("tests/test_executor.py", "TestExecutor.test_execute_tpcds"):
+        "needs DuckDB: compares the TPC-DS query results with DuckDB's",
+    ("tests/test_executor.py", "TestExecutor.test_sql_boolean_logic_with_numpy_scalars"):
+        "python-only: evaluates numpy scalars",
+    ("tests/test_executor.py", "TestExecutor.test_subquery_memoization"):
+        "python-only: inspects PythonExecutor's private subquery cache; see TestSubqueryMemoization in executor/internal_test.go",
+    ("tests/test_executor.py", "TestExecutor.test_subquery_execution_does_not_mutate_the_plan"):
+        "python-only: drives PythonExecutor directly; see TestSubqueryExecutionDoesNotMutateThePlan in executor/internal_test.go",
+    ("tests/test_executor.py", "TestExecutor.test_sql_boolean_logic_preserves_short_circuiting"):
+        "python-only: drives PythonExecutor directly; see TestBooleanLogicShortCircuits in executor/internal_test.go",
+    ("tests/test_executor.py", "TestExecutor.test_agg_order"):
+        "python-only: inspects a Plan built by Python; see TestAggregationOrder in executor/internal_test.go",
     ("tests/test_serde.py", "TestSerde.test_custom_expression"):
         "python-only: subclasses exp.Expression at module level; see TestSerdeRegisteredKind in exp/serde_test.go",
     ("tests/test_schema.py", "TestSchema.test_custom_schema"):

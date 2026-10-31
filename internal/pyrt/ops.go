@@ -281,6 +281,9 @@ func exprOp(a, b Value, build func(x *exp.Expr, other any) *exp.Expr) (Value, bo
 
 // Lt is a < b.
 func Lt(a, b Value) Value {
+	if r, ok := setCompare(a, b, "<"); ok {
+		return r
+	}
 	if r, ok := exprOp(a, b, (*exp.Expr).Lt); ok {
 		return r
 	}
@@ -292,6 +295,9 @@ func Lt(a, b Value) Value {
 
 // Le is a <= b.
 func Le(a, b Value) Value {
+	if r, ok := setCompare(a, b, "<="); ok {
+		return r
+	}
 	if r, ok := exprOp(a, b, (*exp.Expr).Lte); ok {
 		return r
 	}
@@ -303,6 +309,9 @@ func Le(a, b Value) Value {
 
 // Gt is a > b.
 func Gt(a, b Value) Value {
+	if r, ok := setCompare(a, b, ">"); ok {
+		return r
+	}
 	if r, ok := exprOp(a, b, (*exp.Expr).Gt); ok {
 		return r
 	}
@@ -314,6 +323,9 @@ func Gt(a, b Value) Value {
 
 // Ge is a >= b.
 func Ge(a, b Value) Value {
+	if r, ok := setCompare(a, b, ">="); ok {
+		return r
+	}
 	if r, ok := exprOp(a, b, (*exp.Expr).Gte); ok {
 		return r
 	}
@@ -1391,4 +1403,30 @@ func Hash(v Value) Value {
 		return HashKey(e)
 	}
 	return HashKey(v)
+}
+
+// setCompare implements the subset comparisons of sets.
+func setCompare(a, b Value, op string) (bool, bool) {
+	x, ok1 := norm(a).(*Set)
+	y, ok2 := norm(b).(*Set)
+	if !ok1 || !ok2 {
+		return false, false
+	}
+	subset := func(p, q *Set) bool {
+		for _, it := range p.Items() {
+			if !q.Has(it) {
+				return false
+			}
+		}
+		return true
+	}
+	switch op {
+	case "<=":
+		return subset(x, y), true
+	case "<":
+		return subset(x, y) && x.d.Len() < y.d.Len(), true
+	case ">=":
+		return subset(y, x), true
+	}
+	return subset(y, x) && y.d.Len() < x.d.Len(), true
 }

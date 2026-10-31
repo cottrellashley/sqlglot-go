@@ -106,9 +106,14 @@ func (e *SchemaError) Error() string { return e.Message }
 func (*SchemaError) sqlglotError()   {}
 
 // ExecuteError is raised by the executor.
-type ExecuteError struct{ Message string }
+type ExecuteError struct {
+	Message string
+	// Cause is the error that made the execution fail, if any (Python's __cause__).
+	Cause error
+}
 
 func (e *ExecuteError) Error() string { return e.Message }
+func (e *ExecuteError) Unwrap() error { return e.Cause }
 func (*ExecuteError) sqlglotError()   {}
 
 // SqlglotErr is a general sqlglot error (Python's SqlglotError base class).

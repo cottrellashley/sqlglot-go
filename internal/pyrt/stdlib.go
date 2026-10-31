@@ -452,6 +452,21 @@ func init() {
 			}
 			return exp.NaiveDatetime{Time: t}
 		}),
+		"timedelta": Func("timedelta", func(a Args) Value {
+			units := []struct {
+				name string
+				d    time.Duration
+			}{{"days", 24 * time.Hour}, {"seconds", time.Second}, {"microseconds", time.Microsecond},
+				{"milliseconds", time.Millisecond}, {"minutes", time.Minute}, {"hours", time.Hour}, {"weeks", 7 * 24 * time.Hour}}
+			var total float64
+			for i, u := range units {
+				if v := a.Get(i, u.name, nil); v != nil {
+					f, _ := toFloat(v)
+					total += f * float64(u.d)
+				}
+			}
+			return time.Duration(total)
+		}),
 		"date": Func("date", func(a Args) Value {
 			return exp.DateValue{Year: mustInt(a.Pos[0]), Month: mustInt(a.Pos[1]), Day: mustInt(a.Pos[2])}
 		}),
@@ -461,6 +476,9 @@ func init() {
 		}),
 	}}
 	globals["datetime"] = datetimeModule
+	for _, name := range []string{"date", "time", "datetime", "timezone", "timedelta"} {
+		globals["datetime."+name] = datetimeModule.Attrs[name]
+	}
 }
 
 // percentTemplateRe matches the messages produced by a %-format template.

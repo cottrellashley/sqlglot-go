@@ -61,7 +61,7 @@ func argsAttr(v *ArgsView, name string) Value {
 }
 
 func goErr(err error) *PyErr {
-	switch err.(type) {
+	switch x := err.(type) {
 	case *errs.ParseError:
 		return &PyErr{Class: ParseError, Msg: err.Error(), Go: err}
 	case *errs.TokenError:
@@ -80,6 +80,13 @@ func goErr(err error) *PyErr {
 		return &PyErr{Class: ValueError, Msg: err.Error(), Go: err}
 	case *errs.SqlglotErr:
 		return &PyErr{Class: SqlglotError, Msg: err.Error(), Go: err}
+	case interface{ PythonClass() string }:
+		for _, c := range []*ExcClass{ValueError, TypeError, KeyError, IndexError, AttributeError, NotImplementedError,
+			ZeroDivisionError, NameError} {
+			if c.Name == x.PythonClass() {
+				return &PyErr{Class: c, Msg: err.Error(), Go: err}
+			}
+		}
 	}
 	msg := err.Error()
 	if m := unknownDialectRe.FindStringSubmatch(msg); m != nil {

@@ -14,6 +14,6 @@ for f in "$REF"/tests/dialects/test_*.py; do
 done
 # Core suites (the ones for modules that exist in Go).
 for name in test_build test_errors test_expressions test_generator test_helper test_jsonpath test_parser \
-	test_anonymize test_diff test_lineage test_optimizer test_schema test_serde test_time test_tokens test_transforms test_transpile test_typing; do
+	test_anonymize test_diff test_executor test_lineage test_optimizer test_schema test_serde test_time test_tokens test_transforms test_transpile test_typing; do
 	conv "tests/$name.py" "$ROOT/tests/core/${name#test_}_test.go" core_test
 done

@@ -296,6 +296,7 @@ var (
 	RuntimeError        = &ExcClass{"RuntimeError", Exception}
 	RecursionError      = &ExcClass{"RecursionError", RuntimeError}
 	ZeroDivisionError   = &ExcClass{"ZeroDivisionError", Exception}
+	NameError           = &ExcClass{"NameError", Exception}
 	StopIteration       = &ExcClass{"StopIteration", Exception}
 	OSError             = &ExcClass{"OSError", Exception}
 	FileNotFoundError   = &ExcClass{"FileNotFoundError", OSError}
