@@ -619,6 +619,7 @@ func GetDialect(d any) (*Dialect, error) {
 		}
 		return x, nil
 	case *DialectClass:
+		x.Finalize()
 		return x.NewInstance(), nil
 	case string:
 		if x == "" {

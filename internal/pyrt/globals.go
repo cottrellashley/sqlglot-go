@@ -19,12 +19,43 @@ var globals = map[string]Value{}
 // registered in Go are reported as skipped rather than failed.
 var KnownDialects = map[string]bool{}
 
+// dialectsOrder lists the members of the Dialects enum in definition order.
+var dialectsOrder = append([]string{""}, strings.Fields("athena bigquery clickhouse databricks dax doris dremio drill "+
+	"druid duckdb dune fabric hive materialize mysql oracle postgres presto prql redshift risingwave snowflake solr "+
+	"spark spark2 sqlite starrocks tableau teradata trino tsql exasol")...)
+
 func init() {
-	for _, d := range strings.Fields("athena bigquery clickhouse databricks dax doris dremio drill druid duckdb dune " +
-		"fabric hive materialize mysql oracle postgres presto prql redshift risingwave singlestore snowflake solr " +
-		"spark spark2 sqlite starrocks tableau teradata trino tsql exasol") {
+	for _, d := range dialectsOrder[1:] {
 		KnownDialects[d] = true
 	}
+	// singlestore is a dialect of sqlglot that is not a member of the Dialects enum
+	KnownDialects["singlestore"] = true
+}
+
+// dialectsEnum is the Dialects enum. Its members are str subclasses, so they are represented by
+// their values (see strAttr's "value").
+type dialectsEnum struct{}
+
+// PyAttr implements Attrer.
+func (dialectsEnum) PyAttr(name string) (Value, bool) {
+	if name == "DIALECT" {
+		return "", true
+	}
+	for _, d := range dialectsOrder[1:] {
+		if strings.ToUpper(d) == name {
+			return d, true
+		}
+	}
+	return nil, false
+}
+
+// PyIter implements iteration over the members.
+func (dialectsEnum) PyIter() []Value {
+	out := make([]Value, len(dialectsOrder))
+	for i, d := range dialectsOrder {
+		out[i] = d
+	}
+	return out
 }
 
 func wsControlCharsToDuck() Value {
@@ -226,9 +257,7 @@ func init() {
 	m["exp"] = expModule
 	m["expressions"] = expModule
 	m["Dialect"] = dialectClassValue
-	m["Dialects"] = &Module{Name: "Dialects", Get: func(name string) (Value, bool) {
-		return strings.ToLower(name), true
-	}}
+	m["Dialects"] = dialectsEnum{}
 	m["ErrorLevel"] = &Module{Name: "ErrorLevel", Attrs: map[string]Value{
 		"IGNORE": errs.Ignore, "WARN": errs.Warn, "RAISE": errs.Raise, "IMMEDIATE": errs.Immediate,
 	}}
@@ -255,50 +284,6 @@ func init() {
 	m["intersect"] = expModule.Attrs["intersect"]
 	m["except_"] = expModule.Attrs["except_"]
 
-	m["annotate_types"] = Func("annotate_types", func(a Args) Value {
-		return Guard(func() Value {
-			e, _ := norm(a.Pos[0]).(*exp.Expr)
-			o := sqlglot.AnnotateOptions{Dialect: dialectArg(a.Get(-1, "dialect", nil))}
-			if s := a.Get(1, "schema", nil); s != nil {
-				o.Schema = toSchema(s)
-			}
-			if ow, ok := a.Kwarg("overwrite_types"); ok && !Truth(ow) {
-				o.NoOverwriteTypes = true
-			}
-			if _, ok := a.Kwarg("expression_metadata"); ok {
-				NotPorted("annotate_types(expression_metadata=...)")
-			}
-			if _, ok := a.Kwarg("coerces_to"); ok {
-				NotPorted("annotate_types(coerces_to=...)")
-			}
-			out, err := sqlglot.AnnotateTypesOpts(e, o)
-			check(err)
-			return out
-		})
-	})
-	m["normalize_identifiers"] = Func("normalize_identifiers", func(a Args) Value {
-		return Guard(func() Value {
-			store := false
-			if s, ok := a.Kwarg("store_original_column_identifiers"); ok {
-				store = Truth(s)
-			}
-			return sqlglot.NormalizeIdentifiersOpts(toGo(a.Pos[0]), dialectArg(a.Get(1, "dialect", nil)), store)
-		})
-	})
-	m["simplify"] = Func("simplify", func(a Args) Value {
-		return Guard(func() Value {
-			e, _ := norm(a.Pos[0]).(*exp.Expr)
-			cp := Truth(a.Get(1, "constant_propagation", false))
-			coalesce := Truth(a.Get(-1, "coalesce_simplification", false))
-			return sqlglot.SimplifyOpts(e, cp, coalesce, dialectArg(a.Get(-1, "dialect", nil)))
-		})
-	})
-	m["canonicalize"] = Func("canonicalize", func(a Args) Value {
-		return Guard(func() Value {
-			e, _ := norm(a.Pos[0]).(*exp.Expr)
-			return sqlglot.Canonicalize(e, dialectArg(a.Get(1, "dialect", nil)))
-		})
-	})
 	m["MappingSchema"] = Func("MappingSchema", func(a Args) Value {
 		return Guard(func() Value {
 			o := sqlglot.MappingSchemaOptions{Dialect: dialectArg(a.Get(2, "dialect", nil))}
@@ -435,6 +420,10 @@ func (dialectClassObj) PyAttr(name string) (Value, bool) {
 				d, err := sqlglot.GetDialect(dialectArg(a.Pos[0]))
 				if err != nil {
 					if name == "get" {
+						if e := goErr(err); e.Class == UnportedDialectError {
+							skipEvents++
+							return &SkippedV{e.Msg}
+						}
 						return nil
 					}
 					e := goErr(err)
@@ -450,7 +439,15 @@ func (dialectClassObj) PyAttr(name string) (Value, bool) {
 			})
 		}), true
 	case "classes":
-		NotPorted("Dialect.classes")
+		d := NewDict()
+		for _, name := range dialectsOrder {
+			if c, err := sqlglot.GetDialectClass(name); err == nil {
+				d.Set(name, &DialectClassV{c})
+			} else {
+				d.Set(name, &SkippedV{name})
+			}
+		}
+		return d, true
 	}
 	return classField(reflect.ValueOf(sqlglot.BaseDialectClass()).Elem(), name)
 }

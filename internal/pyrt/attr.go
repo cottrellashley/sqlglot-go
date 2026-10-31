@@ -438,6 +438,9 @@ func strArgs(a Args) []string {
 
 func strAttr(s string, name string) Value {
 	switch name {
+	case "value":
+		// members of str enums (e.g. Dialects) are represented by their values
+		return s
 	case "upper":
 		return method(name, func(a Args) Value { return strings.ToUpper(s) })
 	case "lower":

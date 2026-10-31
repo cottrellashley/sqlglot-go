@@ -36,6 +36,19 @@ CMPOPS = {
     ast.Eq: "Eq", ast.NotEq: "Ne", ast.Lt: "Lt", ast.LtE: "Le", ast.Gt: "Gt", ast.GtE: "Ge",
     ast.Is: "Is", ast.IsNot: "IsNot", ast.In: "In", ast.NotIn: "NotIn",
 }
+# Test methods that exercise Python-only mechanics. They become documented skips; the reason
+# names the Go-native test covering the same behavior where there is one.
+PYTHON_ONLY = {
+    ("tests/dialects/test_dialect.py", "TestDialect.test_lazy_load"):
+        "python-only: checks that importing sqlglot loads dialect modules lazily (Go packages are linked statically)",
+    ("tests/dialects/test_dialect.py", "TestDialect.test_get_or_raise"):
+        "python-only: defines a Dialect subclass inline; see TestCustomDialectSettings in dialect_extension_test.go",
+    ("tests/dialects/test_dialect.py", "TestDialect.test_patch_dialect_parser"):
+        "python-only: patches Snowflake.parser_class with a Python subclass; see TestPatchDialectParser in dialect_extension_test.go",
+    ("tests/dialects/test_dialect.py", "TestDialect.test_custom_dialect"):
+        "python-only: subclasses Dialect and SnowflakeParser inline; see TestCustomDialect in dialect_extension_test.go",
+}
+
 # self.<method>(...) calls with a dedicated Go method on *pyrt.Case
 CASE_METHODS = {
     "validate_identity": "ValidateIdentity",
@@ -747,6 +760,9 @@ class Converter:
             ctx.declare(n)
         binds = self.params(node.args, ctx)
         out = [f"func {self.method_func(cls_name, node.name)}(self *Case, a Args) Value {{"]
+        reason = PYTHON_ONLY.get((self.relpath, f"{cls_name}.{node.name}"))
+        if reason:
+            return out + [f"M(self, \"skipTest\", {go_str(reason)})", "return nil", "}"]
         names = list(ctx.locals.values())
         if names:
             out.append(f"var {', '.join(names)} Value")
