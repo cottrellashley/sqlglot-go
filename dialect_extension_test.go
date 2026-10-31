@@ -12,6 +12,7 @@ import (
 	sqlglot "github.com/cottrellashley/sqlglot-go"
 	"github.com/cottrellashley/sqlglot-go/dialects/snowflake"
 	"github.com/cottrellashley/sqlglot-go/exp"
+	"github.com/cottrellashley/sqlglot-go/tokens"
 )
 
 func TestCustomDialect(t *testing.T) {
@@ -146,5 +147,33 @@ func TestRegisterKind(t *testing.T) {
 
 	if got := exp.New(specialUdfVarArgs, "a", exp.NewColumn("a"), "expressions", []*exp.Expr{exp.NewColumn("b")}).SQL(); got != "SPECIAL_UDF(a, b)" {
 		t.Fatalf("got %q", got)
+	}
+}
+
+// TestReadmeDialect checks the minimal dialect of the README.
+func TestReadmeDialect(t *testing.T) {
+	sqlglot.Register("readmedialect", func() *sqlglot.DialectClass {
+		c := sqlglot.NewDialectClass("readmedialect", sqlglot.BaseDialectClass())
+		c.ClassName = "ReadmeDialect"
+		c.NormalizationStrategy = sqlglot.Uppercase
+		c.Tokenizer.Identifiers = []tokens.Delim{tokens.Q("`")}
+		c.Tokenizer.Keywords["MINUS"] = tokens.Except
+		c.Parser.Functions["STRLEN"] = sqlglot.FromArgList(exp.Length)
+		c.Generator.Transforms[exp.Length] = sqlglot.RenameFunc("STRLEN")
+		c.Generator.TypeMapping[exp.DTypeText] = "STRING"
+		return c
+	})
+	for _, tc := range []struct{ sql, read, write, want string }{
+		{"SELECT LENGTH(`a b`), CAST(x AS TEXT) FROM t", "readmedialect", "duckdb", `SELECT LENGTH("a b"), CAST(x AS TEXT) FROM t`},
+		{"SELECT STRLEN(a) FROM t MINUS SELECT 1", "readmedialect", "duckdb", "SELECT LENGTH(a) FROM t EXCEPT SELECT 1"},
+		{`SELECT LENGTH("a b"), CAST(x AS TEXT) FROM t`, "duckdb", "readmedialect", "SELECT STRLEN(`a b`), CAST(x AS STRING) FROM t"},
+	} {
+		out, err := sqlglot.Transpile(tc.sql, tc.read, tc.write)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if out[0] != tc.want {
+			t.Errorf("%s: got %s, want %s", tc.sql, out[0], tc.want)
+		}
 	}
 }
