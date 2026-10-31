@@ -132,3 +132,30 @@ func (mm *MockMethodV) PyAttr(name string) (Value, bool) {
 	}
 	return nil, false
 }
+
+// PyAttr implements Attrer: logging methods log through the sqlglot logger.
+func (l *LoggerV) PyAttr(name string) (Value, bool) {
+	logAt := func(level slog.Level) Value {
+		return Func(name, func(a Args) Value {
+			msg := Str(a.Pos[0])
+			if len(a.Pos) > 1 {
+				msg = percentFormat(msg, a.Pos[1:])
+			}
+			sqlglot.Logger.Log(context.Background(), level, msg)
+			return nil
+		})
+	}
+	switch name {
+	case "warning", "warn":
+		return logAt(slog.LevelWarn), true
+	case "error":
+		return logAt(slog.LevelError), true
+	case "info":
+		return logAt(slog.LevelInfo), true
+	case "debug":
+		return logAt(slog.LevelDebug), true
+	case "name":
+		return l.Name, true
+	}
+	return nil, false
+}

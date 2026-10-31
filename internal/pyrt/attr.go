@@ -245,6 +245,8 @@ func typeOf(v Value) Value {
 		return x.Kind()
 	case *PyErr:
 		return x.Class
+	case interface{ PyType() Value }:
+		return x.PyType()
 	}
 	return Func(TypeName(v), func(a Args) Value { NotPorted("calling type(%s)", TypeName(v)); return nil })
 }
